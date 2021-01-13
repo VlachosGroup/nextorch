@@ -158,20 +158,6 @@ def inversestandardize_X(X, X_mean, X_std):
     
     return X_real
     
-
-
-def factorial(levels, DOE_function = DOE.fullfact):
-    '''
-    levels - a list of integers, design levels
-    DOE_function - pyDOE function, general full-factorial by default
-    Return normalized sampling plan given a DOE function
-    '''
-    X_real = DOE_function(levels)
-    #Normailize X_real
-    X_ranges = np.transpose([[0, i-1] for i in levels]) #-1 for python index
-    X_norm = norm_X(X_real, X_range = X_ranges)
-    
-    return X_norm
     
 
 def eval_test_function(X_unit, X_range, test_function):

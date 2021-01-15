@@ -1,35 +1,22 @@
-# -*- coding: utf-8 -*-
 """
-Created on Tue Oct 15 11:44:00 2019
-
-@author: Yifan Wang
+nextorch.utils
 
 Utility functions for Bayesian Optimization
-
 """
 
 import numpy as np
 import copy
 import torch
 
-import pyDOE2 as DOE
+from typing import Optional, TypeVar, Union, Tuple
+# Create a type variable for 1D arrays from numpy
+array = TypeVar('array')
+# Create a type variable for 2D arrays from numpy and call it as a matrix
+matrix = TypeVar('matrix')
 
 # use a GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float
-
-#import matplotlib.pyplot as plt 
-#import matplotlib
-#
-#font = {'size'   : 20}
-#
-#matplotlib.rc('font', **font)
-#matplotlib.rcParams['axes.linewidth'] = 1.5
-#matplotlib.rcParams['xtick.major.size'] = 8
-#matplotlib.rcParams['xtick.major.width'] = 2
-#matplotlib.rcParams['ytick.major.size'] = 8
-#matplotlib.rcParams['ytick.major.width'] = 2
-
 
 #%%
 '''
@@ -37,7 +24,7 @@ Normalization functions
 Work for numpy arrays 
 '''
 
-def norm_xv(xv, xi_range):
+def norm_xv(xv: array, xi_range: list) -> array:
     '''
     Takes in a column of x variable xv in a real scale
     and the variable range [lb, rb]

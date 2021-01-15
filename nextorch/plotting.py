@@ -12,7 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import numpy as np
 import types
-from typing import Optional, TypeVar, Union, Tuple
+from typing import Optional, TypeVar, Union, Tuple, List
 
 # Create a type variable for matplotlib axes
 plot_ax = TypeVar('plot_ax')
@@ -31,8 +31,8 @@ matplotlib.rcParams['ytick.major.width'] = 2
 def add_2D_x_slice(
     ax: plot_ax, 
     xvalue: float, 
-    yrange: list, 
-    zrange: list, 
+    yrange: List[float], 
+    zrange: List[float], 
     mesh_size: Optional[int] = 100
 ) -> plot_ax:
     """Adds a 2-dimensional plane on x axis, parallel to y-z plane
@@ -44,9 +44,9 @@ def add_2D_x_slice(
         Ax of the plot
     xvalue : float
         the value on x axis which the slice is made
-    yrange : list
+    yrange : list of float
         [left bound, right bound] of y value
-    zrange : list
+    zrange : list of float
         [left bound, right bound] of z value
     mesh_size : Optional[int], optional
         mesh size on the slice, by default 100
@@ -69,8 +69,8 @@ def add_2D_x_slice(
 def add_2D_y_slice(
     ax: plot_ax, 
     yvalue: float, 
-    xrange: list, 
-    zrange: list, 
+    xrange: List[float], 
+    zrange: List[float], 
     mesh_size: Optional[int] = 100
 ) -> plot_ax:
     """Adds a 2-dimensional plane on y axis, parallel to x-z plane
@@ -82,9 +82,9 @@ def add_2D_y_slice(
         Ax of the plot
     yvalue : float
         the value on y axis which the slice is made
-    xrange : list
+    xrange : list of float
         [left bound, right bound] of x value
-    zrange : list
+    zrange : list of float
         [left bound, right bound] of z value
     mesh_size : Optional[int], optional
         mesh size on the slice, by default 100
@@ -107,8 +107,8 @@ def add_2D_y_slice(
 def add_2D_z_slice(
     ax: plot_ax, 
     zvalue: float, 
-    yrange: list, 
-    zrange: list, 
+    yrange: List[float], 
+    zrange: List[float], 
     mesh_size: Optional[int] = 100
 ) -> plot_ax:
     """Adds a 2-dimensional plane on z axis, parallel to x-y plane
@@ -120,9 +120,9 @@ def add_2D_z_slice(
         Ax of the plot
     zvalue : float
         the value on z axis which the slice is made
-    xrange : list
+    xrange : list of float
         [left bound, right bound] of x value
-    yrange : list
+    yrange : list of float
         [left bound, right bound] of y value
     mesh_size : Optional[int], optional
         mesh size on the slice, by default 100

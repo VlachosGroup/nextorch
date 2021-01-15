@@ -7,13 +7,13 @@ Handles input and output files
 import os
 import pandas as pd 
 import numpy as np
-from typing import Optional, TypeVar, Union, Tuple
+from typing import Optional, TypeVar, Union, Tuple, NewType
 # Create a type variable for 1D arrays from numpy
 array = TypeVar('array')
 # Create a type variable for 2D arrays from numpy and call it as a matrix
-matrix = TypeVar('matrix')
+matrix = TypeVar('matrix')  
 # Create a type variable for pandas dataframe
-dataframe = TypeVar('dataframe')
+dataframe = TypeVar('dataframe') 
 
 def read_excel(
     file_path: str, 

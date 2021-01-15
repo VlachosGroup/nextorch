@@ -13,6 +13,9 @@ from typing import Optional, TypeVar, Union, Tuple
 array = TypeVar('array')
 # Create a type variable for 2D arrays from numpy and call it as a matrix
 matrix = TypeVar('matrix')
+# Create a type variable for torch tensor, it can 1D, 2D arrays in torch
+tensor = TypeVar('tensor')
+
 
 # use a GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -25,11 +28,22 @@ Work for numpy arrays
 '''
 
 def norm_xv(xv: array, xi_range: list) -> array:
-    '''
-    Takes in a column of x variable xv in a real scale
-    and the variable range [lb, rb]
-    return the normalized x in a unit scale
-    '''
+    """
+    Takes in an x array in a real scale
+    and converts it to a unit scale
+
+    Parameters
+    ----------
+    xv : array
+        original x array
+    xi_range : list
+        range of x, [left bound, right bound]
+
+    Returns
+    -------
+    xv: array
+        normalized x in a unit scale
+    """    
     xunit = copy.deepcopy(xv)
     lb = xi_range[0] #the left bound
     rb = xi_range[1] #the right bound
@@ -37,15 +51,39 @@ def norm_xv(xv: array, xi_range: list) -> array:
     
     return xunit
 
-def norm_X(X,  X_range = [], log_flags = [], decimals = None):
-    '''
-    Takes in a numpy matrix in a real scale, the variable ranges in a list 
-    and an optional parameters, number of decimals places to round off to
-    and returns in unit dimensions 
-    '''
+def norm_X(
+    X: matrix,  
+    X_range: Optional[list] = [], 
+    log_flags: Optional[list] = [], 
+    decimals: Optional[int] = None
+) -> matrix:
+    """Takes in a matrix in a real scale
+    and converts it into a unit scale
+
+    Parameters
+    ----------
+    X : matrix
+        original matrix in a real scale
+    X_range : Optional[list], optional
+        list of x ranges, by default []
+    log_flags : Optional[list], optional
+        list of boolean flags
+        True: use the log scale on this dimensional
+        False: use the normal scale 
+        by default []
+    decimals : Optional[int], optional
+        Number of decimal places to keep
+        by default None, i.e. no rounding up 
+
+    Returns
+    -------
+    Xunit: matrix
+        matrix scaled to a unit scale
+    """
+     #If 1D, make it 2D a matrix
     if len(X.shape)<2:
         X = copy.deepcopy(X)
-        X = np.array([X]) #If 1D, make it 2D array
+        X = np.array([X])
         
     dim = X.shape[1] #the number of column in X
     
@@ -56,9 +94,7 @@ def norm_X(X,  X_range = [], log_flags = [], decimals = None):
     
     # Initialize with a zero matrix
     Xunit = np.zeros((X.shape[0], X.shape[1]))
-    
     for i, xi in enumerate(np.transpose(X)):
-        
         if log_flags[i]:
             Xunit[:,i] =  np.log10(norm_xv(xi, X_range[i]))
         else:
@@ -71,12 +107,23 @@ def norm_X(X,  X_range = [], log_flags = [], decimals = None):
     return Xunit
 
 
-def inversenorm_xv(xv, xi_range):    
-    
-    '''
-    Takes in a column of x variable xv in a unit scale
-    and the variable range [lb, rb]
-    '''
+def inversenorm_xv(xv: array, xi_range: list) -> array:    
+    """
+    Takes in an x array in a unit scale
+    and converts it to a real scale
+
+    Parameters
+    ----------
+    xv : array
+        x array in a unit scale
+    xi_range : list
+        range of x, [left bound, right bound]
+
+    Returns
+    -------
+    xv: array
+        x in a real scale
+    """ 
     xreal = copy.deepcopy(xv)
     lb = xi_range[0] #the left bound
     rb = xi_range[1] #the right bound
@@ -85,12 +132,35 @@ def inversenorm_xv(xv, xi_range):
     return xreal
 
 
-def inversenorm_X(X, X_range = [], log_flags = [], decimals = None):
-    '''
-    Takes in a matrix in a unit scale, the variable ranges in a list 
-    and an optional parameters, number of decimals places to round off to
-    and returns in real dimensions 
-    '''
+def inversenorm_X(
+    X: matrix, 
+    X_range: Optional[list]= [], 
+    log_flags: Optional[list] = [], 
+    decimals: Optional[int] = None
+) -> matrix:
+    """Takes in a matrix in a unit scale
+    and converts it into a real scale
+
+    Parameters
+    ----------
+    X : matrix
+        original matrix in a unit scale
+    X_range : Optional[list], optional
+        list of x ranges, by default []
+    log_flags : Optional[list], optional
+        list of boolean flags
+        True: use the log scale on this dimensional
+        False: use the normal scale 
+        by default []
+    decimals : Optional[int], optional
+        Number of decimal places to keep
+        by default None, i.e. no rounding up 
+
+    Returns
+    -------
+    Xunit: matrix
+        matrix scaled to a real scale
+    """
     if len(X.shape)<2:
         X = copy.deepcopy(X)
         X = np.array([X]) #If 1D, make it 2D array
@@ -103,12 +173,12 @@ def inversenorm_X(X, X_range = [], log_flags = [], decimals = None):
     if log_flags == []: log_flags = [False] * dim
     
     Xreal = np.zeros((X.shape[0], X.shape[1]))
-        
     for i, xi in enumerate(np.transpose(X)):
         if log_flags[i]:
             Xreal[:,i] =  10**(inversenorm_xv(xi, X_range[i]))
         else:
             Xreal[:,i] =  inversenorm_xv(xi, X_range[i])
+
     # Round up if necessary
     if not decimals == None:
         Xreal = np.around(Xreal, decimals = decimals)  
@@ -116,21 +186,36 @@ def inversenorm_X(X, X_range = [], log_flags = [], decimals = None):
     return Xreal
 
 
-def standardize_X(X, X_mean = [], X_std = []):
-    '''
-    Takes in a vector/matrix X and returns the standardized data with zero mean and a unit variance
-    '''
-    if type(X_mean) == list:
-        
+def standardize_X(
+    X: Union[array, matrix, tensor], 
+    X_mean: Optional[matrix] = None, 
+    X_std: Optional[matrix] = None
+) -> matrix:
+    """Takes in an array/matrix X 
+    and returns the standardized data with zero mean and a unit variance
+
+    Parameters
+    ----------
+    X : matrix or array
+        the original matrix or array
+    X_mean : Optional[list], optional
+        mean of each column in X, 
+        by default None, it will be computed here
+    X_std : list, optional
+        stand deviation of each column in X, 
+        by default None, it will be computed here
+
+    Returns
+    -------
+    X_standard: matrix
+        Standardized X matrix
+    """    
+    # Compute the mean and std if not provided
+    if X_mean is None:
         X_mean = X.mean(axis = 0)
         X_std = X.std(axis = 0)
         
-        X_standard = (X - X_mean) / X_std
-        
-        return X_standard, X_mean, X_std
-    
-    else: 
-        return (X - X_mean) / X_std
+    return (X - X_mean) / X_std
 
 
 

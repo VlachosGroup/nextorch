@@ -7,19 +7,18 @@ Includes full factorial design, latin hypercube design and random design
 import itertools
 import numpy as np
 import scipy
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, List, NewType
 # Create a type variable for 1D arrays from numpy
-array = TypeVar('array')
+array = TypeVar('array', np.array)
 # Create a type variable for 2D arrays from numpy and call it as a matrix
-matrix = TypeVar('matrix')
+matrix = TypeVar('matrix', np.array)
 
 
 import pyDOE2 as DOE 
 import nextorch.utils as ut
 
 
-
-def full_factorial(levels: list) -> matrix:    
+def full_factorial(levels: List[int]) -> matrix:    
     """Generates full factorial design 
 
     Parameters
@@ -109,8 +108,8 @@ def randomized_design(
 
 
 def randomized_design_w_levels(
-    levels: list, 
-    random_seeds: Optional[list] = None
+    levels: List[int], 
+    random_seeds: Optional[List[int]] = None
 ) -> matrix:
     """Generates randomized design with levels in each dimension
 
@@ -119,7 +118,7 @@ def randomized_design_w_levels(
     levels : list of int
         Each number is a discrete level of each independent variable
         m is the number of variables or the size of the list
-    random_seeds : Optional[list], optional
+    random_seeds : Optional[list of int], optional
         List of random seeds, same size as levels, by default None
 
     Returns
@@ -146,7 +145,7 @@ def randomized_design_w_levels(
     return X_norm
 
 
-def norm_transform(X_norm: matrix, means: list, stdvs: list) -> matrix:
+def norm_transform(X_norm: matrix, means: List[float], stdvs: List[float]) -> matrix:
     """Transform designs into normal distribution
 
     Parameters

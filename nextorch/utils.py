@@ -26,7 +26,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float
 
 #%% Scaling helper functions 
-def norm_xv(xv: array_like_1d, xi_range: array_like_1d) -> array_like_1d:
+def unitscale_xv(xv: array_like_1d, xi_range: array_like_1d) -> array_like_1d:
     """
     Takes in an x array in a real scale
     and converts it to a unit scale
@@ -50,7 +50,7 @@ def norm_xv(xv: array_like_1d, xi_range: array_like_1d) -> array_like_1d:
     
     return xunit
 
-def norm_X(
+def unitscale_X(
     X: matrix_like_2d,  
     X_range: Optional[array_like_1d] = [], 
     log_flags: Optional[list] = [], 
@@ -95,9 +95,9 @@ def norm_X(
     Xunit = np.zeros((X.shape[0], X.shape[1]))
     for i, xi in enumerate(np.transpose(X)):
         if log_flags[i]:
-            Xunit[:,i] =  np.log10(norm_xv(xi, X_range[i]))
+            Xunit[:,i] =  np.log10(unitscale_xv(xi, X_range[i]))
         else:
-            Xunit[:,i] =  norm_xv(xi, X_range[i])
+            Xunit[:,i] =  unitscale_xv(xi, X_range[i])
     
     # Round up if necessary
     if not decimals == None:
@@ -106,7 +106,7 @@ def norm_X(
     return Xunit
 
 
-def inversenorm_xv(xv: array_like_1d, xi_range: array_like_1d) -> array_like_1d:    
+def inverse_unitscale_xv(xv: array_like_1d, xi_range: array_like_1d) -> array_like_1d:    
     """
     Takes in an x array in a unit scale
     and converts it to a real scale
@@ -131,7 +131,7 @@ def inversenorm_xv(xv: array_like_1d, xi_range: array_like_1d) -> array_like_1d:
     return xreal
 
 
-def inversenorm_X(
+def inverse_unitscale_X(
     X: matrix_like_2d, 
     X_range: Optional[array_like_1d]= [], 
     log_flags: Optional[list] = [], 
@@ -174,9 +174,9 @@ def inversenorm_X(
     Xreal = np.zeros((X.shape[0], X.shape[1]))
     for i, xi in enumerate(np.transpose(X)):
         if log_flags[i]:
-            Xreal[:,i] =  10**(inversenorm_xv(xi, X_range[i]))
+            Xreal[:,i] =  10**(inverse_unitscale_xv(xi, X_range[i]))
         else:
-            Xreal[:,i] =  inversenorm_xv(xi, X_range[i])
+            Xreal[:,i] =  inverse_unitscale_xv(xi, X_range[i])
 
     # Round up if necessary
     if not decimals == None:
@@ -220,7 +220,7 @@ def standardize_X(
 
 
 
-def inversestandardize_X(
+def inverse_standardize_X(
     X: matrix_like_2d, 
     X_mean: array_like_1d, 
     X_std: array_like_1d
@@ -302,8 +302,8 @@ def transform_plot2D_X(X1: matrix, X2: matrix, X_range: matrix
         X1, X2 in real units 
     """
     X_range = np.array(X_range).T
-    X1 = inversenorm_xv(X1, X_range[0])
-    X2 = inversenorm_xv(X2, X_range[1])
+    X1 = inverse_unitscale_xv(X1, X_range[0])
+    X2 = inverse_unitscale_xv(X2, X_range[1])
     
     return X1, X2
   
@@ -331,7 +331,7 @@ def transform_plot2D_Y(X: tensor, X_mean: array_like_1d, X_std: array_like_1d, m
     """
     X = X.clone()
     # Inverse the standardization
-    X_real = inversestandardize_X(X, X_mean, X_std)
+    X_real = inverse_standardize_X(X, X_mean, X_std)
 
     # Convert to numpy for plotting
     X_plot2D = np.reshape(X_real.detach().numpy(), (mesh_size, mesh_size))
@@ -375,7 +375,7 @@ def eval_test_function(
     else:
         X_range_np = X_range.copy()
     # transform to real scale 
-    X_real = inversenorm_X(X_unit_np, X_range_np)
+    X_real = inverse_unitscale_X(X_unit_np, X_range_np)
     # evaluate y
     y = test_function(X_real)
     # Convert to tensor

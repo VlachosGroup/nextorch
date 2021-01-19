@@ -7,18 +7,18 @@ Includes full factorial design, latin hypercube design and random design
 import itertools
 import numpy as np
 import scipy
-from typing import Optional, TypeVar, List, NewType
+from typing import Optional, TypeVar, List
 # Create a type variable for 1D arrays from numpy
-array = TypeVar('array', np.array)
+Array = TypeVar('Array')
 # Create a type variable for 2D arrays from numpy and call it as a matrix
-matrix = TypeVar('matrix', np.array)
+Matrix = TypeVar('Matrix')
 
 
 import pyDOE2 as DOE 
 import nextorch.utils as ut
 
 
-def full_factorial(levels: List[int]) -> matrix:    
+def full_factorial(levels: List[int]) -> Matrix:    
     """Generates full factorial design 
 
     Parameters
@@ -29,7 +29,7 @@ def full_factorial(levels: List[int]) -> matrix:
 
     Returns
     -------
-    X_norm: matrix
+    X_norm: Matrix
         Normalized sampling plan with the shape of prod(level_i) * m
     """    
     # Import DOE function
@@ -49,7 +49,7 @@ def latin_hypercube(
     n_points: int, 
     random_seed: Optional[int] = None, 
     criterion: Optional[str] = None
-) -> matrix:
+) -> Matrix:
     """Generates latin hypercube design
 
     Parameters
@@ -68,7 +68,7 @@ def latin_hypercube(
 
     Returns
     -------
-    X_norm: matrix
+    X_norm: Matrix
         Normalized sampling plan with the shape of n_point * n_dim
     """    
     X_norm = DOE.lhs(n_dim, samples = n_points, criterion = criterion, random_state= random_seed)
@@ -80,7 +80,7 @@ def randomized_design(
     n_dim: int, 
     n_points: int, 
     random_seed: Optional[int] = None
-) -> matrix:
+) -> Matrix:
     """Generates randomized design
 
     Parameters
@@ -94,7 +94,7 @@ def randomized_design(
 
     Returns
     -------
-    X_norm: matrix
+    X_norm: Matrix
         Normalized sampling plan with the shape of n_point * n_dim
     """    
     # Set the random state
@@ -110,7 +110,7 @@ def randomized_design(
 def randomized_design_w_levels(
     levels: List[int], 
     random_seeds: Optional[List[int]] = None
-) -> matrix:
+) -> Matrix:
     """Generates randomized design with levels in each dimension
 
     Parameters
@@ -123,7 +123,7 @@ def randomized_design_w_levels(
 
     Returns
     -------
-    X_norm: matrix
+    X_norm: Matrix
         Normalized sampling plan with the shape of prod(level_i) * m
     """    
     n_dim = len(levels)
@@ -145,12 +145,12 @@ def randomized_design_w_levels(
     return X_norm
 
 
-def norm_transform(X_norm: matrix, means: List[float], stdvs: List[float]) -> matrix:
+def norm_transform(X_norm: Matrix, means: List[float], stdvs: List[float]) -> Matrix:
     """Transform designs into normal distribution
 
     Parameters
     ----------
-    X_norm : matrix
+    X_norm : Matrix
         Original design matrix with the shape of n_points*n_dim
     means : list of float
         Means of the target distributions, size of n_dim
@@ -159,7 +159,7 @@ def norm_transform(X_norm: matrix, means: List[float], stdvs: List[float]) -> ma
 
     Returns
     -------
-    X_transformed: matrix
+    X_transformed: Matrix
         Transformed sampling plan with the shape of n_points*n_dim
     """     
     n_dim = X_norm.shape[1] # number of independent variables

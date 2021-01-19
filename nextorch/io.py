@@ -6,14 +6,15 @@ Handles input and output files
 
 import os
 import pandas as pd 
+from pandas import DataFrame
+
 import numpy as np
-from typing import Optional, TypeVar, Union, Tuple, NewType
+from typing import Optional, TypeVar, Union, Tuple
 # Create a type variable for 1D arrays from numpy
-array = TypeVar('array')
+Array = TypeVar('Array')
 # Create a type variable for 2D arrays from numpy and call it as a matrix
-matrix = TypeVar('matrix')  
-# Create a type variable for pandas dataframe
-dataframe = TypeVar('dataframe') 
+Matrix = TypeVar('Matrix')  
+
 
 def read_excel(
     file_path: str, 
@@ -22,7 +23,7 @@ def read_excel(
     skiprows: Optional[list] = None,
     index_col: Optional[int] = 0, 
     verbose: Optional[bool] = True,
-) -> dataframe:
+) -> DataFrame:
     """Reads an excel file and returns the data in pandas Dataframe
 
     Parameters
@@ -44,7 +45,8 @@ def read_excel(
 
     Returns
     -------
-    data: dataframe
+    data: DataFrame
+
         Input data saved in pandas dataframe
     """  
 
@@ -73,7 +75,7 @@ def read_csv(
     skiprows: Optional[list] = None,
     index_col: Optional[int] = 0, 
     verbose: Optional[bool] = True,
-) -> dataframe:
+) -> DataFrame:
     """Reads a csv file and returns the data in pandas Dataframe
 
     Parameters
@@ -93,7 +95,7 @@ def read_csv(
 
     Returns
     -------
-    data: dataframe
+    data: DataFrame
         Input data saved in pandas dataframe
     """   
     data = pd.read_csv(file_path, 
@@ -114,10 +116,10 @@ def read_csv(
     return data
 
 def split_X_y(
-    data: dataframe,
+    data: DataFrame,
     y_names: Union[str, list], 
     X_names: Optional[list] = None
-) -> Tuple[matrix, list, matrix, list]:
+) -> Tuple[Matrix, list, Matrix, list]:
     """Splits the data into independent (X) 
     and dependent (y) varibles 
 
@@ -132,7 +134,7 @@ def split_X_y(
 
     Returns
     -------
-    X, y: Tuple[matrix, list, matrix, list]
+    X, y: Tuple[Matrix, list, Matrix, list]
         Independent variable matrix, names and
         dependent variable matrix, names 
     """    

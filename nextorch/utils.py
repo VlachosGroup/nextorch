@@ -7,40 +7,40 @@ Utility functions for Bayesian Optimization
 import numpy as np
 import copy
 import torch
+from torch import Tensor 
 
 from typing import Optional, TypeVar, Union, Tuple
 # NEED TO EXPLAIN THESE IN DOCS
 # Create a type variable for 1D arrays from numpy, np.ndarray
-array = TypeVar('array')
+Array = TypeVar('Array')
 # Create a type variable for 2D arrays from numpy, np.ndarray, and call it as a matrix
-matrix = TypeVar('matrix')
-# Create a type variable for torch.Tensor, it can be 1D, 2D arrays in torch
-tensor = TypeVar('tensor')
+Matrix = TypeVar('Matrix')
+
 # Create a type variable which is array like (1D) including list, array, 1d tensor
-array_like_1d = Union[list, array, tensor]
+ArrayLike1d = Union[list, Array, Tensor]
 # Create a type variable which is matrix like (2D) including matrix, tensor
-matrix_like_2d = Union[matrix, tensor]
+MatrixLike2d = Union[Matrix, Tensor]
 
 # use a GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float
 
 #%% Scaling helper functions 
-def unitscale_xv(xv: array_like_1d, xi_range: array_like_1d) -> array_like_1d:
+def unitscale_xv(xv: ArrayLike1d, xi_range: ArrayLike1d) -> ArrayLike1d:
     """
     Takes in an x array in a real scale
     and converts it to a unit scale
 
     Parameters
     ----------
-    xv : array_like_1d
+    xv : ArrayLike1d
         original x array
-    xi_range : array_like_1d
+    xi_range : ArrayLike1d
         range of x, [left bound, right bound]
 
     Returns
     -------
-    xunit: array_like_1d, same type as xv
+    xunit: ArrayLike1d, same type as xv
         normalized x in a unit scale
     """    
     xunit = copy.deepcopy(xv)
@@ -51,17 +51,17 @@ def unitscale_xv(xv: array_like_1d, xi_range: array_like_1d) -> array_like_1d:
     return xunit
 
 def unitscale_X(
-    X: matrix_like_2d,  
-    X_range: Optional[array_like_1d] = [], 
+    X: MatrixLike2d,  
+    X_range: Optional[ArrayLike1d] = [], 
     log_flags: Optional[list] = [], 
     decimals: Optional[int] = None
-) -> matrix:
+) -> Matrix:
     """Takes in a matrix in a real scale
     and converts it into a unit scale
 
     Parameters
     ----------
-    X : matrix_like_2d
+    X : MatrixLike2d
         original matrix in a real scale
     X_range : Optional[array_like_1d], optional
         list of x ranges, by default []
@@ -106,21 +106,21 @@ def unitscale_X(
     return Xunit
 
 
-def inverse_unitscale_xv(xv: array_like_1d, xi_range: array_like_1d) -> array_like_1d:    
+def inverse_unitscale_xv(xv: ArrayLike1d, xi_range: ArrayLike1d) -> ArrayLike1d:    
     """
     Takes in an x array in a unit scale
     and converts it to a real scale
 
     Parameters
     ----------
-    xv : array_like_1d
+    xv : ArrayLike1d
         x array in a unit scale
-    xi_range : array_like_1d
+    xi_range : ArrayLike1d
         range of x, [left bound, right bound]
 
     Returns
     -------
-    xv: array_like_1d, same type as xv
+    xv: ArrayLike1d, same type as xv
         x in a real scale
     """ 
     xreal = copy.deepcopy(xv)
@@ -132,17 +132,17 @@ def inverse_unitscale_xv(xv: array_like_1d, xi_range: array_like_1d) -> array_li
 
 
 def inverse_unitscale_X(
-    X: matrix_like_2d, 
-    X_range: Optional[array_like_1d]= [], 
+    X: MatrixLike2d, 
+    X_range: Optional[ArrayLike1d]= [], 
     log_flags: Optional[list] = [], 
     decimals: Optional[int] = None
-) -> matrix:
+) -> Matrix:
     """Takes in a matrix in a unit scale
     and converts it into a real scale
 
     Parameters
     ----------
-    X : matrix_like_2d
+    X : MatrixLike2d
         original matrix in a unit scale
     X_range : Optional[array_like_1d], optional
         list of x ranges, by default []
@@ -186,29 +186,29 @@ def inverse_unitscale_X(
 
 
 def standardize_X(
-    X: matrix_like_2d, 
-    X_mean: Optional[array_like_1d] = None, 
-    X_std: Optional[array_like_1d] = None
-) -> matrix_like_2d:
+    X: MatrixLike2d, 
+    X_mean: Optional[ArrayLike1d] = None, 
+    X_std: Optional[ArrayLike1d] = None
+) -> MatrixLike2d:
     """Takes in an array/matrix X 
     and returns the standardized data with zero mean and a unit variance
 
     Parameters
     ----------
-    X : matrix_like_2d
+    X : MatrixLike2d
         the original matrix or array
-    X_mean : Optional[array_like_1d], optional
+    X_mean : Optional[ArrayLike1d], optional
         same type as X
         mean of each column in X, 
         by default None, it will be computed here
-    X_std : array_like_1d, optional
+    X_std : ArrayLike1d, optional
         same type as X
         stand deviation of each column in X, 
         by default None, it will be computed here
 
     Returns
     -------
-    X_standard: matrix_like_2d, same type as X
+    X_standard: MatrixLike2d, same type as X
         Standardized X matrix
     """    
     # Compute the mean and std if not provided
@@ -221,29 +221,29 @@ def standardize_X(
 
 
 def inverse_standardize_X(
-    X: matrix_like_2d, 
-    X_mean: array_like_1d, 
-    X_std: array_like_1d
-) -> matrix_like_2d:
+    X: MatrixLike2d, 
+    X_mean: ArrayLike1d, 
+    X_std: ArrayLike1d
+) -> MatrixLike2d:
     """Takes in an arrary/matrix/tensor X 
     and returns the data in the real scale
 
     Parameters
     ----------
-    X : matrix_like_2d
+    X : MatrixLike2d
         the original matrix or array
-    X_mean : Optional[array_like_1d], optional
+    X_mean : Optional[ArrayLike1d], optional
         same type as X
         mean of each column in X, 
         by default None, it will be computed here
-    X_std : array_like_1d, optional
+    X_std : ArrayLike1d, optional
         same type as X
         stand deviation of each column in X, 
         by default None, it will be computed here
 
     Returns
     -------
-    X_real: matrix_like_2d, same type as X
+    X_real: MatrixLike2d, same type as X
         in real scale
     """
     
@@ -255,7 +255,7 @@ def inverse_standardize_X(
     return X_real
     
 #%% 2-dimensional system specific functions
-def create_2D_mesh(mesh_size = 41) -> Tuple[matrix, matrix, matrix]:   
+def create_2D_mesh(mesh_size = 41) -> Tuple[Matrix, Matrix, Matrix]:   
     """Create 2D mesh for testing
 
     Parameters
@@ -265,7 +265,7 @@ def create_2D_mesh(mesh_size = 41) -> Tuple[matrix, matrix, matrix]:
 
     Returns
     -------
-    X_test, X1, X2: Tuple[matrix, , array]
+    X_test, X1, X2: Tuple[Matrix, Matrix, Matrix]
         X1 and X2 used for for-loops
     """
     nx1, nx2 = (mesh_size, mesh_size)
@@ -283,22 +283,22 @@ def create_2D_mesh(mesh_size = 41) -> Tuple[matrix, matrix, matrix]:
     
     return X_test, X1, X2
 
-def transform_plot2D_X(X1: matrix, X2: matrix, X_range: matrix
-) -> Tuple[matrix, matrix]:
+def transform_plot2D_X(X1: Matrix, X2: Matrix, X_range: Matrix
+) -> Tuple[Matrix, Matrix]:
     """Transform X1 and X2 in unit scale to real scales for plotting
 
     Parameters
     ----------
-    X1 : matrix
+    X1 : Matrix
         X for variable 1
-    X2 : matrix
+    X2 : Matrix
         X for variable 2
-    X_range : matrix
+    X_range : Matrix
         the ranges of two variables 
 
     Returns
     -------
-    X1, X2: Tuple[matrix, matrix]
+    X1, X2: Tuple[Matrix, Matrix]
         X1, X2 in real units 
     """
     X_range = np.array(X_range).T
@@ -307,18 +307,18 @@ def transform_plot2D_X(X1: matrix, X2: matrix, X_range: matrix
     
     return X1, X2
   
-def transform_plot2D_Y(X: tensor, X_mean: array_like_1d, X_std: array_like_1d, mesh_size: int
-) -> matrix:
+def transform_plot2D_Y(X: Tensor, X_mean: ArrayLike1d, X_std: ArrayLike1d, mesh_size: int
+) -> Matrix:
     """takes in 1 column of tensor 
     convert to real units and return a 2D numpy array 
 
     Parameters
     ----------
-    X : tensor
+    X : Tensor
         1d tensor
-    X_mean : array_like_1d
+    X_mean : ArrayLike1d
         means 
-    X_std : array_like_1d
+    X_std : ArrayLike1d
         standard deviations
     mesh_size : int
         mesh size
@@ -343,25 +343,25 @@ def transform_plot2D_Y(X: tensor, X_mean: array_like_1d, X_std: array_like_1d, m
 
 
 #%% Model training helper functions
-def eval_test_function(
-    X_unit: matrix_like_2d, 
-    X_range: array_like_1d, 
-    test_function
-) -> tensor:
+def evaluate_objective_func(
+    X_unit: MatrixLike2d, 
+    X_range: ArrayLike1d, 
+    objective_func: object
+) -> Tensor:
     """Evaluate the test function
 
     Parameters
     ----------
-    X_unit : matrix_like_2d, matrix or 2d tensor
+    X_unit : MatrixLike2d, matrix or 2d tensor
         X in a unit scale
-    X_range : array_like_1d, array or 1d tensor
+    X_range : ArrayLike1d, array or 1d tensor
         list of x ranges
     test_function : function object
         a test function which evaluate np arrays
 
     Returns
     -------
-    y_tensor: tensor
+    y_tensor: Tensor
         model predicted values
     """
     # Convert matrix type from tensor to numpy matrix
@@ -377,7 +377,7 @@ def eval_test_function(
     # transform to real scale 
     X_real = inverse_unitscale_X(X_unit_np, X_range_np)
     # evaluate y
-    y = test_function(X_real)
+    y = objective_func(X_real)
     # Convert to tensor
     y_tensor = torch.tensor(y, dtype = dtype)
 

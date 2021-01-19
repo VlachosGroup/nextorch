@@ -7,6 +7,7 @@ Contains Gaussian Processes (GP) and Bayesian Optimization (BO) methods
 import numpy as np
 import torch
 from torch import Tensor
+import copy
 
 from typing import Optional, TypeVar, Union, Tuple, List
 
@@ -99,19 +100,18 @@ def fit_with_new_observations(model: Model, X: Tensor, Y: Tensor) -> Model:
     
     return model
 
-#%% Model training helper functions
 def evaluate_objective_func(
     X_unit: MatrixLike2d, 
-    X_range: ArrayLike1d, 
+    X_range: MatrixLike2d, 
     objective_func: object
 ) -> Tensor:
-    """Evaluate the test function
+    """Evaluate the objective function
 
     Parameters
     ----------
     X_unit : MatrixLike2d, matrix or 2d tensor
         X in a unit scale
-    X_range : ArrayLike1d, array or 1d tensor
+    X_range : MatrixLike2d, matrix or 2d tensor
         list of x ranges
     test_function : function object
         a test function which evaluate np arrays
@@ -139,60 +139,95 @@ def evaluate_objective_func(
     y_tensor = torch.tensor(y, dtype = dtype)
 
     return y_tensor
+
+def predict_model(model: Model, X_test: Tensor
+) -> Tuple[Tensor, Tensor, Tensor]:
+    """Makes standardized prediction at X_test using the GP model
+
+    Parameters
+    ----------
+    model : Model
+        A GP model
+    X_test : Tensor
+        X Tensor used for testing, must have the same dimension 
+        as X for training
+
+    Returns
+    -------
+    Y_test: Tensor
+        Standardized prediction, the mean of postierior
+    Y_test_lower: Tensor 
+        The lower confidence interval 
+    Y_test_upper: Tensor
+        The upper confidence interval    
+    """
+    # Make a copy
+    X_test = copy.deepcopy(X_test)
+    X_test = torch.tensor(X_test, dtype = dtype)
+    # Extract postierior distribution
+    posterior = model.posterior(X_test)
+    Y_test = posterior.mean
+    Y_test_lower, Y_test_upper = posterior.mvn.confidence_region()
     
+    return Y_test, Y_test_lower, Y_test_upper
+
+
+def predict_real(model: Model, X_test: Tensor, Y_mean: Tensor, Y_std: Tensor
+) -> Tuple[Matrix, Matrix, Matrix]:
+    """Make predictions in real scale and returns numpy array
+
+    Parameters
+    ----------
+    model : Model
+        A GP model
+    X_test : Tensor
+        X Tensor used for testing, must have the same dimension 
+        as X for training
+    Y_mean : Tensor
+        The mean of initial Y set
+    Y_std : Tensor
+        The std of initial Y set
+
+    Returns
+    -------
+    Y_test_real: numpy matrix
+        predictions in a real scale
+    Y_test_lower_real: numpy matrix 
+        The lower confidence interval in a real scale
+    Y_test_upper_real: numpy matrix 
+        The upper confidence interval in a real scale
+    """
+    # Make standardized predictions using the model
+    Y_test, Y_test_lower, Y_test_upper = predict_model(model, X_test)
+    # Inverse standardize and convert it to numpy matrix
+    Y_test_real = ut.inversestandardize_X(Y_test, Y_mean, Y_std)
+    Y_test_real = Y_test_real.detach().numpy()
     
-def _predict_pipeline_for_training(model, train_X, Y_mean, Y_std):
+    Y_test_lower_real = ut.inversestandardize_X(Y_test_lower, Y_mean, Y_std)
+    Y_test_lower_real = Y_test_lower_real.detach().numpy()
     
-    '''
-    Predict the output value
-    return the mean, confidence interval in numpy arrays
-    '''
-    train_y, train_y_lower,  train_y_upper = ut.predict_surrogate(model, train_X)
+    Y_test_upper_real = ut.inversestandardize_X(Y_test_upper, Y_mean, Y_std)
+    Y_test_upper_real = Y_test_upper_real.detach().numpy()
     
-    train_y_real = ut.inversestandardize_X(train_y, Y_mean, Y_std)
-    train_y_real = train_y_real.detach().numpy()
-    
-    train_y_lower_real = ut.inversestandardize_X(train_y_lower, Y_mean, Y_std)
-    train_y_lower_real = train_y_lower_real.detach().numpy()
-    
-    train_y_upper_real = ut.inversestandardize_X(train_y_upper, Y_mean, Y_std)
-    train_y_upper_real = train_y_upper_real.detach().numpy()
-    
-    return train_y_real, train_y_lower_real, train_y_upper_real
+    return Y_test_real, Y_test_lower_real, Y_test_upper_real
         
-def predict_surrogate(model, test_x):
-    '''
-    Input a Gaussian process model 
-    return the mean, lower confidence interval and upper confidence intervale 
-    from the postierior
-    '''
-    
-    test_x = copy.deepcopy(test_x)
-    test_x = torch.tensor(test_x, dtype = dtype)
-    
-    posterior = model.posterior(test_x)
-    
-    test_y_mean = posterior.mean
-    test_y_lower, test_y_upper = posterior.mvn.confidence_region()
-    
-    return test_y_mean, test_y_lower, test_y_upper
 
-def _predict_pipeline_for_testing(model, test_X,  mesh_size, Y_mean, Y_std):
+# def predict_mesh_2D(model, X_test,  mesh_size, Y_mean, Y_std):
+#     '''
+#     Predict 2d mesh values from surrogates 
+#     Generate plots if required
+#     Return outputs Y in 2d numpy matrix 
+#     '''
+#     # predict the mean for ff model, returns a standardized 1d tensor
+#     Y_test, _, _ = ut.predict_model(model, X_test)
+#     # Inverse the standardization and convert 1d y into a 2d array
+#     Y_test_real = ut.transform_mesh_2D_Y(Y_test, Y_mean, Y_std, mesh_size)
     
-    '''
-    Predict 2d mesh values from surrogates 
-    Generate plots if required
-    Return outputs Y in 2d numpy matrix 
-    '''
-    # predict the mean for ff model, returns a standardized 1d tensor
-    test_y, test_y_lower, test_y_upper = ut.predict_surrogate(model, test_X)
-    # Inverse the standardization and convert 1d y into a 2d array
-    test_Y_real = ut.transform_plot2D_Y(test_y, Y_mean, Y_std, mesh_size)
-    
-    return test_Y_real
+#     return Y_test_real
 
     
 
+#%%
 
 class Experiment():
     """Experiment object
@@ -290,8 +325,8 @@ class Experiment():
             # Convert to Tensor
             X = torch.tensor(X)
             Y = torch.tensor(Y)
-            Y_mean = Y.mean(axis = 0)
-            Y_std = Y.std(axis = 0)
+            Y_mean = Y.mean(axis = 0).detach().clone()
+            Y_std = Y.std(axis = 0).detach().clone()
 
         # Assign to self
         self.X = X
@@ -372,7 +407,7 @@ class Experiment():
 
     def run_trial(self, 
         X_new: Tensor,
-        Y_new_real: Optional[Tensor] = None,
+        Y_new_real: Optional[Tensor] = None
     ) -> Tensor:
         """Run trial candidate points
         Fit the GP model to new data
@@ -416,6 +451,67 @@ class Experiment():
         self.model = fit_with_new_observations(self.model, X_new, Y_new)
         
         return Y_new
+
+    def predict(self, 
+        X_test: Tensor, 
+        show_confidence: Optional[bool] = False
+    ) -> Union[Tensor, Tuple[Tensor, Tensor, Tensor]]:
+        """Use GP model for prediction at X_test
+
+        Parameters
+        ----------
+        X_test : Tensor
+            X Tensor used for testing, must have the same dimension 
+            as X for training
+        show_confidence : Optional[bool], optional
+            by default False, only return posterior mean
+            If True, return the mean, and lower, upper confidence interval
+
+        Returns
+        -------
+        Y_test: Tensor
+            The mean of postierior 
+        Y_test_lower: Tensor, optional
+            The lower confidence interval 
+        Y_test_upper: Tensor, optional
+            The upper confidence interval   
+        """
+        Y_test, Y_test_lower, Y_test_upper = predict_model(self.model, X_test)
+        if show_confidence:
+            return Y_test, Y_test_lower, Y_test_upper
+        
+        return Y_test
+
+    def validate_training(self, show_confidence: Optional[bool] = False
+    ) -> Union[Matrix, Tuple[Matrix, Matrix, Matrix]]:
+        """Use GP model for prediction at training X
+        Y_real is used to compare with Y from objective function
+
+        Parameters
+        ----------
+        show_confidence : Optional[bool], optional
+            by default False, only return posterior mean
+            If True, return the mean, and lower, upper confidence interval
+
+        Returns
+        -------
+        Y_test_real: numpy matrix
+            predictions in a real scale
+        Y_test_lower_real: numpy matrix 
+            The lower confidence interval in a real scale
+        Y_test_upper_real: numpy matrix 
+            The upper confidence interval in a real scale
+        """
+        Y_real, Y_lower_real, Y_upper_real = predict_real(self.model, self.X)
+        if show_confidence:
+            return Y_real, Y_lower_real, Y_upper_real
+        
+        return Y_real
+
+
+        
+        
+
 
     
 

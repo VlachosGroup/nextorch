@@ -352,7 +352,7 @@ def transform_plot2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
     
     return X1, X2
   
-def transform_plot2D_Y(X: Tensor, X_mean: ArrayLike1d, X_std: ArrayLike1d, mesh_size: int
+def transform_mesh2D_Y(X: Tensor, X_mean: Tensor, X_std: Tensor, mesh_size: int
 ) -> Matrix:
     """takes in 1 column of tensor 
     convert to real units and return a 2D numpy array 
@@ -361,9 +361,9 @@ def transform_plot2D_Y(X: Tensor, X_mean: ArrayLike1d, X_std: ArrayLike1d, mesh_
     ----------
     X : Tensor
         1d tensor
-    X_mean : ArrayLike1d
+    X_mean : Tensor
         means 
-    X_std : ArrayLike1d
+    X_std : Tensor
         standard deviations
     mesh_size : int
         mesh size

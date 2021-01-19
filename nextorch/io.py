@@ -22,7 +22,7 @@ def read_excel(
     var_names: Optional[list] = None, 
     skiprows: Optional[list] = None,
     index_col: Optional[int] = 0, 
-    verbose: Optional[bool] = True,
+    verbose: Optional[bool] = True
 ) -> DataFrame:
     """Reads an excel file and returns the data in pandas Dataframe
 
@@ -74,7 +74,7 @@ def read_csv(
     var_names: Optional[list] = None, 
     skiprows: Optional[list] = None,
     index_col: Optional[int] = 0, 
-    verbose: Optional[bool] = True,
+    verbose: Optional[bool] = True
 ) -> DataFrame:
     """Reads a csv file and returns the data in pandas Dataframe
 

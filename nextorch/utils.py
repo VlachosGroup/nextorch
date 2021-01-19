@@ -18,14 +18,37 @@ Matrix = TypeVar('Matrix')
 
 # Create a type variable which is array like (1D) including list, array, 1d tensor
 ArrayLike1d = Union[list, Array, Tensor]
-# Create a type variable which is matrix like (2D) including matrix, tensor
-MatrixLike2d = Union[Matrix, Tensor]
+# Create a type variable which is matrix like (2D) including matrix, tensor, 2d list
+# This also includes ArrayList1d types
+MatrixLike2d = Union[list, Matrix, Tensor]
 
 # use a GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float
 
 #%% Scaling helper functions 
+def get_ranges_X(X: MatrixLike2d) -> list:
+    """Calculate the ranges for X matrix
+
+    Parameters
+    ----------
+    X : MatrixLike2d
+        matrix or tensor
+
+    Returns
+    -------
+    list
+        2D list of ranges: [left bound, right bound]
+    """
+    X_ranges = []
+    n_dim = X.shape[0]
+
+    for i in range(n_dim):
+        X.append([np.min(X[:,i]), np.max(X[:,i])])
+    
+    return X_ranges
+
+
 def unitscale_xv(xv: ArrayLike1d, xi_range: ArrayLike1d) -> ArrayLike1d:
     """
     Takes in an x array in a real scale
@@ -52,8 +75,9 @@ def unitscale_xv(xv: ArrayLike1d, xi_range: ArrayLike1d) -> ArrayLike1d:
 
 def unitscale_X(
     X: MatrixLike2d,  
-    X_range: Optional[ArrayLike1d] = [], 
-    log_flags: Optional[list] = [], 
+    X_ranges: Optional[MatrixLike2d] = None, 
+    unit_flag: Optional[bool] = False,
+    log_flags: Optional[list] = None, 
     decimals: Optional[int] = None
 ) -> Matrix:
     """Takes in a matrix in a real scale
@@ -63,8 +87,12 @@ def unitscale_X(
     ----------
     X : MatrixLike2d
         original matrix in a real scale
-    X_range : Optional[array_like_1d], optional
-        list of x ranges, by default []
+    X_ranges : Optional[MatrixLike2d], optional
+        list of x ranges, by default None
+    unit_flag: Optional[bool], optional,
+        by default, False 
+        If true, the X is in a unit scale so
+        the function is used to scale X to a log scale
     log_flags : Optional[list], optional
         list of boolean flags
         True: use the log scale on this dimensional
@@ -84,20 +112,25 @@ def unitscale_X(
         X = copy.deepcopy(X)
         X = np.array([X])
         
-    dim = X.shape[1] #the number of column in X
+    n_dim = X.shape[1] #the number of column in X
     
-    if X_range == []: X_range = [[0,1]] * dim
-    else: X_range = np.transpose(X_range)
+    if unit_flag: #the X are in unit scale
+        X_ranges = [[0,1]] * n_dim
+    else:
+        if X_ranges is None: # X_ranges not defined
+            X_ranges = get_ranges_X(X)
+        else:  # X_ranges already defined
+            X_ranges = np.transpose(X_ranges)
     
-    if log_flags == []: log_flags = [False] * dim
+    if log_flags is None: log_flags = [False] * n_dim
     
     # Initialize with a zero matrix
     Xunit = np.zeros((X.shape[0], X.shape[1]))
     for i, xi in enumerate(np.transpose(X)):
         if log_flags[i]:
-            Xunit[:,i] =  np.log10(unitscale_xv(xi, X_range[i]))
+            Xunit[:,i] =  np.log10(unitscale_xv(xi, X_ranges[i]))
         else:
-            Xunit[:,i] =  unitscale_xv(xi, X_range[i])
+            Xunit[:,i] =  unitscale_xv(xi, X_ranges[i])
     
     # Round up if necessary
     if not decimals == None:
@@ -133,8 +166,9 @@ def inverse_unitscale_xv(xv: ArrayLike1d, xi_range: ArrayLike1d) -> ArrayLike1d:
 
 def inverse_unitscale_X(
     X: MatrixLike2d, 
-    X_range: Optional[ArrayLike1d]= [], 
-    log_flags: Optional[list] = [], 
+    X_ranges: Optional[MatrixLike2d]= None,
+    unit_flag: Optional[bool] = False,
+    log_flags: Optional[list] = None, 
     decimals: Optional[int] = None
 ) -> Matrix:
     """Takes in a matrix in a unit scale
@@ -144,13 +178,17 @@ def inverse_unitscale_X(
     ----------
     X : MatrixLike2d
         original matrix in a unit scale
-    X_range : Optional[array_like_1d], optional
-        list of x ranges, by default []
+    X_ranges : Optional[MatrixLike2d], optional
+        list of x ranges, by default None
+    unit_flag: Optional[bool], optional,
+        by default, False 
+        If true, the X is in a unit scale so
+        the function is used to scale X to a log scale
     log_flags : Optional[list], optional
         list of boolean flags
         True: use the log scale on this dimensional
         False: use the normal scale 
-        by default []
+        by default None
     decimals : Optional[int], optional
         Number of decimal places to keep
         by default None, i.e. no rounding up 
@@ -164,19 +202,24 @@ def inverse_unitscale_X(
         X = copy.deepcopy(X)
         X = np.array([X]) #If 1D, make it 2D array
     
-    dim = X.shape[1]  #the number of column in X
+    n_dim = X.shape[1]  #the number of column in X
     
-    if X_range == []: X_range = [[0,1]] * dim
-    else: X_range = np.transpose(X_range)
+    if unit_flag: #the X are in unit scale
+        X_ranges = [[0,1]] * n_dim
+    else:
+        if X_ranges is None: # X_ranges not defined
+            X_ranges = get_ranges_X(X)
+        else:  # X_ranges already defined
+            X_ranges = np.transpose(X_ranges)
     
-    if log_flags == []: log_flags = [False] * dim
+    if log_flags is None: log_flags = [False] * n_dim
     
     Xreal = np.zeros((X.shape[0], X.shape[1]))
     for i, xi in enumerate(np.transpose(X)):
         if log_flags[i]:
-            Xreal[:,i] =  10**(inverse_unitscale_xv(xi, X_range[i]))
+            Xreal[:,i] =  10**(inverse_unitscale_xv(xi, X_ranges[i]))
         else:
-            Xreal[:,i] =  inverse_unitscale_xv(xi, X_range[i])
+            Xreal[:,i] =  inverse_unitscale_xv(xi, X_ranges[i])
 
     # Round up if necessary
     if not decimals == None:
@@ -253,7 +296,9 @@ def inverse_standardize_X(
         X_real = np.multiply(X, X_std) +  X_mean # element by element multiplication
     
     return X_real
-    
+
+
+
 #%% 2-dimensional system specific functions
 def create_2D_mesh(mesh_size = 41) -> Tuple[Matrix, Matrix, Matrix]:   
     """Create 2D mesh for testing
@@ -283,7 +328,7 @@ def create_2D_mesh(mesh_size = 41) -> Tuple[Matrix, Matrix, Matrix]:
     
     return X_test, X1, X2
 
-def transform_plot2D_X(X1: Matrix, X2: Matrix, X_range: Matrix
+def transform_plot2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
 ) -> Tuple[Matrix, Matrix]:
     """Transform X1 and X2 in unit scale to real scales for plotting
 
@@ -301,9 +346,9 @@ def transform_plot2D_X(X1: Matrix, X2: Matrix, X_range: Matrix
     X1, X2: Tuple[Matrix, Matrix]
         X1, X2 in real units 
     """
-    X_range = np.array(X_range).T
-    X1 = inverse_unitscale_xv(X1, X_range[0])
-    X2 = inverse_unitscale_xv(X2, X_range[1])
+    X_ranges = np.array(X_ranges).T
+    X1 = inverse_unitscale_xv(X1, X_ranges[0])
+    X2 = inverse_unitscale_xv(X2, X_ranges[1])
     
     return X1, X2
   
@@ -342,3 +387,8 @@ def transform_plot2D_Y(X: Tensor, X_mean: ArrayLike1d, X_std: ArrayLike1d, mesh_
 
 
 
+
+
+# experiments are in tensor
+# plot in numpy
+# util functions works for both tensor and numpy

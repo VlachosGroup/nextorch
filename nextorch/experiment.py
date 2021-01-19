@@ -163,16 +163,16 @@ class Experiment():
 
         unit_bounds = torch.stack([torch.zeros(self.n_dim), torch.ones(self.n_dim)])
 
-        acq_func_current = self.acq_func(self.model, best_f= best_value) 
-        X_new, acq_value = optimize_acqf(acq_func_current, bounds= unit_bounds, 
+        acq_func_val_current = self.acq_func(self.model, best_f= best_value) 
+        X_new, acq_value = optimize_acqf(acq_func_val_current, bounds= unit_bounds, 
                                         q=1, num_restarts=10, raw_samples=100)
 
-        return X_new, acq_value_current
+        return X_new, acq_func_val_current
 
     def run_trial(self):
 
         # One Iteration
-        X_new, acq_value_current = self.generate_next_point()
+        X_new, acq_func_val_current = self.generate_next_point()
         # new_X, new_Y are 2D tensors
         Y_new_real = ut.evaluate_objective_func(X_new, self.X_range, self.objective_func)
 

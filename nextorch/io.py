@@ -43,9 +43,10 @@ def read_excel(
 
     Returns
     -------
-    data: DataFrame
-
-        Input data saved in pandas dataframe
+    data: 'pandas.DataFrame'_
+        Input data
+    
+    _:'pandas.DataFrame': https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
     """  
 
     data = pd.read_excel(file_path, 
@@ -93,8 +94,10 @@ def read_csv(
 
     Returns
     -------
-    data: DataFrame
-        Input data saved in pandas dataframe
+    data: 'pandas.DataFrame'_
+        Input data 
+    
+    _:'pandas.DataFrame': https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
     """   
     data = pd.read_csv(file_path, 
                         names = var_names,
@@ -123,7 +126,7 @@ def split_X_y(
 
     Parameters
     ----------
-    data : dataframe
+    data : 'pandas.DataFrame'_
         Input dataframe
     Y_names : Union[str, List[str]]
         Name(s) of dependent variables, can be a single str or list of str
@@ -140,6 +143,8 @@ def split_X_y(
         Dependent variable matrix
     Y_names: List[str]
         Dependent variable matrix
+    
+    _:'pandas.DataFrame': https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
     """    
     if isinstance(Y_names, str): 
         Y_names = [Y_names]

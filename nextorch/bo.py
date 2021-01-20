@@ -14,7 +14,6 @@ from typing import Optional, TypeVar, Union, Tuple, List
 # bortorch functions
 from botorch.models import SingleTaskGP
 from botorch.models.model import Model
-from botorch.models.gpytorch import GPyTorchModel
 from botorch.acquisition import AcquisitionFunction
 from botorch.acquisition.analytic import ExpectedImprovement, UpperConfidenceBound, ProbabilityOfImprovement
 from botorch.acquisition.monte_carlo import qExpectedImprovement, qUpperConfidenceBound, qProbabilityOfImprovement
@@ -53,9 +52,12 @@ def create_and_fit_gp(X: Tensor, Y: Tensor) -> Model:
 
     Returns
     -------
-    model: bortorch model
+    model: 'botorch.models.model.Model'_
         A single task GP, fit to X and Y
+    
+    :_'botorch.models.model.Model': https://botorch.org/api/models.html
     """
+
     #the model is a single task GP
     model = SingleTaskGP(train_X=X, train_Y=Y) 
     model.train()
@@ -73,7 +75,7 @@ def fit_with_new_observations(model: Model, X: Tensor, Y: Tensor) -> Model:
 
     Parameters
     ----------
-    model : bortorch model
+    model : 'botorch.models.model.Model'_
         a single task GP
     Xs : Tensor
         Independent data, new observation
@@ -82,8 +84,10 @@ def fit_with_new_observations(model: Model, X: Tensor, Y: Tensor) -> Model:
 
     Returns
     -------
-    model: bortorch model
+    model: 'botorch.models.model.Model'_
         A single task GP, fit to X and Y
+
+    :_'botorch.models.model.Model': https://botorch.org/api/models.html
     """
     # Add the new point into the model
     model = model.condition_on_observations(X=X, Y=Y)
@@ -144,7 +148,7 @@ def predict_model(model: Model, X_test: Tensor
 
     Parameters
     ----------
-    model : Model
+    model : 'botorch.models.model.Model'
         A GP model
     X_test : Tensor
         X Tensor used for testing, must have the same dimension 
@@ -157,7 +161,9 @@ def predict_model(model: Model, X_test: Tensor
     Y_test_lower: Tensor 
         The lower confidence interval 
     Y_test_upper: Tensor
-        The upper confidence interval    
+        The upper confidence interval  
+
+    :_'botorch.models.model.Model': https://botorch.org/api/models.html
     """
     # Make a copy
     X_test = copy.deepcopy(X_test)
@@ -176,7 +182,7 @@ def predict_real(model: Model, X_test: Tensor, Y_mean: Tensor, Y_std: Tensor
 
     Parameters
     ----------
-    model : Model
+    model : 'botorch.models.model.Model'_
         A GP model
     X_test : Tensor
         X Tensor used for testing, must have the same dimension 
@@ -194,6 +200,8 @@ def predict_real(model: Model, X_test: Tensor, Y_mean: Tensor, Y_std: Tensor
         The lower confidence interval in a real scale
     Y_test_upper_real: numpy matrix 
         The upper confidence interval in a real scale
+    
+    :_'botorch.models.model.Model': https://botorch.org/api/models.html
     """
     # Make standardized predictions using the model
     Y_test, Y_test_lower, Y_test_upper = predict_model(model, X_test)
@@ -217,17 +225,51 @@ def get_acq_func(
         best_f: Optional[float] = 1.0,
         **kwargs
 ) -> AcquisitionFunction:
+    """Get a specific type of acqucision function
 
-    err_msg = 'Input acqucision function is not allow. Select from: '
+    Parameters
+    ----------
+    model : 'botorch.models.model.Model'_
+        A GP model
+    acq_func_name : str
+        Name of the acquisition function
+        Must be one of "EI", "PI", "UCB", "qEI", "qPI", "qUCB"
+    minmize : Optional[bool], optional
+        whether the goal is to minimize objective function, 
+        by default True
+    beta : Optional[float], optional
+        hyperparameter used in UCB, by default 0.2
+    best_f : Optional[float], optional
+        best value seen so far used in PI and EI, by default 1.0
+    **kwargs：keyword arguments
+        Other parameters used by 'botorch.acquisition'_
+
+
+    Returns
+    -------
+    acq_func: 'botorch.acquisition.AcquisitionFunction'
+        acquisition function object
+        
+    Raises
+    ------
+    KeyError
+        if input name is not a validate acquisition function
+
+    :_'botorch.models.model.Model': https://botorch.org/api/models.html
+    .._'botorch.acquisition': https://botorch.org/api/acquisition.html
+    .._'botorch.acquisition.AcquisitionFunction': https://botorch.org/api/acquisition.html
+    """
+
+    err_msg = 'Input acquisition function is not allow. Select from: '
     for ki in acq_dict.keys():
         err_msg += ki + ',' 
     err_msg.split(',')
-
+    # check if the name input is valid
     if not acq_func_name in acq_dict.keys():
         raise KeyError(err_msg)
-    
+    # get the object
     acq_object = acq_dict[acq_func_name]
-
+    # input key parameters
     if acq_func_name == 'EI':
         acq_func = acq_object(model, best_f = best_f, maximize = (not minmize), **kwargs)
     elif acq_func_name == 'PI':
@@ -455,9 +497,14 @@ class Experiment():
         Some print statements
         '''
 
-    def update_bestseen(self):
+    def update_bestseen(self) -> Tensor:
+        """Calculate the best seen value in Y 
 
-        # Obtain the best value seen so far in Y
+        Returns
+        -------
+        best_value_scalar: Tensor
+            a scalar saved in Tensor object
+        """
         if self.minmize:
             best_values = self.Y.min(dim=0)[0]
         else: 
@@ -477,14 +524,14 @@ class Experiment():
         Parameters
         ----------
         objective_func : Optional[object], by default None
-            objective function that we try to optimize
-        model : Optional[Model], optional
+            objective function that is being optimized
+        model : Optional['botorch.models.model.Model'_], optional
             pre-trained GP model, by default None
-        acq_func : Optional[AcquisitionFunction], optional
-            Acqucision function, by default ExpectedImprovement
         minmize : Optional[bool], optional
             by default True, minimize the objective function
             Otherwise False, maximize the objective function
+        
+        :_'botorch.models.model.Model': https://botorch.org/api/models.html
         """
         self.objective_func = objective_func
 
@@ -493,37 +540,46 @@ class Experiment():
 
         self.minmize = minmize
 
-
     def generate_next_point(self, 
         acq_func_name: Optional[str] = 'EI', 
         n_candidates: Optional[int] = 1,
         beta: Optional[float] = 0.2,
         **kwargs
-    ) -> Tuple[Tensor, object]:
-        """Generate the next experiment point(s)
+    ) -> Tuple[Tensor, AcquisitionFunction]:
+        """Generate the next trial point(s)
 
         Parameters
         ----------
+        acq_func_name : Optional[str], optional
+            Name of the acquisition function
+            Must be one of "EI", "PI", "UCB", "qEI", "qPI", "qUCB"
+            by default 'EI'
         n_candidates : Optional[int], optional
             Number of candidate points, by default 1
             The point maximizes the acqucision function
+        beta : Optional[float], optional
+            hyperparameter used in UCB, by default 0.2
+        **kwargs：keyword arguments
+            Other parameters used by 'botorch.acquisition'_
 
         Returns
         -------
-        X_new, acq_func_current: Tuple[Tensor, object]
-            X_new: the candidate point matrix 
-            acq_func_current: acquction function object
-        """
-        
-        #print(best_value_scalar)
-        self.beta = beta
-        self.acq_func_name = acq_func_name
+        X_new: Tensor
+            where the acquisition function is optimized
+            A new trial shall be run at this point
+        acq_func: AcquisitionFunction
+            Current acquisition function, can be used for plotting
 
+        .._'botorch.acquisition': https://botorch.org/api/acquisition.html
+        """
+        self.acq_func_name = acq_func_name
+        self.beta = beta
         # Update the best_f if necessary
         best_f = None
         if self.acq_func_name in ['EI', 'PI', 'UCB']:
             best_f = self.update_bestseen()
-        
+
+        # Set parameters for acquisition function
         acq_func = get_acq_func(self.model, 
                                 self.acq_func_name, 
                                 minmize= self.minmize, 
@@ -532,8 +588,8 @@ class Experiment():
                                 **kwargs)
         
         unit_bounds = torch.stack([torch.zeros(self.n_dim), torch.ones(self.n_dim)])
-
-        #print(unit_bounds)
+        
+        # Optimize the acquisition using the default setup
         X_new, _ = optimize_acqf(acq_func, 
                                 bounds= unit_bounds, 
                                 q=n_candidates, 
@@ -637,7 +693,7 @@ class Experiment():
         Y_test_upper_real: numpy matrix 
             The upper confidence interval in a real scale
         """
-        Y_real, Y_lower_real, Y_upper_real = predict_real(self.model, self.X)
+        Y_real, Y_lower_real, Y_upper_real = predict_real(self.model, self.X, self.Y_mean, self.Y_std)
         if show_confidence:
             return Y_real, Y_lower_real, Y_upper_real
         

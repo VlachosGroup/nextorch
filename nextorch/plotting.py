@@ -11,8 +11,13 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.axes._axes import Axes
 import numpy as np
-import types
+import torch
+from torch import Tensor
+from botorch.acquisition.acquisition import AcquisitionFunction
+
 from typing import Optional, TypeVar, Union, Tuple, List
+from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d
+
 
 # Set matplotlib default values
 font = {'size'   : 20}
@@ -138,9 +143,56 @@ def add_2D_z_slice(
 
     return ax
 
+def plot_acq_func_1d(
+    acq_func: AcquisitionFunction, 
+    X_test: Tensor, 
+    X_train: Tensor, 
+    X_new: Optional[Tensor] = None):
+    """Plot 1-dimensional acquision function 
+
+    Parameters
+    ----------
+    acq_func : AcquisitionFunction
+        the acquision function object
+    X_test : Tensor
+        Test data points for plotting
+    X_train : Tensor
+        Training data points
+    X_new : Optional[Tensor], optional
+        The next data point, i.e the infill points,
+        by default None
+    """
+
+    n_dim = X_test.shape[1]
+    # compute acquicision function values at X_test and X_train
+    test_acq_val = acq_func(X_test.view((X_test.shape[0],1,n_dim)))
+    train_acq_val = acq_func(X_train.view((X_train.shape[0],1,n_dim)))
+
+    # Initialize plot
+    fig, ax = plt.subplots(figsize=(12, 6))
+    with torch.no_grad():
+        ax.plot(X_test.cpu().numpy(), test_acq_val.detach(), 'b-', label = 'Acquistion')
+        # Plot training points as black stars
+        ax.scatter(X_train.cpu().numpy(), train_acq_val.detach(), s = 120, c= 'k', marker = '*', label = 'Initial Data')
+         # Plot the new infill points as red stars
+        if X_new is not None:
+            new_acq_val = acq_func(X_new.view((X_new.shape[0],1,n_dim)))
+            ax.scatter(X_new.cpu().numpy(), new_acq_val.detach(),  s = 120, c ='r', marker = '*', label = 'Infill Data')
+    
+    ax.ticklabel_format(style = 'sci', axis = 'y', scilimits = (-2,2) )
+    ax.set_xlabel('x')
+    ax.set_ylabel(r'$ \alpha$')    
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    #plt.tight_layout()
+    plt.show()
+
+
+
+
+
 
 #%% Not finished yet 
-def plot_testing(model, test_X, train_X, train_Y,  test_Y = None, new_X = None, new_Y = None):
+def plot_testing(model: object, test_X, train_X, train_Y,  test_Y = None, new_X = None, new_Y = None):
     '''
     Test the surrogate model with model, test_X and new_X
     '''
@@ -174,25 +226,3 @@ def plot_testing(model, test_X, train_X, train_Y,  test_Y = None, new_X = None, 
     #plt.tight_layout()
     plt.show()
 
-def plot_acq_func(acq_func, test_X, train_X, new_X = None):
-    # compute acquicision function values at test_X
-    test_acq_val = acq_func(test_X.view((test_X.shape[0],1,dim)))
-    train_acq_val = acq_func(train_X.view((train_X.shape[0],1,dim)))
-
-    # Initialize plot
-    fig, ax = plt.subplots(figsize=(12, 6))
-    with torch.no_grad():
-        ax.plot(test_X.cpu().numpy(), test_acq_val.detach(), 'b-', label = 'Acquistion (EI)')
-        # Plot training points as black stars
-        ax.scatter(train_X.cpu().numpy(), train_acq_val.detach(), s = 120, c= 'k', marker = '*', label = 'Initial Data')
-         # Plot the new infill points as red stars
-        if not type(new_X) == type(None):
-            new_acq_val = acq_func(new_X.view((new_X.shape[0],1,dim)))
-            ax.scatter(new_X.cpu().numpy(), new_acq_val.detach(),  s = 120, c ='r', marker = '*', label = 'Infill Data')
-    
-    ax.ticklabel_format(style = 'sci', axis = 'y', scilimits = (-2,2) )
-    ax.set_xlabel('x')
-    ax.set_ylabel(r'$ \alpha$')    
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    #plt.tight_layout()
-    plt.show()

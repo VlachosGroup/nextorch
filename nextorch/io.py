@@ -9,17 +9,15 @@ import pandas as pd
 from pandas import DataFrame
 
 import numpy as np
-from typing import Optional, TypeVar, Union, Tuple
-# Create a type variable for 1D arrays from numpy
-Array = TypeVar('Array')
-# Create a type variable for 2D arrays from numpy and call it as a matrix
-Matrix = TypeVar('Matrix')  
+from typing import Optional, TypeVar, Union, Tuple, List
+from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d
+
 
 
 def read_excel(
     file_path: str, 
     sheet_name: Optional[str] = 0, 
-    var_names: Optional[list] = None, 
+    var_names: Optional[List[str]] = None, 
     skiprows: Optional[list] = None,
     index_col: Optional[int] = 0, 
     verbose: Optional[bool] = True
@@ -32,7 +30,7 @@ def read_excel(
         Path of the excel spreedsheet
     sheet_name : Optional[str], optional
         Name of the excel sheet, by default 0, i.e., the first sheet
-    var_names : Optional[list], optional
+    var_names : Optional[List[str]], optional
         Names of variables to include, by default None, 
     skiprows : Optional[list], optional
         Rows to skip at the beginning (0-indexed)
@@ -71,7 +69,7 @@ def read_excel(
 
 def read_csv(
     file_path: str, 
-    var_names: Optional[list] = None, 
+    var_names: Optional[List[str]] = None, 
     skiprows: Optional[list] = None,
     index_col: Optional[int] = 0, 
     verbose: Optional[bool] = True
@@ -82,7 +80,7 @@ def read_csv(
     ----------
     file_path : str
         Path of the csv file
-    var_names : Optional[list], optional
+    var_names : Optional[List[str]], optional
         Names of variables to include, by default None, 
     skiprows : Optional[list], optional
         Rows to skip at the beginning (0-indexed)
@@ -117,9 +115,9 @@ def read_csv(
 
 def split_X_y(
     data: DataFrame,
-    y_names: Union[str, list], 
-    X_names: Optional[list] = None
-) -> Tuple[Matrix, list, Matrix, list]:
+    Y_names: Union[str, List[str]], 
+    X_names: Optional[List[str]] = None
+) -> Tuple[Matrix, Matrix, List[str], List[str]]:
     """Splits the data into independent (X) 
     and dependent (y) varibles 
 
@@ -127,29 +125,34 @@ def split_X_y(
     ----------
     data : dataframe
         Input dataframe
-    y_names : Union[str, list]
+    Y_names : Union[str, List[str]]
         Name(s) of dependent variables, can be a single str or list of str
-    X_names : Optional[list], optional
+    X_names : Optional[List[str]], optional
         Names of independent variables, by default None, i.e. select all
 
     Returns
     -------
-    X, y: Tuple[Matrix, list, Matrix, list]
-        Independent variable matrix, names and
-        dependent variable matrix, names 
+    X: Matrix
+        Independent variable matrix
+    X_names: List[str]
+        Independent variables names
+    Y: Matrix 
+        Dependent variable matrix
+    Y_names: List[str]
+        Dependent variable matrix
     """    
-    if isinstance(y_names, str): 
-        y_names = [y_names]
+    if isinstance(Y_names, str): 
+        Y_names = [Y_names]
 
     var_names = list(data.columns)
     # Select the rest if X_names are not specified
     if X_names is None:
-        X_names = [ni for ni in var_names if ni not in y_names]
+        X_names = [ni for ni in var_names if ni not in Y_names]
 
     X = np.array(data[X_names])
-    y = np.array(data[y_names])
+    Y = np.array(data[Y_names])
 
-    return X, X_names, y, y_names
+    return X, Y, X_names, Y_names
 
 
 

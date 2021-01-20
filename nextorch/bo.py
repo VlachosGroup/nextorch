@@ -1,5 +1,5 @@
 """
-nextorch.experiment
+nextorch.bo
 
 Contains Gaussian Processes (GP) and Bayesian Optimization (BO) methods 
 """
@@ -11,38 +11,35 @@ import copy
 
 from typing import Optional, TypeVar, Union, Tuple, List
 
-
 # bortorch functions
 from botorch.models import SingleTaskGP
 from botorch.models.model import Model
 from botorch.models.gpytorch import GPyTorchModel
 from botorch.acquisition import AcquisitionFunction
-from botorch.acquisition.analytic import ExpectedImprovement, UpperConfidenceBound
+from botorch.acquisition.analytic import ExpectedImprovement, UpperConfidenceBound, ProbabilityOfImprovement
+from botorch.acquisition.monte_carlo import qExpectedImprovement, qUpperConfidenceBound, qProbabilityOfImprovement
 from botorch.optim import optimize_acqf
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.optim.fit import fit_gpytorch_torch
 
 import nextorch.utils as ut
+from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d
 
-from typing import Optional, TypeVar, Union, Tuple
-# NEED TO EXPLAIN THESE IN DOCS
-# Create a type variable for 1D arrays from numpy, np.ndarray
-Array = TypeVar('Array')
-# Create a type variable for 2D arrays from numpy, np.ndarray, and call it as a matrix
-Matrix = TypeVar('Matrix')
-
-# Create a type variable which is array like (1D) including list, array, 1d tensor
-ArrayLike1d = Union[list, Array, Tensor]
-# Create a type variable which is matrix like (2D) including matrix, tensor, 2d list
-# This also includes ArrayList1d types
-MatrixLike2d = Union[list, Matrix, Tensor]
+# Dictionary for compatiable acqucision functions
+acq_dict = {'EI': ExpectedImprovement, 
+            'PI': ProbabilityOfImprovement,
+            'UCB': UpperConfidenceBound,
+            'qEI': qExpectedImprovement, 
+            'qPI': qProbabilityOfImprovement,
+            'qUCB': qUpperConfidenceBound}
+"""dict: Keys are the names, values are the BoTorch objects"""
 
 
 # use a GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #dtype = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 dtype = torch.float
-
+torch.set_default_dtype(dtype)
 
 def create_and_fit_gp(X: Tensor, Y: Tensor) -> Model:
     """Creates a GP model to fit the data
@@ -118,7 +115,7 @@ def evaluate_objective_func(
 
     Returns
     -------
-    y_tensor: Tensor
+    Y_tensor: Tensor
         model predicted values
     """
     # Convert matrix type from tensor to numpy matrix
@@ -132,13 +129,14 @@ def evaluate_objective_func(
     else:
         X_range_np = X_range.copy()
     # transform to real scale 
+    print(X_range_np)
     X_real = ut.inverse_unitscale_X(X_unit_np, X_range_np)
     # evaluate y
-    y = objective_func(X_real)
+    Y = objective_func(X_real)
     # Convert to tensor
-    y_tensor = torch.tensor(y, dtype = dtype)
+    Y_tensor = torch.tensor(Y, dtype = dtype)
 
-    return y_tensor
+    return Y_tensor
 
 def predict_model(model: Model, X_test: Tensor
 ) -> Tuple[Tensor, Tensor, Tensor]:
@@ -211,6 +209,41 @@ def predict_real(model: Model, X_test: Tensor, Y_mean: Tensor, Y_std: Tensor
     
     return Y_test_real, Y_test_lower_real, Y_test_upper_real
         
+def get_acq_func(
+        model: Model,
+        acq_func_name: str, 
+        minmize: Optional[bool] = True, 
+        beta: Optional[float] = 0.2,
+        best_f: Optional[float] = 1.0,
+        **kwargs
+) -> AcquisitionFunction:
+
+    err_msg = 'Input acqucision function is not allow. Select from: '
+    for ki in acq_dict.keys():
+        err_msg += ki + ',' 
+    err_msg.split(',')
+
+    if not acq_func_name in acq_dict.keys():
+        raise KeyError(err_msg)
+    
+    acq_object = acq_dict[acq_func_name]
+
+    if acq_func_name == 'EI':
+        acq_func = acq_object(model, best_f = best_f, maximize = (not minmize), **kwargs)
+    elif acq_func_name == 'PI':
+        acq_func = acq_object(model, best_f = best_f, maximize = (not minmize), **kwargs)
+    elif acq_func_name == 'UCB':
+        acq_func = acq_object(model, beta = beta, maximize = (not minmize), **kwargs)
+    elif acq_func_name == 'qEI':
+        acq_func = acq_object(model, best_f = best_f, **kwargs)
+    elif acq_func_name == 'qPI':
+        acq_func = acq_object(model, best_f = best_f, **kwargs)
+    else: # acq_func_name == 'qUCB':
+        acq_func = acq_object(model, beta = beta, **kwargs)
+
+    return acq_func
+
+
 
 # def predict_mesh_2D(model, X_test,  mesh_size, Y_mean, Y_std):
 #     '''
@@ -235,20 +268,27 @@ class Experiment():
     Input data is MatrixLike2D
     Data is passed in Tensor"""
 
-    def ___init___(self,
-        X_real: MatrixLike2d,
-        Y_real: MatrixLike2d,
-        preprocessed: Optional[bool] = False,
-        X_ranges: Optional[MatrixLike2d] = None,
-        unit_flag: Optional[bool] = False,
-        log_flags: Optional[list] = None, 
-        decimals: Optional[int] = None,
-        name: Optional[str] = 'Experiment', 
-        X_names: Optional[List[str]] = None,
-        Y_names: Optional[List[str]] = None, 
+    def __init__(self, name: Optional[str] = 'simple_experiment'):
+        """Define the name of the epxeriment
+
+        Parameters
+        ----------
+        name : Optional[str], optional
+            Name of the experiment, by default 'simple_experiment'
+        """
+        self.name = name
+
+    def preprocess_data(self, 
+                        X_real: MatrixLike2d,
+                        Y_real: MatrixLike2d,
+                        preprocessed: Optional[bool] = False,
+                        X_ranges: Optional[MatrixLike2d] = None,
+                        unit_flag: Optional[bool] = False,
+                        log_flags: Optional[list] = None, 
+                        decimals: Optional[int] = None
     ):
-        """Input data into Experiment object
-        
+        """Preprocesses input data and assigns the variables to self
+
         Parameters
         ----------
         X_real : MatrixLike2d
@@ -272,78 +312,164 @@ class Experiment():
         decimals : Optional[int], optional
             Number of decimal places to keep
             by default None, i.e. no rounding up
-        name : Optional[str], optional
-            Name of the experiment, by default 'Experiment'
-        X_names : Optional[List[str]], optional
-            Names of independent varibles, by default None
-        Y_names : Optional[List[str]], optional
-            Names of dependent varibles, by default None
-        
+
+        Raises
+        ------
+        ValueError
+            When inputting X_ranges and unit_flag is True 
         """
-        # Assign variables and names
-        self.X_real = X_real
-        self.Y_real = Y_real
 
-        if X_ranges is None:
-            X_ranges = ut.get_ranges_X(X_real)
-        self.X_ranges = X_ranges
+        self.X_real = X_real  # independent variable in real unit, numpy array
+        self.Y_real = Y_real  # dependent variable in real unit, numpy array
 
-        self.n_dim = X_real.shape[1] # number of independent variables
-        self.n_points = X_real.shape[0] # number of data points
-        self.n_points_init = X_real.shape[0]
-        self.n_objectives = Y_real.shape[1] # number of dependent variables
-
-        self.name = name
-
-        if X_names is None:
-            X_names = ['X' + str(i+1) for i in range(self.n_dim)]
-
-        if Y_names is None:
-            Y_names = ['Y' + str(i+1) for i in range(self.n_objectives)]
-
-        self.X_names = X_names
-        self.Y_names = Y_names
+        err_msg = "Variable ranges not needed if they are in a unit scale. \
+                    Consider dropping X_ranges input or setting unit_flag as False"
 
         # Case 1, Input is Tensor, preprocessed
         # X is in a unit scale and 
         # Y is standardized with a zero mean and a unit variance
         if preprocessed: 
-            X = X_real.detach().clone()
-            Y = Y_real.detach().clone()
+            X = self.X_real.detach().clone()
+            Y = self.Y_real.detach().clone()
             Y_mean = torch.zeros(self.n_objectives)
             Y_std = torch.ones(self.n_objectives)
+            
+            if X_ranges is None:
+                X_ranges = [[0,1]] * self.n_dim
+            else:
+                raise ValueError(err_msg)
         
         # Case 2, Input is numpy matrix, not processed
         else: 
+            # Set X_ranges
+            if X_ranges is None:
+                if unit_flag:
+                    X_ranges = [[0,1]] * self.n_dim
+                else:
+                    X_ranges = ut.get_ranges_X(X_real)
+            else:
+                if unit_flag:
+                    raise ValueError(err_msg)
+
+            # Scale X
             X = ut.unitscale_X(X_real, 
                                 X_ranges = X_ranges, 
                                 unit_flag = unit_flag, 
                                 log_flags = log_flags, 
                                 decimals = decimals)
-
+            # Standardize Y
             Y = ut.standardize_X(Y_real)
             # Convert to Tensor
-            X = torch.tensor(X)
-            Y = torch.tensor(Y)
-            Y_mean = Y.mean(axis = 0).detach().clone()
-            Y_std = Y.std(axis = 0).detach().clone()
+            X = torch.tensor(X, dtype=dtype)
+            Y = torch.tensor(Y, dtype=dtype)
+            # Get mean and std
+            Y_mean = torch.tensor(Y_real.mean(axis = 0), dtype = dtype)
+            Y_std = torch.tensor(Y_real.std(axis = 0), dtype = dtype)
 
         # Assign to self
         self.X = X
         self.Y = Y
         self.X_init = X.detach().clone()
         self.Y_init = Y.detach().clone()
+        self.X_ranges = X_ranges
         self.Y_mean = Y_mean
         self.Y_std = Y_std
 
+
+    def input_data(self,
+        X_real: MatrixLike2d,
+        Y_real: MatrixLike2d,
+        Y_weights: Optional[ArrayLike1d] = None,
+        X_names: Optional[List[str]] = None,
+        Y_names: Optional[List[str]] = None, 
+        preprocessed: Optional[bool] = False,
+        X_ranges: Optional[MatrixLike2d] = None,
+        unit_flag: Optional[bool] = False,
+        log_flags: Optional[list] = None, 
+        decimals: Optional[int] = None
+    ):
+        """Input data into Experiment object
+        
+        Parameters
+        ----------
+        X_real : MatrixLike2d
+            original independent data in a real scale
+        Y_real : MatrixLike2d
+            original dependent data in a real scale
+        Y_weights: Optional[ArrayLike1d], optional
+            Weights of each objectives, sums to 1, used for multi-objetcive function
+            by default None, used for single-objective function
+        X_names : Optional[List[str]], optional
+            Names of independent varibles, by default None
+        Y_names : Optional[List[str]], optional
+            Names of dependent varibles, by default None
+        preprocessed : Optional[bool], optional
+            by default False, the input data will be processed
+            if true, skip processing
+        X_ranges : Optional[MatrixLike2d], optional
+            list of x ranges, by default None
+        unit_flag: Optional[bool], optional,
+            by default, False 
+            If true, the X is in a unit scale so
+            the function is used to scale X to a log scale
+        log_flags : Optional[list], optional
+            list of boolean flags
+            True: use the log scale on this dimensional
+            False: use the normal scale 
+            by default []
+        decimals : Optional[int], optional
+            Number of decimal places to keep
+            by default None, i.e. no rounding up
+        """
+
+        # get specs of the data
+        self.n_dim = X_real.shape[1] # number of independent variables
+        self.n_points = X_real.shape[0] # number of data points
+        self.n_points_init = X_real.shape[0] # number of data points for the initial design
+        self.n_objectives = Y_real.shape[1] # number of dependent variables
+
+        # assign variable names
+        if X_names is None:
+            X_names = ['X' + str(i+1) for i in range(self.n_dim)]
+        if Y_names is None:
+            Y_names = ['Y' + str(i+1) for i in range(self.n_objectives)]
+        self.X_names = X_names
+        self.Y_names = Y_names
+
+        # assign weights for objectives 
+        if Y_weights is None:
+            Y_weights = torch.div(torch.ones(self.n_objectives), self.n_objectives)
+        if not isinstance(Y_weights, Tensor):
+            Y_weights = torch.tensor(Y_weights, dtype=dtype)
+        self.Y_weights = Y_weights
+
+        # Preprocess the data 
+        self.preprocess_data(X_real, 
+                            Y_real,
+                            preprocessed = preprocessed,
+                            X_ranges = X_ranges,
+                            unit_flag = unit_flag,
+                            log_flags = log_flags, 
+                            decimals = decimals)
         '''
         Some print statements
         '''
 
-    def set_BO_specs(self,
+    def update_bestseen(self):
+
+        # Obtain the best value seen so far in Y
+        if self.minmize:
+            best_values = self.Y.min(dim=0)[0]
+        else: 
+            best_values = self.Y.max(dim=0)[0]
+        # leverage the weights
+        best_value_scalar = torch.dot(self.Y_weights, best_values)
+
+        return best_value_scalar
+
+    def set_optim_specs(self,
         objective_func: Optional[object] = None,  
         model: Optional[Model] = None, 
-        acq_func: Optional[AcquisitionFunction] = ExpectedImprovement,
         minmize: Optional[bool] = True,
     ):  
         """Set the specs for Bayseian Optimization
@@ -365,11 +491,14 @@ class Experiment():
         if model is None:
             self.model = create_and_fit_gp(self.X, self.Y)
 
-        self.acq_func = acq_func
         self.minmize = minmize
 
+
     def generate_next_point(self, 
-        n_candidates: Optional[int] = 1
+        acq_func_name: Optional[str] = 'EI', 
+        n_candidates: Optional[int] = 1,
+        beta: Optional[float] = 0.2,
+        **kwargs
     ) -> Tuple[Tensor, object]:
         """Generate the next experiment point(s)
 
@@ -385,25 +514,33 @@ class Experiment():
             X_new: the candidate point matrix 
             acq_func_current: acquction function object
         """
-        # Obtain the best value seen so far in Y
-        best_value = []
-        for i in range(self.n_objectives):
-            if self.minmize:
-                best_value.append(self.Y[:,i].max())
-            else:
-                best_value.append(self.Y[:,i].min())
-        best_value = torch.tensor(best_value, dtype = dtype)
         
-        # Get a new acquicision function and maximize it
-        acq_func_current = self.acq_func(self.model, best_f= best_value) 
+        #print(best_value_scalar)
+        self.beta = beta
+        self.acq_func_name = acq_func_name
+
+        # Update the best_f if necessary
+        best_f = None
+        if self.acq_func_name in ['EI', 'PI', 'UCB']:
+            best_f = self.update_bestseen()
+        
+        acq_func = get_acq_func(self.model, 
+                                self.acq_func_name, 
+                                minmize= self.minmize, 
+                                beta = self.beta,
+                                best_f = best_f,
+                                **kwargs)
+        
         unit_bounds = torch.stack([torch.zeros(self.n_dim), torch.ones(self.n_dim)])
-        X_new, _ = optimize_acqf(acq_func_current, 
+
+        #print(unit_bounds)
+        X_new, _ = optimize_acqf(acq_func, 
                                 bounds= unit_bounds, 
                                 q=n_candidates, 
                                 num_restarts=10, 
                                 raw_samples=100)
 
-        return X_new, acq_func_current
+        return X_new, acq_func
 
     def run_trial(self, 
         X_new: Tensor,
@@ -429,11 +566,9 @@ class Experiment():
         # Must input Y_new_real
         # Otherwise, raise error
         if self.objective_func is None:
-            try: 
-                Y_new = ut.standardize_X(Y_new_real, self.Y_mean, self.Y_std)
-            except KeyError:
-                err_msg = "No objective function is specified. The experimental reponse must be provided."
-                raise KeyError(err_msg)
+            
+            err_msg = "No objective function is specified. The experimental reponse must be provided."
+            raise ValueError(err_msg)
 
         # Case 2, Predict Y_new from objective function
         # Standardize Y_new_real from the prediction

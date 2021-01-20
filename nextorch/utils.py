@@ -22,9 +22,8 @@ ArrayLike1d = Union[list, Array, Tensor]
 # This also includes ArrayList1d types
 MatrixLike2d = Union[list, Matrix, Tensor]
 
-# use a GPU if available
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-dtype = torch.float
+
+
 
 #%% Scaling helper functions 
 def get_ranges_X(X: MatrixLike2d) -> list:
@@ -40,11 +39,15 @@ def get_ranges_X(X: MatrixLike2d) -> list:
     list
         2D list of ranges: [left bound, right bound]
     """
+    if len(X.shape)<2:
+        X = copy.deepcopy(X)
+        X = np.array([X])
+        
     X_ranges = []
-    n_dim = X.shape[0]
+    n_dim = X.shape[1]
 
     for i in range(n_dim):
-        X.append([np.min(X[:,i]), np.max(X[:,i])])
+        X_ranges.append([np.min(X[:,i]), np.max(X[:,i])])
     
     return X_ranges
 
@@ -119,8 +122,6 @@ def unitscale_X(
     else:
         if X_ranges is None: # X_ranges not defined
             X_ranges = get_ranges_X(X)
-        else:  # X_ranges already defined
-            X_ranges = np.transpose(X_ranges)
     
     if log_flags is None: log_flags = [False] * n_dim
     
@@ -209,8 +210,6 @@ def inverse_unitscale_X(
     else:
         if X_ranges is None: # X_ranges not defined
             X_ranges = get_ranges_X(X)
-        else:  # X_ranges already defined
-            X_ranges = np.transpose(X_ranges)
     
     if log_flags is None: log_flags = [False] * n_dim
     
@@ -300,7 +299,7 @@ def inverse_standardize_X(
 
 
 #%% 2-dimensional system specific functions
-def create_2D_mesh(mesh_size = 41) -> Tuple[Matrix, Matrix, Matrix]:   
+def create_2D_mesh_X(mesh_size = 41) -> Tuple[Matrix, Matrix, Matrix]:   
     """Create 2D mesh for testing
 
     Parameters
@@ -310,8 +309,12 @@ def create_2D_mesh(mesh_size = 41) -> Tuple[Matrix, Matrix, Matrix]:
 
     Returns
     -------
-    X_test, X1, X2: Tuple[Matrix, Matrix, Matrix]
-        X1 and X2 used for for-loops
+    X_test: Matrix
+        X in 2D mesh
+    X1: Matrix
+        X1
+    X2: Matrix
+        X2
     """
     nx1, nx2 = (mesh_size, mesh_size)
     x1 = np.linspace(0, 1, nx1)
@@ -328,7 +331,7 @@ def create_2D_mesh(mesh_size = 41) -> Tuple[Matrix, Matrix, Matrix]:
     
     return X_test, X1, X2
 
-def transform_plot2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
+def transform_2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
 ) -> Tuple[Matrix, Matrix]:
     """Transform X1 and X2 in unit scale to real scales for plotting
 
@@ -343,8 +346,10 @@ def transform_plot2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
 
     Returns
     -------
-    X1, X2: Tuple[Matrix, Matrix]
-        X1, X2 in real units 
+    X1: Matrix
+        X1 in a real scale
+    X2: Matrix
+        X2 in a real scale
     """
     X_ranges = np.array(X_ranges).T
     X1 = inverse_unitscale_xv(X1, X_ranges[0])
@@ -352,10 +357,12 @@ def transform_plot2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
     
     return X1, X2
   
-def transform_mesh2D_Y(X: Tensor, X_mean: Tensor, X_std: Tensor, mesh_size: int
+def transform_2D_mesh_Y(X: Tensor, X_mean: Tensor, X_std: Tensor, mesh_size: int
 ) -> Matrix:
-    """takes in 1 column of tensor 
+    """takes in 1 column of X tensor 
+    predict the Y values
     convert to real units and return a 2D numpy array 
+    in the size of mesh_size*mesh_size
 
     Parameters
     ----------

@@ -22,7 +22,8 @@ ArrayLike1d = Union[list, Array, Tensor]
 # This also includes ArrayList1d types
 MatrixLike2d = Union[list, Matrix, Tensor]
 
-
+dtype = torch.float
+torch.set_default_dtype(dtype)
 
 
 #%% Scaling helper functions 
@@ -289,7 +290,7 @@ def inverse_standardize_X(
         in real scale
     """
     
-    if isinstance(X, torch.Tensor):
+    if isinstance(X, Tensor):
         X_real = X * X_std +  X_mean
     else:
         X_real = np.multiply(X, X_std) +  X_mean # element by element multiplication
@@ -391,8 +392,47 @@ def transform_2D_mesh_Y(X: Tensor, X_mean: Tensor, X_std: Tensor, mesh_size: int
     return X_plot2D
     
 
+def np_to_tensor(X: MatrixLike2d) -> Tensor:
+    """Converts numpy objects to tensor objects
+    Returns a copy
+
+    Parameters
+    ----------
+    X : MatrixLike2D
+        numpy objects
+
+    Returns
+    -------
+    X: Tensor
+        tensor objects
+    """
+    if not isinstance(X, Tensor): 
+        X = torch.tensor(X, dtype= dtype)
+    else:
+        X = X.detach().clone()
+
+    return X
 
 
+def tensor_to_np(X: MatrixLike2d) -> Matrix:
+    """Convert tensor objects to numpy array objects
+    Returns a copy with no gradient information
+    Parameters
+    ----------
+    X : MatrixLike2d
+        tensor objects
+
+    Returns
+    -------
+    Matrix
+        numpy objects
+    """
+    if not isinstance(X, np.ndarray):
+        X = X.detach().cpu().numpy()
+    else: 
+        X = X.copy()
+
+    return X
 
 
 

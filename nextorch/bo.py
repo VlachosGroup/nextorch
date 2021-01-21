@@ -23,6 +23,7 @@ from botorch.optim.fit import fit_gpytorch_torch
 
 import nextorch.utils as ut
 from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d
+from nextorch.utils import tensor_to_np, np_to_tensor
 
 # Dictionary for compatiable acqucision functions
 acq_dict = {'EI': ExpectedImprovement, 
@@ -123,26 +124,19 @@ def evaluate_objective_func(
         model predicted values
     """
     # Convert matrix type from tensor to numpy matrix
-    if isinstance(X_unit, torch.Tensor):
-        X_unit_np = X_unit.cpu().numpy()
-    else:
-        X_unit_np = X_unit.copy()
-        
-    if isinstance(X_range, torch.Tensor):
-        X_range_np = X_range.cpu().numpy()
-    else:
-        X_range_np = X_range.copy()
+    X_unit_np = tensor_to_np(X_unit)
+    X_range_np = tensor_to_np(X_range)    
+    
     # transform to real scale 
-    print(X_range_np)
     X_real = ut.inverse_unitscale_X(X_unit_np, X_range_np)
     # evaluate y
     Y = objective_func(X_real)
     # Convert to tensor
-    Y_tensor = torch.tensor(Y, dtype = dtype)
+    Y_tensor = np_to_tensor(Y)
 
     return Y_tensor
 
-def predict_model(model: Model, X_test: Tensor
+def predict_model(model: Model, X_test: MatrixLike2d
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """Makes standardized prediction at X_test using the GP model
 
@@ -150,8 +144,8 @@ def predict_model(model: Model, X_test: Tensor
     ----------
     model : 'botorch.models.model.Model'
         A GP model
-    X_test : Tensor
-        X Tensor used for testing, must have the same dimension 
+    X_test : MatrixLike2d
+        X matrix used for testing, must have the same dimension 
         as X for training
 
     Returns
@@ -166,8 +160,8 @@ def predict_model(model: Model, X_test: Tensor
     :_'botorch.models.model.Model': https://botorch.org/api/models.html
     """
     # Make a copy
-    X_test = copy.deepcopy(X_test)
-    X_test = torch.tensor(X_test, dtype = dtype)
+    X_test = np_to_tensor(X_test)
+
     # Extract postierior distribution
     posterior = model.posterior(X_test)
     Y_test = posterior.mean
@@ -176,7 +170,11 @@ def predict_model(model: Model, X_test: Tensor
     return Y_test, Y_test_lower, Y_test_upper
 
 
-def predict_real(model: Model, X_test: Tensor, Y_mean: Tensor, Y_std: Tensor
+def predict_real(
+    model: Model, 
+    X_test: MatrixLike2d, 
+    Y_mean: MatrixLike2d, 
+    Y_std: MatrixLike2d
 ) -> Tuple[Matrix, Matrix, Matrix]:
     """Make predictions in real scale and returns numpy array
 
@@ -184,12 +182,12 @@ def predict_real(model: Model, X_test: Tensor, Y_mean: Tensor, Y_std: Tensor
     ----------
     model : 'botorch.models.model.Model'_
         A GP model
-    X_test : Tensor
-        X Tensor used for testing, must have the same dimension 
+    X_test : MatrixLike2d
+        X matrix used for testing, must have the same dimension 
         as X for training
-    Y_mean : Tensor
+    Y_mean : MatrixLike2d
         The mean of initial Y set
-    Y_std : Tensor
+    Y_std : MatrixLike2d
         The std of initial Y set
 
     Returns
@@ -207,16 +205,31 @@ def predict_real(model: Model, X_test: Tensor, Y_mean: Tensor, Y_std: Tensor
     Y_test, Y_test_lower, Y_test_upper = predict_model(model, X_test)
     # Inverse standardize and convert it to numpy matrix
     Y_test_real = ut.inversestandardize_X(Y_test, Y_mean, Y_std)
-    Y_test_real = Y_test_real.detach().numpy()
+    Y_test_real = tensor_to_np(Y_test_real)
     
     Y_test_lower_real = ut.inversestandardize_X(Y_test_lower, Y_mean, Y_std)
-    Y_test_lower_real = Y_test_lower_real.detach().numpy()
+    Y_test_lower_real = tensor_to_np(Y_test_lower_real)
     
     Y_test_upper_real = ut.inversestandardize_X(Y_test_upper, Y_mean, Y_std)
-    Y_test_upper_real = Y_test_upper_real.detach().numpy()
+    Y_test_upper_real = tensor_to_np(Y_test_upper)
     
     return Y_test_real, Y_test_lower_real, Y_test_upper_real
-        
+
+
+# def predict_mesh_2D(model, X_test,  mesh_size, Y_mean, Y_std):
+#     '''
+#     Predict 2d mesh values from surrogates 
+#     Generate plots if required
+#     Return outputs Y in 2d numpy matrix 
+#     '''
+#     # predict the mean for ff model, returns a standardized 1d tensor
+#     Y_test, _, _ = ut.predict_model(model, X_test)
+#     # Inverse the standardization and convert 1d y into a 2d array
+#     Y_test_real = ut.transform_mesh_2D_Y(Y_test, Y_mean, Y_std, mesh_size)
+    
+#     return Y_test_real
+
+
 def get_acq_func(
         model: Model,
         acq_func_name: str, 
@@ -285,22 +298,17 @@ def get_acq_func(
 
     return acq_func
 
-
-
-# def predict_mesh_2D(model, X_test,  mesh_size, Y_mean, Y_std):
-#     '''
-#     Predict 2d mesh values from surrogates 
-#     Generate plots if required
-#     Return outputs Y in 2d numpy matrix 
-#     '''
-#     # predict the mean for ff model, returns a standardized 1d tensor
-#     Y_test, _, _ = ut.predict_model(model, X_test)
-#     # Inverse the standardization and convert 1d y into a 2d array
-#     Y_test_real = ut.transform_mesh_2D_Y(Y_test, Y_mean, Y_std, mesh_size)
+def eval_acq_func(acq_func: AcquisitionFunction, X_test: MatrixLike2d) -> MatrixLike2d:
     
-#     return Y_test_real
+    X_test = np_to_tensor(X_test)
+    n_dim = 1
+    # compute acquicision function values at X_test and X_train
+    acq_val_test = acq_func(X_test.view((X_test.shape[0],1, n_dim)))
+    acq_val_test = tensor_to_np(acq_val_test)
 
-    
+    return acq_val_test
+
+
 
 #%%
 
@@ -371,8 +379,8 @@ class Experiment():
         # X is in a unit scale and 
         # Y is standardized with a zero mean and a unit variance
         if preprocessed: 
-            X = self.X_real.detach().clone()
-            Y = self.Y_real.detach().clone()
+            X = np_to_tensor(self.X_real)  
+            Y = np_to_tensor(self.Y_real)  
             Y_mean = torch.zeros(self.n_objectives)
             Y_std = torch.ones(self.n_objectives)
             
@@ -402,11 +410,11 @@ class Experiment():
             # Standardize Y
             Y = ut.standardize_X(Y_real)
             # Convert to Tensor
-            X = torch.tensor(X, dtype=dtype)
-            Y = torch.tensor(Y, dtype=dtype)
+            X = np_to_tensor(X)
+            Y = np_to_tensor(Y)
             # Get mean and std
-            Y_mean = torch.tensor(Y_real.mean(axis = 0), dtype = dtype)
-            Y_std = torch.tensor(Y_real.std(axis = 0), dtype = dtype)
+            Y_mean = np_to_tensor(Y_real.mean(axis = 0))
+            Y_std = np_to_tensor(Y_real.std(axis = 0))
 
         # Assign to self
         self.X = X
@@ -416,6 +424,10 @@ class Experiment():
         self.X_ranges = X_ranges
         self.Y_mean = Y_mean
         self.Y_std = Y_std
+
+        self.unit_flag = unit_flag
+        self.log_flags = log_flags
+        self.decimals =decimals
 
 
     def input_data(self,
@@ -481,9 +493,8 @@ class Experiment():
         # assign weights for objectives 
         if Y_weights is None:
             Y_weights = torch.div(torch.ones(self.n_objectives), self.n_objectives)
-        if not isinstance(Y_weights, Tensor):
-            Y_weights = torch.tensor(Y_weights, dtype=dtype)
-        self.Y_weights = Y_weights
+
+        self.Y_weights = np_to_tensor(Y_weights)
 
         # Preprocess the data 
         self.preprocess_data(X_real, 
@@ -545,7 +556,7 @@ class Experiment():
         n_candidates: Optional[int] = 1,
         beta: Optional[float] = 0.2,
         **kwargs
-    ) -> Tuple[Tensor, AcquisitionFunction]:
+    ) -> Tuple[Tensor, Matrix, AcquisitionFunction]:
         """Generate the next trial point(s)
 
         Parameters
@@ -567,6 +578,8 @@ class Experiment():
         X_new: Tensor
             where the acquisition function is optimized
             A new trial shall be run at this point
+        X_new: Matrix
+            The new point in a real scale
         acq_func: AcquisitionFunction
             Current acquisition function, can be used for plotting
 
@@ -596,10 +609,18 @@ class Experiment():
                                 num_restarts=10, 
                                 raw_samples=100)
 
-        return X_new, acq_func
+        # Get X_new_real
+        X_new_real = ut.inverse_unitscale_X(X_new, 
+                                            X_ranges = self.X_ranges, 
+                                            unit_flag= self.unit_flag,
+                                            log_flags= self.log_flags,
+                                            decimals = self.decimals)
+
+        return X_new, X_new_real, acq_func
 
     def run_trial(self, 
         X_new: Tensor,
+        X_new_real: Matrix,
         Y_new_real: Optional[Tensor] = None
     ) -> Tensor:
         """Run trial candidate points
@@ -609,6 +630,8 @@ class Experiment():
         ----------
         X_new: Tensor 
             The new candidate point matrix 
+        X_new_real: Matrix 
+            The new candidate point matrix in a real scale
         Y_new_real: Tensor
             Experimental reponse values
 
@@ -622,7 +645,6 @@ class Experiment():
         # Must input Y_new_real
         # Otherwise, raise error
         if self.objective_func is None:
-            
             err_msg = "No objective function is specified. The experimental reponse must be provided."
             raise ValueError(err_msg)
 
@@ -631,10 +653,14 @@ class Experiment():
         else:
             Y_new_real = evaluate_objective_func(X_new, self.X_ranges, self.objective_func)
             Y_new = ut.standardize_X(Y_new_real, self.Y_mean, self.Y_std)
-                
+
+        
         # Combine all the training data
         self.X = torch.cat((self.X, X_new))
         self.Y = torch.cat((self.Y, Y_new))
+        self.X_real = np.concatenate((self.X_real, X_new_real))
+        self.Y_real = np.concatenate((self.X_real, Y_new_real))
+
         # Increment the number of points by n_candidate
         self.n_points += X_new.shape[0]
         

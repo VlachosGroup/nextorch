@@ -13,11 +13,9 @@ sys.path.insert(0, project_path)
 from nextorch import plotting
 from nextorch import bo
 from nextorch import utils
-import torch
 import numpy as np
+import torch
 
-from botorch.optim import optimize_acqf
-from botorch.acquisition.analytic import ExpectedImprovement
 
 def simple_1d(X):
     """1D function f(x) = (6x-2)^2 * sin(12x-4)
@@ -67,6 +65,8 @@ Exp.set_optim_specs(objective_func = simple_1d)
 # Optimization loop
 n = 10
 for i in range(n):
-    X_new, _ = Exp.generate_next_point()
-    Exp.run_trial(X_new)
+    X_new, X_new_real, acq_func = Exp.generate_next_point()
+    plotting.plot_acq_func_1d(acq_func, X_test, Exp.X, X_new)
+    #plotting.plot_objective_func_1d(Exp.model, X_test, Y_test, Exp.X_real, Exp.Y_real, X_new, objective_func(X_test))
+    Exp.run_trial(X_new, X_new_real)
 

@@ -11,13 +11,15 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.axes._axes import Axes
 import numpy as np
+
 import torch
 from torch import Tensor
 from botorch.acquisition.acquisition import AcquisitionFunction
+from botorch.models.model import Model
 
 from typing import Optional, TypeVar, Union, Tuple, List
 from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d
-
+from nextorch.utils import tensor_to_np, np_to_tensor
 
 # Set matplotlib default values
 font = {'size'   : 20}
@@ -145,39 +147,41 @@ def add_2D_z_slice(
 
 def plot_acq_func_1d(
     acq_func: AcquisitionFunction, 
-    X_test: Tensor, 
-    X_train: Tensor, 
-    X_new: Optional[Tensor] = None):
+    X_test: MatrixLike2d, 
+    X_train: MatrixLike2d, 
+    X_new: Optional[MatrixLike2d] = None):
     """Plot 1-dimensional acquision function 
 
     Parameters
     ----------
     acq_func : AcquisitionFunction
         the acquision function object
-    X_test : Tensor
+    X_test : MatrixLike2d
         Test data points for plotting
-    X_train : Tensor
+    X_train : MatrixLike2d
         Training data points
-    X_new : Optional[Tensor], optional
+    X_new : Optional[MatrixLike2d], optional
         The next data point, i.e the infill points,
         by default None
     """
-
-    n_dim = X_test.shape[1]
+    n_dim = 1
     # compute acquicision function values at X_test and X_train
-    test_acq_val = acq_func(X_test.view((X_test.shape[0],1,n_dim)))
-    train_acq_val = acq_func(X_train.view((X_train.shape[0],1,n_dim)))
+    test_acq_val = acq_func(np_to_tensor(X_test).view((X_test.shape[0],1, n_dim)))
+    train_acq_val = acq_func(np_to_tensor(X_train).view((X_train.shape[0],1,n_dim)))
+    test_acq_val = tensor_to_np(test_acq_val)
+    train_acq_val = tensor_to_np(train_acq_val)
+
 
     # Initialize plot
     fig, ax = plt.subplots(figsize=(12, 6))
-    with torch.no_grad():
-        ax.plot(X_test.cpu().numpy(), test_acq_val.detach(), 'b-', label = 'Acquistion')
-        # Plot training points as black stars
-        ax.scatter(X_train.cpu().numpy(), train_acq_val.detach(), s = 120, c= 'k', marker = '*', label = 'Initial Data')
-         # Plot the new infill points as red stars
-        if X_new is not None:
-            new_acq_val = acq_func(X_new.view((X_new.shape[0],1,n_dim)))
-            ax.scatter(X_new.cpu().numpy(), new_acq_val.detach(),  s = 120, c ='r', marker = '*', label = 'Infill Data')
+    ax.plot(X_test, test_acq_val, 'b-', label = 'Acquisition')
+    # Plot training points as black stars
+    ax.scatter(X_train, train_acq_val, s = 120, c= 'k', marker = '*', label = 'Initial Data')
+        # Plot the new infill points as red stars
+    if X_new is not None:
+        new_acq_val = acq_func(np_to_tensor(X_new).view((X_new.shape[0],1,n_dim)))
+        new_acq_val = tensor_to_np(new_acq_val)
+        ax.scatter(X_new, new_acq_val,  s = 120, c ='r', marker = '*', label = 'Infill Data')
     
     ax.ticklabel_format(style = 'sci', axis = 'y', scilimits = (-2,2) )
     ax.set_xlabel('x')
@@ -188,38 +192,41 @@ def plot_acq_func_1d(
 
 
 
-
-
-
 #%% Not finished yet 
-def plot_testing(model: object, test_X, train_X, train_Y,  test_Y = None, new_X = None, new_Y = None):
+def plot_objective_func_1d(
+    model: Model, 
+    X_test: MatrixLike2d,
+    Y_test: MatrixLike2d, 
+    X_train: MatrixLike2d, 
+    Y_train: MatrixLike2d,  
+    X_new: MatrixLike2d, 
+    Y_new: MatrixLike2d):
     '''
     Test the surrogate model with model, test_X and new_X
     '''
+    # compute posterior
+    posterior = model.posterior(np_to_tensor(X_test))
+    # Get upper and lower confidence bounds (2 standard deviations from the mean)
+    lower, upper = posterior.mvn.confidence_region()
+
+    
 
     # Initialize plot
     fig, ax = plt.subplots(figsize=(12, 6))
-
-    with torch.no_grad():
-        # compute posterior
-        posterior = model.posterior(test_X)
-        # Get upper and lower confidence bounds (2 standard deviations from the mean)
-        lower, upper = posterior.mvn.confidence_region()
         
-        # Plot the groud truth test_Y if provided
-        ax.plot(test_X.cpu().numpy(), test_Y.cpu().numpy(), 'k--', label = 'Objective f(x)')
-        # Plot posterior means as blue line
-        ax.plot(test_X.cpu().numpy(), posterior.mean.cpu().numpy(), 'b', label = 'Posterior Mean')
-        # Shade between the lower and upper confidence bounds
-        ax.fill_between(test_X.cpu().numpy(), lower.cpu().numpy(), upper.cpu().numpy(), alpha=0.5, label = 'Confidence')
-        
-        # Plot training points as black stars
-        ax.scatter(train_X.cpu().numpy(), train_Y.cpu().numpy(), s =120, c= 'k', marker = '*', label = 'Initial Data')
-         # Plot the new infill points as red stars
-        if not type(new_X) == type(None):    
-            ax.scatter(new_X.cpu().numpy(), new_Y.cpu().numpy(), s = 120, c = 'r', marker = '*', label = 'Infill Data')
-        
+    # Plot the groud truth Y_test if provided
+    ax.plot(X_test.cpu().numpy(), Y_test.cpu().numpy(), 'k--', label = 'Objective f(x)')
+    # Plot posterior means as blue line
+    ax.plot(X_test.cpu().numpy(), posterior.mean.cpu().numpy(), 'b', label = 'Posterior Mean')
+    # Shade between the lower and upper confidence bounds
+    ax.fill_between(X_test.cpu().numpy(), lower.cpu().numpy(), upper.cpu().numpy(), alpha=0.5, label = 'Confidence')
     
+    # Plot training points as black stars
+    ax.scatter(X_train.cpu().numpy(), Y_train.cpu().numpy(), s =120, c= 'k', marker = '*', label = 'Initial Data')
+        # Plot the new infill points as red stars
+    if not X_new is None:    
+        ax.scatter(X_new.cpu().numpy(), Y_new.cpu().numpy(), s = 120, c = 'r', marker = '*', label = 'Infill Data')
+        
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))

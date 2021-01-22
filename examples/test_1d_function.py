@@ -51,8 +51,6 @@ X_init = np.array([[0, 0.25, 0.5, 0.75]]).T
 Y_init = objective_func(X_init)
 
 X_test = np.linspace(0, 1, 1000)
-Y_test = objective_func(X_test)
-
 
 Exp = bo.Experiment('simple_1d')
 Exp.input_data(X_init, Y_init,  unit_flag = True)
@@ -63,14 +61,11 @@ Exp.set_optim_specs(objective_func = simple_1d)
 #for i in range(n):
 X_new, X_new_real, acq_func = Exp.generate_next_point()
 Y_new_real = objective_func(X_new_real)
-plotting.plot_objective_func_1d(Exp.model, X_test, Y_test, Exp.X_real, Exp.Y_real, X_new, Y_new_real, False, Exp.Y_mean, Exp.Y_std)
+plotting.plot_objective_func_1d(Exp.model, X_test, Y_test, Exp.X_real, Exp.Y_real, X_new, Y_new_real, True, Exp.Y_mean, Exp.Y_std)
 Exp.run_trial(X_new, X_new_real, Y_new_real)
 #
 X_new, X_new_real, acq_func = Exp.generate_next_point()
 Y_new_real = objective_func(X_new_real)
-plotting.plot_objective_func_1d(Exp.model, X_test, Y_test, Exp.X_real, Exp.Y_real, X_new, Y_new_real, False, Exp.Y_mean, Exp.Y_std)
-
-    
-
-    #Exp.run_trial(X_new, X_new_real, Y_new_real)
+plotting.plot_exp_objective_func_1d(Exp, X_test = X_test, X_new = X_new)
+Exp.run_trial(X_new, X_new_real, Y_new_real)
 

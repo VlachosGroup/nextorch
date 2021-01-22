@@ -114,7 +114,7 @@ def unitscale_X(
      #If 1D, make it 2D a matrix
     if len(X.shape)<2:
         X = copy.deepcopy(X)
-        X = np.array([X])
+        X = np.expand_dims(X, axis=1) #If 1D, make it 2D array
         
     n_dim = X.shape[1] #the number of column in X
     
@@ -128,7 +128,8 @@ def unitscale_X(
     
     # Initialize with a zero matrix
     Xunit = np.zeros((X.shape[0], X.shape[1]))
-    for i, xi in enumerate(np.transpose(X)):
+    for i in range(n_dim):
+        xi = X[:,i]
         if log_flags[i]:
             Xunit[:,i] =  np.log10(unitscale_xv(xi, X_ranges[i]))
         else:
@@ -202,7 +203,7 @@ def inverse_unitscale_X(
     """
     if len(X.shape)<2:
         X = copy.deepcopy(X)
-        X = np.array([X]) #If 1D, make it 2D array
+        X = np.expand_dims(X, axis=1) #If 1D, make it 2D array
     
     n_dim = X.shape[1]  #the number of column in X
     
@@ -214,8 +215,10 @@ def inverse_unitscale_X(
     
     if log_flags is None: log_flags = [False] * n_dim
     
+    # Initialize with a zero matrix
     Xreal = np.zeros((X.shape[0], X.shape[1]))
-    for i, xi in enumerate(np.transpose(X)):
+    for i in range(n_dim):
+        xi = X[:,i]
         if log_flags[i]:
             Xreal[:,i] =  10**(inverse_unitscale_xv(xi, X_ranges[i]))
         else:

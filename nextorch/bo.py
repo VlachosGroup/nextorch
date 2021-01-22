@@ -105,8 +105,9 @@ def fit_with_new_observations(model: Model, X: Tensor, Y: Tensor) -> Model:
 def eval_objective_func(
     X_unit: MatrixLike2d, 
     X_range: MatrixLike2d, 
-    objective_func: object
-) -> Tensor:
+    objective_func: object,
+    return_type: Optional[str] = 'tensor'
+) -> MatrixLike2d:
     """Evaluate the objective function
 
     Parameters
@@ -117,27 +118,42 @@ def eval_objective_func(
         list of x ranges
     test_function : function object
         a test function which evaluate np arrays
+    return_type: Optional[str], optional
+        either 'tensor' or 'np'
 
     Returns
     -------
-    Y_tensor: Tensor
+    Y: MatrixLike2d
         model predicted values
+
+    Raises
+    ------
+    ValueError
+        if input return_type not defined
     """
+    # Convert to tensor
+    if return_type not in ['tensor', 'np']:
+        raise ValueError('return_type must be either tensor or np')
+
     # Convert matrix type from tensor to numpy matrix
     X_unit_np = tensor_to_np(X_unit)
-    X_range_np = tensor_to_np(X_range)    
+    #X_range_np = tensor_to_np(X_range)    
     
     # transform to real scale 
-    X_real = ut.inverse_unitscale_X(X_unit_np, X_range_np)
+    X_real = ut.inverse_unitscale_X(X_unit_np, X_range)
     # evaluate y
     Y = objective_func(X_real)
-    # Convert to tensor
-    Y_tensor = np_to_tensor(Y)
 
-    return Y_tensor
+    if return_type == 'tensor':
+        Y = np_to_tensor(Y)
 
-def predict_model(model: Model, X_test: MatrixLike2d
-) -> Tuple[Tensor, Tensor, Tensor]:
+    return Y
+
+def predict_model(
+    model: Model, 
+    X_test: MatrixLike2d,
+    return_type: Optional[str] = 'tensor'
+) -> Tuple[MatrixLike2d, MatrixLike2d, MatrixLike2d]:
     """Makes standardized prediction at X_test using the GP model
 
     Parameters
@@ -147,18 +163,28 @@ def predict_model(model: Model, X_test: MatrixLike2d
     X_test : MatrixLike2d
         X matrix used for testing, must have the same dimension 
         as X for training
+    return_type: Optional[str], optional
+        either 'tensor' or 'np'
 
     Returns
     -------
-    Y_test: Tensor
+    Y_test: MatrixLike2d
         Standardized prediction, the mean of postierior
-    Y_test_lower: Tensor 
+    Y_test_lower: MatrixLike2d 
         The lower confidence interval 
-    Y_test_upper: Tensor
-        The upper confidence interval  
+    Y_test_upper: MatrixLike2d
+        The upper confidence interval 
+
+    Raises
+    ------
+    ValueError
+        if input return_type not defined 
 
     :_'botorch.models.model.Model': https://botorch.org/api/models.html
     """
+    if return_type not in ['tensor', 'np']:
+        raise ValueError('return_type must be either tensor or np')
+
     # Make a copy
     X_test = np_to_tensor(X_test)
 
@@ -166,6 +192,11 @@ def predict_model(model: Model, X_test: MatrixLike2d
     posterior = model.posterior(X_test)
     Y_test = posterior.mean
     Y_test_lower, Y_test_upper = posterior.mvn.confidence_region()
+
+    if return_type == 'np':
+        Y_test = tensor_to_np(Y_test), 
+        Y_test_lower = tensor_to_np(Y_test_lower)
+        Y_test_upper = tensor_to_np(Y_test_upper)
     
     return Y_test, Y_test_lower, Y_test_upper
 
@@ -174,8 +205,9 @@ def predict_real(
     model: Model, 
     X_test: MatrixLike2d, 
     Y_mean: MatrixLike2d, 
-    Y_std: MatrixLike2d
-) -> Tuple[Matrix, Matrix, Matrix]:
+    Y_std: MatrixLike2d,
+    return_type: Optional[str] = 'tensor'
+) -> Tuple[MatrixLike2d, MatrixLike2d, MatrixLike2d]:
     """Make predictions in real scale and returns numpy array
 
     Parameters
@@ -201,17 +233,20 @@ def predict_real(
     
     :_'botorch.models.model.Model': https://botorch.org/api/models.html
     """
+    if return_type not in ['tensor', 'np']:
+        raise ValueError('return_type must be either tensor or np')
+
     # Make standardized predictions using the model
     Y_test, Y_test_lower, Y_test_upper = predict_model(model, X_test)
     # Inverse standardize and convert it to numpy matrix
-    Y_test_real = ut.inversestandardize_X(Y_test, Y_mean, Y_std)
-    Y_test_real = tensor_to_np(Y_test_real)
-    
-    Y_test_lower_real = ut.inversestandardize_X(Y_test_lower, Y_mean, Y_std)
-    Y_test_lower_real = tensor_to_np(Y_test_lower_real)
-    
-    Y_test_upper_real = ut.inversestandardize_X(Y_test_upper, Y_mean, Y_std)
-    Y_test_upper_real = tensor_to_np(Y_test_upper)
+    Y_test_real = ut.inverse_standardize_X(Y_test, Y_mean, Y_std)
+    Y_test_lower_real = ut.inverse_standardize_X(Y_test_lower, Y_mean, Y_std)
+    Y_test_upper_real = ut.inverse_standardize_X(Y_test_upper, Y_mean, Y_std)
+
+    if return_type == 'np':
+        Y_test_real = tensor_to_np(Y_test_real)
+        Y_test_lower_real = tensor_to_np(Y_test_lower_real)
+        Y_test_upper_real = tensor_to_np(Y_test_upper)
     
     return Y_test_real, Y_test_lower_real, Y_test_upper_real
 
@@ -299,7 +334,8 @@ def get_acq_func(
 
 def eval_acq_func(
     acq_func: AcquisitionFunction, 
-    X_test: MatrixLike2d
+    X_test: MatrixLike2d,
+    return_type: Optional[str] = 'tensor'
 ) -> MatrixLike2d:
     """Evaluate acquisition function at test values
 
@@ -310,20 +346,31 @@ def eval_acq_func(
     X_test : MatrixLike2d
         X matrix used for testing, must have the same dimension 
         as X for training
+    return_type: Optional[str], optional
+        either 'tensor' or 'np'
 
     Returns
     -------
     acq_val_test: MatrixLike2d
         acquisition function value at X_test
+        
+    Raises
+    ------
+    ValueError
+        if input return_type not defined 
 
     .._'botorch.acquisition.AcquisitionFunction': https://botorch.org/api/acquisition.html
     """
+    if return_type not in ['tensor', 'np']:
+        raise ValueError('return_type must be either tensor or np')
+
     X_test = np_to_tensor(X_test)
     n_dim = 1
     # compute acquicision function values at X_test and X_train
     # the input needs to be formatted as a 3D tensor
     acq_val_test = acq_func(X_test.view((X_test.shape[0],1, n_dim)))
-    acq_val_test = tensor_to_np(acq_val_test)
+    if return_type == 'np':
+        acq_val_test = tensor_to_np(acq_val_test)
 
     return acq_val_test
 
@@ -740,7 +787,11 @@ class Experiment():
         Y_test_upper_real: numpy matrix 
             The upper confidence interval in a real scale
         """
-        Y_real, Y_lower_real, Y_upper_real = predict_real(self.model, self.X, self.Y_mean, self.Y_std)
+        Y_real, Y_lower_real, Y_upper_real = predict_real(self.model, 
+                                                          self.X, 
+                                                          self.Y_mean, 
+                                                          self.Y_std, 
+                                                          return_type='np')
         if show_confidence:
             return Y_real, Y_lower_real, Y_upper_real
         

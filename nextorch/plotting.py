@@ -19,7 +19,9 @@ from botorch.models.model import Model
 
 from typing import Optional, TypeVar, Union, Tuple, List
 from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d
-from nextorch.utils import tensor_to_np, np_to_tensor
+from nextorch.utils import tensor_to_np, np_to_tensor, standardize_X
+from nextorch.bo import eval_acq_func, predict_model, predict_real
+
 
 # Set matplotlib default values
 font = {'size'   : 20}
@@ -145,43 +147,42 @@ def add_2D_z_slice(
 
     return ax
 
+
 def plot_acq_func_1d(
     acq_func: AcquisitionFunction, 
     X_test: MatrixLike2d, 
-    X_train: MatrixLike2d, 
+    X_train: Optional[MatrixLike2d] = None, 
     X_new: Optional[MatrixLike2d] = None):
     """Plot 1-dimensional acquision function 
 
     Parameters
     ----------
-    acq_func : AcquisitionFunction
+    acq_func : 'botorch.acquisition.AcquisitionFunction'_
         the acquision function object
     X_test : MatrixLike2d
         Test data points for plotting
-    X_train : MatrixLike2d
-        Training data points
+    X_train : Optional[MatrixLike2d], optional
+        Training data points, by default None
     X_new : Optional[MatrixLike2d], optional
         The next data point, i.e the infill points,
         by default None
+
+    .._'botorch.acquisition.AcquisitionFunction': https://botorch.org/api/acquisition.html
     """
-    n_dim = 1
     # compute acquicision function values at X_test and X_train
-    test_acq_val = acq_func(np_to_tensor(X_test).view((X_test.shape[0],1, n_dim)))
-    train_acq_val = acq_func(np_to_tensor(X_train).view((X_train.shape[0],1,n_dim)))
-    test_acq_val = tensor_to_np(test_acq_val)
-    train_acq_val = tensor_to_np(train_acq_val)
-
-
+    acq_val_test = eval_acq_func(acq_func, X_test)
+    
     # Initialize plot
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(X_test, test_acq_val, 'b-', label = 'Acquisition')
-    # Plot training points as black stars
-    ax.scatter(X_train, train_acq_val, s = 120, c= 'k', marker = '*', label = 'Initial Data')
-        # Plot the new infill points as red stars
+    ax.plot(X_test, acq_val_test, 'b-', label = 'Acquisition')
+    # Plot training points as black 
+    if X_train is not None:
+        acq_val_train = eval_acq_func(acq_func, X_train)
+        ax.scatter(X_train, acq_val_train, s = 120, c= 'k', marker = '*', label = 'Initial Data')
+    # Plot the new infill points as red stars
     if X_new is not None:
-        new_acq_val = acq_func(np_to_tensor(X_new).view((X_new.shape[0],1,n_dim)))
-        new_acq_val = tensor_to_np(new_acq_val)
-        ax.scatter(X_new, new_acq_val,  s = 120, c ='r', marker = '*', label = 'Infill Data')
+        acq_val_new = eval_acq_func(acq_func, X_new)
+        ax.scatter(X_new, acq_val_new,  s = 120, c ='r', marker = '*', label = 'Infill Data')
     
     ax.ticklabel_format(style = 'sci', axis = 'y', scilimits = (-2,2) )
     ax.set_xlabel('x')
@@ -191,41 +192,81 @@ def plot_acq_func_1d(
     plt.show()
 
 
-
-#%% Not finished yet 
 def plot_objective_func_1d(
     model: Model, 
-    X_test: MatrixLike2d,
-    Y_test: MatrixLike2d, 
-    X_train: MatrixLike2d, 
-    Y_train: MatrixLike2d,  
-    X_new: MatrixLike2d, 
-    Y_new: MatrixLike2d):
-    '''
-    Test the surrogate model with model, test_X and new_X
-    '''
-    # compute posterior
-    posterior = model.posterior(np_to_tensor(X_test))
-    # Get upper and lower confidence bounds (2 standard deviations from the mean)
-    lower, upper = posterior.mvn.confidence_region()
+    X_test: ArrayLike1d, 
+    Y_test: ArrayLike1d, 
+    X_train: Optional[MatrixLike2d] = None,
+    Y_train: Optional[MatrixLike2d] = None, 
+    X_new: Optional[MatrixLike2d] = None,
+    Y_new: Optional[MatrixLike2d] = None,
+    plot_real: Optional[bool] = False,
+    Y_mean: Optional[MatrixLike2d] = None,
+    Y_std: Optional[MatrixLike2d] = None):
+    """Plot objective function along 1 dimension
 
+    Parameters
+    ----------
+    model : 'botorch.models.model.Model'_
+        A GP model
+    X_test : MatrixLike2d
+        Test data points for plotting
+    X_train : Optional[MatrixLike2d], optional
+        Training data points, by default None
+    X_new : Optional[MatrixLike2d], optional
+        The next data point, i.e the infill points,
+        by default None
     
+    :_'botorch.models.model.Model': https://botorch.org/api/models.html
+    """
+    # handle the edge cases
+    if (X_train is not None) and (Y_train is None):
+        raise ValueError("Plot X_train, must also input Y_train")
+    if (X_new is not None) and (Y_new is None):
+        raise ValueError("Plot X_new, must also input Y_new")
+    if plot_real and (Y_mean is None or Y_std is None):
+        raise ValueError("Plot in the real scale, must supply the mean and std of Y set")
+
+    if plot_real: # Y in a real scale
+        Y_test = Y_test
+        Y_test_pred, Y_test_lower_pred, Y_test_upper_pred = predict_real(model, X_test, Y_mean, Y_std)
+    else: # Y in a standardized scale
+        Y_test = standardize_X(Y_test, Y_mean, Y_std) #standardize Y_test
+        Y_train = standardize_X(Y_train, Y_mean, Y_std) 
+        Y_new = standardize_X(Y_new, Y_mean, Y_std) 
+
+        Y_test_pred, Y_test_lower_pred, Y_test_upper_pred = predict_model(model, X_test)
+        Y_test_pred = tensor_to_np(Y_test_pred)
+        Y_test_lower_pred = tensor_to_np(Y_test_upper_pred)
+        Y_test_upper_pred = tensor_to_np(Y_test_upper_pred)
+
+    # reduce the dimension to 1d arrays
+    Y_test_pred = np.squeeze(Y_test_pred)
+    Y_test_lower_pred = np.squeeze(Y_test_upper_pred)
+    Y_test_upper_pred = np.squeeze(Y_test_upper_pred)
 
     # Initialize plot
     fig, ax = plt.subplots(figsize=(12, 6))
         
     # Plot the groud truth Y_test if provided
-    ax.plot(X_test.cpu().numpy(), Y_test.cpu().numpy(), 'k--', label = 'Objective f(x)')
+    X_test = tensor_to_np(X_test)
+    Y_test = tensor_to_np(Y_test)
+
+    ax.plot(X_test, Y_test, 'k--', label = 'Objective f(x)')
+
     # Plot posterior means as blue line
-    ax.plot(X_test.cpu().numpy(), posterior.mean.cpu().numpy(), 'b', label = 'Posterior Mean')
+    ax.plot(X_test, Y_test_pred, 'b', label = 'Posterior Mean')
     # Shade between the lower and upper confidence bounds
-    ax.fill_between(X_test.cpu().numpy(), lower.cpu().numpy(), upper.cpu().numpy(), alpha=0.5, label = 'Confidence')
-    
+    ax.fill_between(X_test, Y_test_lower_pred, Y_test_upper_pred, alpha=0.5, label = 'Confidence')
+
     # Plot training points as black stars
-    ax.scatter(X_train.cpu().numpy(), Y_train.cpu().numpy(), s =120, c= 'k', marker = '*', label = 'Initial Data')
-        # Plot the new infill points as red stars
-    if not X_new is None:    
-        ax.scatter(X_new.cpu().numpy(), Y_new.cpu().numpy(), s = 120, c = 'r', marker = '*', label = 'Infill Data')
+    if X_train is not None:
+        X_train = tensor_to_np(X_train)
+        Y_train = tensor_to_np(Y_train)
+        ax.scatter(X_train, Y_train, s =120, c= 'k', marker = '*', label = 'Initial Data')
+    # Plot the new infill points as red stars
+    if X_new is not None:    
+        ax.scatter(X_new, Y_new, s = 120, c = 'r', marker = '*', label = 'Infill Data')
         
     ax.set_xlabel('x')
     ax.set_ylabel('y')

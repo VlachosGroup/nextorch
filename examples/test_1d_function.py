@@ -10,12 +10,8 @@ import sys
 project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_path)
 
-from nextorch import plotting
-from nextorch import bo
-from nextorch import utils
+from nextorch import plotting, bo
 import numpy as np
-import torch
-
 
 def simple_1d(X):
     """1D function f(x) = (6x-2)^2 * sin(12x-4)
@@ -67,6 +63,9 @@ n = 10
 for i in range(n):
     X_new, X_new_real, acq_func = Exp.generate_next_point()
     plotting.plot_acq_func_1d(acq_func, X_test, Exp.X, X_new)
-    #plotting.plot_objective_func_1d(Exp.model, X_test, Y_test, Exp.X_real, Exp.Y_real, X_new, objective_func(X_test))
-    Exp.run_trial(X_new, X_new_real)
+
+    Y_new_real = objective_func(X_new_real)
+    plotting.plot_objective_func_1d(Exp.model, X_test, Y_test, Exp.X_real, Exp.Y_real, X_new, Y_new_real)
+
+    Exp.run_trial(X_new, X_new_real, Y_new_real)
 

@@ -102,7 +102,7 @@ def fit_with_new_observations(model: Model, X: Tensor, Y: Tensor) -> Model:
     
     return model
 
-def evaluate_objective_func(
+def eval_objective_func(
     X_unit: MatrixLike2d, 
     X_range: MatrixLike2d, 
     objective_func: object
@@ -257,10 +257,9 @@ def get_acq_func(
     **kwargs：keyword arguments
         Other parameters used by 'botorch.acquisition'_
 
-
     Returns
     -------
-    acq_func: 'botorch.acquisition.AcquisitionFunction'
+    acq_func: 'botorch.acquisition.AcquisitionFunction'_
         acquisition function object
         
     Raises
@@ -298,11 +297,31 @@ def get_acq_func(
 
     return acq_func
 
-def eval_acq_func(acq_func: AcquisitionFunction, X_test: MatrixLike2d) -> MatrixLike2d:
-    
+def eval_acq_func(
+    acq_func: AcquisitionFunction, 
+    X_test: MatrixLike2d
+) -> MatrixLike2d:
+    """Evaluate acquisition function at test values
+
+    Parameters
+    ----------
+    acq_func : 'botorch.acquisition.AcquisitionFunction'_
+        acquisition function object
+    X_test : MatrixLike2d
+        X matrix used for testing, must have the same dimension 
+        as X for training
+
+    Returns
+    -------
+    acq_val_test: MatrixLike2d
+        acquisition function value at X_test
+
+    .._'botorch.acquisition.AcquisitionFunction': https://botorch.org/api/acquisition.html
+    """
     X_test = np_to_tensor(X_test)
     n_dim = 1
     # compute acquicision function values at X_test and X_train
+    # the input needs to be formatted as a 3D tensor
     acq_val_test = acq_func(X_test.view((X_test.shape[0],1, n_dim)))
     acq_val_test = tensor_to_np(acq_val_test)
 
@@ -644,17 +663,19 @@ class Experiment():
         # Case 1, no objective function is specified 
         # Must input Y_new_real
         # Otherwise, raise error
-        if self.objective_func is None:
-            err_msg = "No objective function is specified. The experimental reponse must be provided."
-            raise ValueError(err_msg)
+        if Y_new_real is None:
+            if self.objective_func is None:
+                err_msg = "No objective function is specified. The experimental reponse must be provided."
+                raise ValueError(err_msg)
 
         # Case 2, Predict Y_new from objective function
         # Standardize Y_new_real from the prediction
-        else:
-            Y_new_real = evaluate_objective_func(X_new, self.X_ranges, self.objective_func)
-            Y_new = ut.standardize_X(Y_new_real, self.Y_mean, self.Y_std)
-
+            else:
+                Y_new_real = eval_objective_func(X_new, self.X_ranges, self.objective_func)
         
+        # Case 3, Y_new_real is provided from the experiment
+        Y_new = ut.standardize_X(Y_new_real, self.Y_mean, self.Y_std)
+
         # Combine all the training data
         self.X = torch.cat((self.X, X_new))
         self.Y = torch.cat((self.Y, Y_new))

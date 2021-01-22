@@ -194,8 +194,8 @@ def plot_acq_func_1d(
 
 def plot_objective_func_1d(
     model: Model, 
-    X_test: ArrayLike1d, 
-    Y_test: ArrayLike1d, 
+    X_test: MatrixLike2d, 
+    Y_test: Optional[MatrixLike2d] = None, 
     X_train: Optional[MatrixLike2d] = None,
     Y_train: Optional[MatrixLike2d] = None, 
     X_new: Optional[MatrixLike2d] = None,
@@ -224,33 +224,33 @@ def plot_objective_func_1d(
         raise ValueError("Plot X_train, must also input Y_train")
     if (X_new is not None) and (Y_new is None):
         raise ValueError("Plot X_new, must also input Y_new")
-    if plot_real and (Y_mean is None or Y_std is None):
-        raise ValueError("Plot in the real scale, must supply the mean and std of Y set")
+    if not plot_real and (Y_mean is None or Y_std is None):
+        raise ValueError("Plot in the standard scale, must supply the mean and std of Y set")
 
     if plot_real: # Y in a real scale
         Y_test = Y_test
         Y_test_pred, Y_test_lower_pred, Y_test_upper_pred = predict_real(model, X_test, Y_mean, Y_std)
     else: # Y in a standardized scale
-        Y_test = standardize_X(Y_test, Y_mean, Y_std) #standardize Y_test
-        Y_train = standardize_X(Y_train, Y_mean, Y_std) 
-        Y_new = standardize_X(Y_new, Y_mean, Y_std) 
+        Y_test = standardize_X(Y_test, Y_mean, Y_std, return_type= 'np') #standardize Y_test
+        Y_train = standardize_X(Y_train, Y_mean, Y_std, return_type= 'np') 
+        Y_new = standardize_X(Y_new, Y_mean, Y_std, return_type= 'np') 
 
         Y_test_pred, Y_test_lower_pred, Y_test_upper_pred = predict_model(model, X_test)
         Y_test_pred = tensor_to_np(Y_test_pred)
-        Y_test_lower_pred = tensor_to_np(Y_test_upper_pred)
+        Y_test_lower_pred = tensor_to_np(Y_test_lower_pred)
         Y_test_upper_pred = tensor_to_np(Y_test_upper_pred)
 
     # reduce the dimension to 1d arrays
     Y_test_pred = np.squeeze(Y_test_pred)
-    Y_test_lower_pred = np.squeeze(Y_test_upper_pred)
+    Y_test_lower_pred = np.squeeze(Y_test_lower_pred)
     Y_test_upper_pred = np.squeeze(Y_test_upper_pred)
 
     # Initialize plot
     fig, ax = plt.subplots(figsize=(12, 6))
         
     # Plot the groud truth Y_test if provided
-    X_test = tensor_to_np(X_test)
-    Y_test = tensor_to_np(Y_test)
+    X_test = np.squeeze(tensor_to_np(X_test))
+    Y_test = np.squeeze(tensor_to_np(Y_test))
 
     ax.plot(X_test, Y_test, 'k--', label = 'Objective f(x)')
 
@@ -261,11 +261,13 @@ def plot_objective_func_1d(
 
     # Plot training points as black stars
     if X_train is not None:
-        X_train = tensor_to_np(X_train)
-        Y_train = tensor_to_np(Y_train)
+        X_train = np.squeeze(tensor_to_np(X_train))
+        Y_train = np.squeeze(tensor_to_np(Y_train))
         ax.scatter(X_train, Y_train, s =120, c= 'k', marker = '*', label = 'Initial Data')
     # Plot the new infill points as red stars
     if X_new is not None:    
+        X_new = np.squeeze(tensor_to_np(X_new))
+        Y_new = np.squeeze(tensor_to_np(Y_new))
         ax.scatter(X_new, Y_new, s = 120, c = 'r', marker = '*', label = 'Infill Data')
         
     ax.set_xlabel('x')

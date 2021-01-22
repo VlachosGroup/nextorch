@@ -59,13 +59,18 @@ Exp.input_data(X_init, Y_init,  unit_flag = True)
 Exp.set_optim_specs(objective_func = simple_1d)
 
 # Optimization loop
-n = 10
-for i in range(n):
-    X_new, X_new_real, acq_func = Exp.generate_next_point()
-    plotting.plot_acq_func_1d(acq_func, X_test, Exp.X, X_new)
+#n = 10
+#for i in range(n):
+X_new, X_new_real, acq_func = Exp.generate_next_point()
+Y_new_real = objective_func(X_new_real)
+plotting.plot_objective_func_1d(Exp.model, X_test, Y_test, Exp.X_real, Exp.Y_real, X_new, Y_new_real, False, Exp.Y_mean, Exp.Y_std)
+Exp.run_trial(X_new, X_new_real, Y_new_real)
+#
+X_new, X_new_real, acq_func = Exp.generate_next_point()
+Y_new_real = objective_func(X_new_real)
+plotting.plot_objective_func_1d(Exp.model, X_test, Y_test, Exp.X_real, Exp.Y_real, X_new, Y_new_real, False, Exp.Y_mean, Exp.Y_std)
 
-    Y_new_real = objective_func(X_new_real)
-    plotting.plot_objective_func_1d(Exp.model, X_test, Y_test, Exp.X_real, Exp.Y_real, X_new, Y_new_real)
+    
 
-    Exp.run_trial(X_new, X_new_real, Y_new_real)
+    #Exp.run_trial(X_new, X_new_real, Y_new_real)
 

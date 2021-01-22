@@ -640,7 +640,7 @@ class Experiment():
     def run_trial(self, 
         X_new: Tensor,
         X_new_real: Matrix,
-        Y_new_real: Optional[Tensor] = None
+        Y_new_real: Optional[Matrix] = None
     ) -> Tensor:
         """Run trial candidate points
         Fit the GP model to new data
@@ -651,7 +651,7 @@ class Experiment():
             The new candidate point matrix 
         X_new_real: Matrix 
             The new candidate point matrix in a real scale
-        Y_new_real: Tensor
+        Y_new_real: Matrix
             Experimental reponse values
 
         Returns
@@ -680,7 +680,7 @@ class Experiment():
         self.X = torch.cat((self.X, X_new))
         self.Y = torch.cat((self.Y, Y_new))
         self.X_real = np.concatenate((self.X_real, X_new_real))
-        self.Y_real = np.concatenate((self.X_real, Y_new_real))
+        self.Y_real = np.concatenate((self.Y_real, Y_new_real))
 
         # Increment the number of points by n_candidate
         self.n_points += X_new.shape[0]

@@ -231,7 +231,8 @@ def inverse_unitscale_X(
 def standardize_X(
     X: MatrixLike2d, 
     X_mean: Optional[ArrayLike1d] = None, 
-    X_std: Optional[ArrayLike1d] = None
+    X_std: Optional[ArrayLike1d] = None,
+    return_type: Optional[str] = 'tensor'
 ) -> MatrixLike2d:
     """Takes in an array/matrix X 
     and returns the standardized data with zero mean and a unit variance
@@ -244,20 +245,39 @@ def standardize_X(
         same type as X
         mean of each column in X, 
         by default None, it will be computed here
-    X_std : ArrayLike1d, optional
+    X_std : Optional[ArrayLike1d], optional
         same type as X
         stand deviation of each column in X, 
         by default None, it will be computed here
+    return_type: Optional[str], optional
+        either 'tensor' or 'np'
 
     Returns
     -------
-    X_standard: MatrixLike2d, same type as X
+    X_standard: MatrixLike2d, set by return_type
         Standardized X matrix
+    
+    Raises
+    ------
+    ValueError
+        if input return_type not defined
     """    
     # Compute the mean and std if not provided
+
     if X_mean is None:
         X_mean = X.mean(axis = 0)
         X_std = X.std(axis = 0)
+    if return_type == 'tensor':
+        X = np_to_tensor(X)
+        X_mean = np_to_tensor(X_mean)
+        X_std = np_to_tensor(X_std)
+    elif return_type == 'np':
+        X = tensor_to_np(X)
+        X_mean = tensor_to_np(X_mean)
+        X_std = tensor_to_np(X_std)
+    
+    else: 
+        raise ValueError('return_type must be either tensor or np')
         
     return (X - X_mean) / X_std
 
@@ -266,7 +286,8 @@ def standardize_X(
 def inverse_standardize_X(
     X: MatrixLike2d, 
     X_mean: ArrayLike1d, 
-    X_std: ArrayLike1d
+    X_std: ArrayLike1d,
+    return_type: Optional[str] = 'tensor'
 ) -> MatrixLike2d:
     """Takes in an arrary/matrix/tensor X 
     and returns the data in the real scale
@@ -279,17 +300,34 @@ def inverse_standardize_X(
         same type as X
         mean of each column in X, 
         by default None, it will be computed here
-    X_std : ArrayLike1d, optional
+    X_std : Optional[ArrayLike1d], optional
         same type as X
         stand deviation of each column in X, 
         by default None, it will be computed here
+    return_type: Optional[str], optional
+        either 'tensor' or 'np'
 
     Returns
     -------
-    X_real: MatrixLike2d, same type as X
+    X_real: MatrixLike2d, set by return_type
         in real scale
-    """
-    
+
+    Raises
+    ------
+    ValueError
+        if input return_type not defined
+    """    
+    if return_type == 'tensor':
+        X = np_to_tensor(X)
+        X_mean = np_to_tensor(X_mean)
+        X_std = np_to_tensor(X_std)
+    elif return_type == 'np':
+        X = tensor_to_np(X)
+        X_mean = tensor_to_np(X_mean)
+        X_std = tensor_to_np(X_std)
+    else: 
+        raise ValueError('return_type must be either tensor or np')
+
     if isinstance(X, Tensor):
         X_real = X * X_std +  X_mean
     else:

@@ -74,8 +74,8 @@ for i in range(n):
     Y_new_real = objective_func(X_new_real)
     
     # Plot the objective functions, and acqucision function
-    plotting.objective_func_1d_exp(Exp, X_test = X_test, X_new = X_new)
-    plotting.acq_func_1d_exp(Exp, X_test = X_test, X_new = X_new)
+    plotting.objective_func_1d_exp(Exp, X_test = X_test, X_new = X_new, save_fig = True)
+    plotting.acq_func_1d_exp(Exp, X_test = X_test, X_new = X_new, save_fig = True)
     
     # Retrain the model by input the next point into Exp object
     Exp.run_trial(X_new, X_new_real, Y_new_real)
@@ -85,4 +85,4 @@ for i in range(n):
 # Validation 
 y_opt, X_opt, index_opt = Exp.get_optim()
 plotting.parity_exp(Exp, save_fig = True)
-plotting.parity_with_ci_exp(Exp)
+plotting.parity_with_ci_exp(Exp, save_fig = True)

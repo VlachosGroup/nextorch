@@ -3,7 +3,7 @@ nextorch.bo
 
 Contains Gaussian Processes (GP) and Bayesian Optimization (BO) methods 
 """
-
+import os, sys
 import numpy as np
 import torch
 from torch import Tensor
@@ -394,6 +394,12 @@ class Experiment():
         """
         self.name = name
 
+        # Set up the path to save graphical results
+        parent_dir = os.getcwd()
+        exp_path = os.path.join(parent_dir, self.name)
+        if not os.path.exists(exp_path): os.makedirs(exp_path)
+        self.exp_path = exp_path
+
     def preprocess_data(self, 
                         X_real: MatrixLike2d,
                         Y_real: MatrixLike2d,
@@ -591,6 +597,7 @@ class Experiment():
 
         return best_value_scalar
 
+
     def set_optim_specs(self,
         objective_func: Optional[object] = None,  
         model: Optional[Model] = None, 
@@ -674,6 +681,9 @@ class Experiment():
                                 q=n_candidates, 
                                 num_restarts=10, 
                                 raw_samples=100)
+
+        # Assign acq_func object to self
+        self.acq_func_current = acq_func
 
         # Get X_new_real
         X_new_real = ut.inverse_unitscale_X(X_new, 
@@ -796,6 +806,40 @@ class Experiment():
             return Y_real, Y_lower_real, Y_upper_real
         
         return Y_real
+
+    def get_optim(self) -> Tuple[float, ArrayLike1d, int]:
+        """Get the optimal response and conditions 
+        from the model
+
+        Returns
+        -------
+        y_opt: float
+            Optimal response
+        X_opt: ArrayLike1d
+            Conditions or independent variable values 
+            at the optimal poinrt
+        index_opt: int
+            Index of optimal point, zero indexing
+        """
+
+        tol = 1e-6 #tolerance for finding match
+        # Use np.ufunc.accumulate to find the bestseen min/max
+        if self.minmize:
+            y_opt_accum = np.minimum.accumulate(self.Y_real) 
+            y_opt = np.min(y_opt_accum)
+        else:
+            y_opt_accum = np.maximum.accumulate(self.Y_real) 
+            y_opt = np.max(y_opt_accum)
+        # find a matching optimum, get the first seen (min) index
+        index_opt = np.min(np.where(np.abs(self.Y_real - y_opt) < tol)[0])
+        # Extract X
+        X_opt = self.X_real[index_opt]
+
+        return y_opt, X_opt, index_opt
+
+
+        
+
 
 
         

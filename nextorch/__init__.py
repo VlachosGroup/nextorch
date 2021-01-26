@@ -6,3 +6,5 @@ import torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float
 torch.set_default_dtype(dtype)
+
+

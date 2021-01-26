@@ -4,7 +4,7 @@ nextorch.plotting
 Creates 2-dimensional and 3-dimensional visualizations 
 The plots are rendered using matplotlib as a backend
 """
-
+import os, sys
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import cm
@@ -149,11 +149,15 @@ def add_2D_z_slice(
     return ax
 
 
-def plot_acq_func_1d(
+def acq_func_1d(
     acq_func: AcquisitionFunction, 
     X_test: MatrixLike2d, 
     X_train: Optional[MatrixLike2d] = None, 
-    X_new: Optional[MatrixLike2d] = None):
+    X_new: Optional[MatrixLike2d] = None, 
+    X_name: Optional[str] = 'x',
+    save_fig: Optional[bool] = False,
+    save_path: Optional[str] = None, 
+    i_iter: Optional[Union[str, int]] = ''):
     """Plot 1-dimensional acquision function 
 
     Parameters
@@ -167,33 +171,85 @@ def plot_acq_func_1d(
     X_new : Optional[MatrixLike2d], optional
         The next data point, i.e the infill points,
         by default None
+    X_name: Optional[str], optional
+        Name of X varibale shown as x-label
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    i_iter: Optional[Union[str, int]], optional
+        Iteration index to add to the figure name
+        by default ''
 
     .._'botorch.acquisition.AcquisitionFunction': https://botorch.org/api/acquisition.html
     """
     # compute acquicision function values at X_test and X_train
-    acq_val_test = eval_acq_func(acq_func, X_test)
-    
+    acq_val_test = eval_acq_func(acq_func, X_test, return_type='np')
+    X_test = np.squeeze(tensor_to_np(X_test))
     # Initialize plot
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.plot(X_test, acq_val_test, 'b-', label = 'Acquisition')
     # Plot training points as black 
     if X_train is not None:
-        acq_val_train = eval_acq_func(acq_func, X_train)
+        acq_val_train = eval_acq_func(acq_func, X_train, return_type='np')
+        X_train = np.squeeze(tensor_to_np(X_train))
         ax.scatter(X_train, acq_val_train, s = 120, c= 'k', marker = '*', label = 'Initial Data')
     # Plot the new infill points as red stars
     if X_new is not None:
-        acq_val_new = eval_acq_func(acq_func, X_new)
+        acq_val_new = eval_acq_func(acq_func, X_new, return_type='np')
+        X_new = np.squeeze(tensor_to_np(X_new))
         ax.scatter(X_new, acq_val_new,  s = 120, c ='r', marker = '*', label = 'Infill Data')
     
     ax.ticklabel_format(style = 'sci', axis = 'y', scilimits = (-2,2) )
-    ax.set_xlabel('x')
+    ax.set_xlabel(X_name)
     ax.set_ylabel(r'$ \alpha$')    
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    #plt.tight_layout()
+
     plt.show()
+    # save the figure as png
+    if save_fig:
+        if save_path is None: 
+            save_path = os.getcwd()
+        fig.savefig(os.path.join(save_path, 'acq_func_'+ str(i_iter) + '.png'), 
+                    bbox_inches="tight")
 
 
-def plot_objective_func_1d(
+
+def acq_func_1d_exp(Exp: Experiment,
+    X_test: MatrixLike2d, 
+    X_new: Optional[MatrixLike2d] = None,
+    X_name: Optional[str] = 'x', 
+    save_fig: Optional[bool] = False):
+    """Plot 1-dimensional acquision function 
+    Using Experiment object
+
+    Parameters
+    ----------
+    Exp : Experiment
+        Experiment object
+    X_test : MatrixLike2d
+        Test data points for plotting
+    X_new : Optional[MatrixLike2d], optional
+        The next data point, i.e the infill points,
+        by default None
+    X_name: Optional[str], optional
+        Name of X varibale shown as x-label
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    """
+    acq_func_1d(acq_func = Exp.acq_func_current, 
+                X_test=X_test, 
+                X_train=Exp.X,
+                X_new=X_new,
+                X_name = X_name, 
+                save_fig= save_fig,
+                save_path=Exp.exp_path,
+                i_iter = Exp.n_points - Exp.n_points_init)
+
+def objective_func_1d(
     model: Model, 
     X_test: MatrixLike2d, 
     Y_test: Optional[MatrixLike2d] = None, 
@@ -203,7 +259,12 @@ def plot_objective_func_1d(
     Y_new: Optional[MatrixLike2d] = None,
     plot_real: Optional[bool] = False,
     Y_mean: Optional[MatrixLike2d] = None,
-    Y_std: Optional[MatrixLike2d] = None):
+    Y_std: Optional[MatrixLike2d] = None, 
+    X_name: Optional[str] = 'x', 
+    Y_name: Optional[str] = 'y',
+    save_fig: Optional[bool] = False,
+    save_path: Optional[str] = None, 
+    i_iter: Optional[Union[str, int]] = ''):
     """Plot objective function along 1 dimension
     Input X variables are in a unit scale and
     Input Y variables are in a real scale
@@ -234,6 +295,20 @@ def plot_objective_func_1d(
         The mean of initial Y set
     Y_std : MatrixLike2d
         The std of initial Y set
+    X_name: Optional[str], optional
+        Name of X varibale shown as x-label
+    Y_name: Optional[str], optional
+        Name of Y varibale shown as y-label
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    i_iter: Optional[str], optional
+        Iteration number to add to the figure name
+        by default ''
+    
 
     Raises
     ------
@@ -297,20 +372,30 @@ def plot_objective_func_1d(
         Y_new = np.squeeze(tensor_to_np(Y_new))
         ax.scatter(X_new, Y_new, s = 120, c = 'r', marker = '*', label = 'Infill Data')
         
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
+    ax.set_xlabel(X_name)
+    ax.set_ylabel(Y_name)
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    #plt.tight_layout()
+
     plt.show()
 
+    # save the figure as png
+    if save_fig:
+        if save_path is None: 
+            save_path = os.getcwd()
+        fig.savefig(os.path.join(save_path, 'objective_func_'+ str(i_iter) + '.png'), 
+                    bbox_inches="tight")
 
-def plot_exp_objective_func_1d(
+
+def objective_func_1d_exp(
     Exp: Experiment,
     X_test: MatrixLike2d, 
     Y_test: Optional[MatrixLike2d] = None, 
     X_new: Optional[MatrixLike2d] = None,
     Y_new: Optional[MatrixLike2d] = None,
-    plot_real: Optional[bool] = False):
+    plot_real: Optional[bool] = False, 
+    X_name: Optional[str] = 'x', 
+    Y_name: Optional[str] = 'y', 
+    save_fig: Optional[bool] = False):
     """Plot objective function along 1 dimension
        using Experiment object
 
@@ -332,6 +417,10 @@ def plot_exp_objective_func_1d(
     plot_real : Optional[bool], optional
         if true plot in the real scale for Y, 
         by default False
+    X_name: Optional[str], optional
+        Name of X varibale shown as x-label
+    Y_name: Optional[str], optional
+        Name of Y varibale shown as y-label
     """
     # if no Y_test input, generate Y_test from objective function
     if (Y_test is None) and (Exp.objective_func is not None):
@@ -341,13 +430,204 @@ def plot_exp_objective_func_1d(
     if (X_new is not None) and (Exp.objective_func is not None) and (Y_new is None):
         Y_new = eval_objective_func(X_new, Exp.X_ranges, Exp.objective_func)
 
-    plot_objective_func_1d(model = Exp.model, 
-                           X_test = X_test,
-                           Y_test = Y_test,
-                           X_train = Exp.X,
-                           Y_train = Exp.Y_real, #be sure to use Y_real
-                           X_new = X_new,
-                           Y_new = Y_new,
-                           plot_real = plot_real,
-                           Y_mean = Exp.Y_mean,
-                           Y_std= Exp.Y_std)
+    objective_func_1d(model = Exp.model, 
+                     X_test = X_test,
+                     Y_test = Y_test,
+                     X_train = Exp.X,
+                     Y_train = Exp.Y_real, #be sure to use Y_real
+                     X_new = X_new,
+                     Y_new = Y_new,
+                     plot_real = plot_real,
+                     Y_mean = Exp.Y_mean,
+                     Y_std= Exp.Y_std, 
+                     X_name= X_name, 
+                     Y_name=Y_name, 
+                     save_fig= save_fig,
+                     save_path=Exp.exp_path,
+                     i_iter = Exp.n_points - Exp.n_points_init)
+
+
+def parity(
+    y1: MatrixLike2d, 
+    y2: MatrixLike2d, 
+    save_fig: Optional[bool] = False,
+    save_path: Optional[str] = None, 
+    i_iter: Optional[Union[str, int]] = ''):
+    """Plot parity plot comparing the ground true 
+    objective function values against predicted model mean
+
+    Parameters
+    ----------
+    y1 : MatrixLike2d
+        Ground truth values
+    y2 : MatrixLike2d
+        Model predicted values
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    i_iter: Optional[Union[str, int]], optional
+        Iteration number to add to the figure name
+        by default ''
+    """
+    y1 = np.squeeze(tensor_to_np(y1))
+    y2 = np.squeeze(tensor_to_np(y2))
+
+    fig, ax = plt.subplots(figsize=(6,6))
+    ax.scatter(y1, y2, s=60, alpha = 0.5)
+    plt.xlabel("Ground Truth")
+    plt.ylabel("Prediction")
+
+    lims = [
+        np.min([y1.min(), y2.min()]),  # min of both axes
+        np.max([y1.max(), y2.max()]),  # max of both axes
+    ]
+    # number of sections in the axis
+    nsections = 5
+    # now plot both limits against eachother
+    ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
+    ax.set_xlim(lims)
+    ax.set_ylim(lims)
+    ax.set_xticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_yticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_xticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_yticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+
+    plt.show()
+
+    # save the figure as png
+    if save_fig:
+        if save_path is None: 
+            save_path = os.getcwd()
+        fig.savefig(os.path.join(save_path, 'parity_'+ str(i_iter) + '.png'), 
+                    bbox_inches="tight")
+
+
+def parity_exp(Exp: Experiment, 
+               save_fig: Optional[bool] = False, 
+               design_name: Optional[Union[str, int]] = 'final'):
+    """Plot parity plot comparing the ground true 
+    objective function values against predicted model mean
+    Using Experiment object
+
+    Parameters
+    ----------
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    design_name : Optional[Union[str, int]], optional
+        Design name to add to the figure name
+        by default 'final'
+    """
+    
+    Y_real_pred = Exp.validate_training(show_confidence=False)
+
+    parity(y1=Exp.Y_real, 
+           y2=Y_real_pred,
+           save_fig=save_fig,
+           save_path=Exp.exp_path,
+           i_iter = design_name)
+    
+def parity_with_ci(
+    y1: MatrixLike2d, 
+    y2: MatrixLike2d, 
+    y2_lower: MatrixLike2d,
+    y2_upper: MatrixLike2d,
+    save_fig: Optional[bool] = False,
+    save_path: Optional[str] = None, 
+    i_iter: Optional[Union[str, int]] = ''):
+    """Plot parity plot comparing the ground true 
+    objective function values against predicted model mean
+    with predicted confidence interval as error bars 
+
+    Parameters
+    ----------
+    y1 : MatrixLike2d
+        Ground truth values
+    y2 : MatrixLike2d
+        Model predicted values
+    y2_lower: MatrixLike2d
+    y2_upper: MatrixLike2d
+
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    i_iter: Optional[Union[str, int]], optional
+        Iteration number to add to the figure name
+        by default ''
+    """
+    y1 = np.squeeze(tensor_to_np(y1))
+    y2 = np.squeeze(tensor_to_np(y2))
+    y2_lower = np.squeeze(tensor_to_np(y2_lower))
+    y2_upper = np.squeeze(tensor_to_np(y2_upper))
+    # calculate the error margin
+    y2err = np.row_stack((np.abs(y2_lower - y2), np.abs(y2_upper - y2))) 
+    
+    fig, ax = plt.subplots(figsize=(6,6))
+    ax.errorbar(y1, y2, yerr = y2err, fmt = 'o', capsize = 2, alpha = 0.5)
+    plt.xlabel("Ground Truth")
+    plt.ylabel("Prediction")
+    
+    lims = [
+        np.min([y1.min(), y2.min()]),  # min of both axes
+        np.max([y1.max(), y2.max()]),  # max of both axes
+    ]
+    # number of sections in the axis
+    nsections = 5
+    # now plot both limits against eachother
+    ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
+    ax.set_xlim(lims)
+    ax.set_ylim(lims)
+    ax.set_xticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_yticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_xticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_yticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+
+    plt.show()
+    # save the figure as png
+    if save_fig:
+        if save_path is None: 
+            save_path = os.getcwd()
+        fig.savefig(os.path.join(save_path, 'parity_w_ci'+ str(i_iter) + '.png'), 
+                    bbox_inches="tight")
+
+
+def parity_with_ci_exp(Exp: Experiment, 
+                       save_fig: Optional[bool] = False, 
+                       design_name: Optional[Union[str, int]] = 'final'):
+    """Plot parity plot comparing the ground true 
+    objective function values against predicted model mean
+    with predicted confidence interval as error bars 
+    Using Experiment object
+
+    Parameters
+    ----------
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    design_name : Optional[Union[str, int]], optional
+        Design name to add to the figure name
+        by default 'final'
+    """
+    
+    Y_real_pred, Y_lower_real_pred, Y_upper_real_pred = \
+        Exp.validate_training(show_confidence=True)
+
+    parity_with_ci(y1=Exp.Y_real, 
+                   y2=Y_real_pred,
+                   y2_lower=Y_lower_real_pred,
+                   y2_upper=Y_upper_real_pred,
+                   save_fig=save_fig,
+                   save_path=Exp.exp_path,
+                   i_iter = design_name)

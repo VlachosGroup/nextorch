@@ -34,121 +34,198 @@ matplotlib.rcParams['xtick.major.width'] = 2
 matplotlib.rcParams['ytick.major.size'] = 8
 matplotlib.rcParams['ytick.major.width'] = 2
 
-
-def add_2D_x_slice(
-    ax: Axes, 
-    xvalue: float, 
-    yrange: List[float], 
-    zrange: List[float], 
-    mesh_size: Optional[int] = 100
-) -> Axes:
-    """Adds a 2-dimensional plane on x axis, parallel to y-z plane
-    in the 3-dimensional (x, y, z) space
-
-    Parameters
-    ----------
-    ax :  `matplotlib.axes.Axes.axis`_
-        Ax of the plot
-    xvalue : float
-        the value on x axis which the slice is made
-    yrange : list of float
-        [left bound, right bound] of y value
-    zrange : list of float
-        [left bound, right bound] of z value
-    mesh_size : Optional[int], optional
-        mesh size on the slice, by default 100
-
-    Returns
-    -------
-    ax : `matplotlib.axes.Axes.axis`_
-        Axes of the plots
-
-    .. _`matplotlib.axes.Axes.axis`: https://matplotlib.org/api/_as_gen/matplotlib.axes.Axes.axis.html
-    """    
-    colormap = cm.summer
-    Y, Z = np.meshgrid(np.linspace(yrange[0], yrange[1], mesh_size), np.linspace(zrange[0], zrange[1], mesh_size), indexing = 'ij')
-    X = xvalue * np.ones((mesh_size, mesh_size))
-    ax.plot_surface(X, Y, Z,  cmap=colormap, rstride=1 , cstride=1, shade=False, alpha = 0.7)
-
-    return ax
+# Set global colormap
+colormap = cm.jet
 
 
-def add_2D_y_slice(
-    ax: Axes, 
-    yvalue: float, 
-    xrange: List[float], 
-    zrange: List[float], 
-    mesh_size: Optional[int] = 100
-) -> Axes:
-    """Adds a 2-dimensional plane on y axis, parallel to x-z plane
-    in the 3-dimensional (x, y, z) space
+#%% Parity plots
+def parity(
+    y1: MatrixLike2d, 
+    y2: MatrixLike2d, 
+    save_fig: Optional[bool] = False,
+    save_path: Optional[str] = None, 
+    i_iter: Optional[Union[str, int]] = ''):
+    """Plot parity plot comparing the ground true 
+    objective function values against predicted model mean
 
     Parameters
     ----------
-    ax :  `matplotlib.axes.Axes.axis`_
-        Ax of the plot
-    yvalue : float
-        the value on y axis which the slice is made
-    xrange : list of float
-        [left bound, right bound] of x value
-    zrange : list of float
-        [left bound, right bound] of z value
-    mesh_size : Optional[int], optional
-        mesh size on the slice, by default 100
+    y1 : MatrixLike2d
+        Ground truth values
+    y2 : MatrixLike2d
+        Model predicted values
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    i_iter: Optional[Union[str, int]], optional
+        Iteration number to add to the figure name
+        by default ''
+    """
+    y1 = np.squeeze(tensor_to_np(y1))
+    y2 = np.squeeze(tensor_to_np(y2))
 
-    Returns
-    -------
-    ax : `matplotlib.axes.Axes.axis`_
-        Axes of the plots
+    fig, ax = plt.subplots(figsize=(6,6))
+    ax.scatter(y1, y2, s=60, alpha = 0.5)
+    plt.xlabel("Ground Truth")
+    plt.ylabel("Prediction")
 
-    .. _`matplotlib.axes.Axes.axis`: https://matplotlib.org/api/_as_gen/matplotlib.axes.Axes.axis.html
-    """    
-    colormap = cm.summer
-    Y, Z = np.meshgrid(np.linspace(xrange[0], xrange[1], mesh_size), np.linspace(zrange[0], zrange[1], mesh_size), indexing = 'ij')
-    X = yvalue * np.ones((mesh_size, mesh_size))
-    ax.plot_surface(X, Y, Z,  cmap=colormap, rstride=1 , cstride=1, shade=False, alpha = 0.7)
+    lims = [
+        np.min([y1.min(), y2.min()]),  # min of both axes
+        np.max([y1.max(), y2.max()]),  # max of both axes
+    ]
+    # number of sections in the axis
+    nsections = 5
+    # now plot both limits against eachother
+    ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
+    ax.set_xlim(lims)
+    ax.set_ylim(lims)
+    ax.set_xticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_yticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_xticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_yticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
 
-    return ax
+    plt.show()
+
+    # save the figure as png
+    if save_fig:
+        if save_path is None: 
+            save_path = os.getcwd()
+        fig.savefig(os.path.join(save_path, 'parity_'+ str(i_iter) + '.png'), 
+                    bbox_inches="tight")
 
 
-def add_2D_z_slice(
-    ax: Axes, 
-    zvalue: float, 
-    xrange: List[float], 
-    yrange: List[float], 
-    mesh_size: Optional[int] = 100
-) -> Axes:
-    """Adds a 2-dimensional plane on z axis, parallel to x-y plane
-    in the 3-dimensional (x, y, z) space
+def parity_exp(Exp: Experiment, 
+               save_fig: Optional[bool] = False, 
+               design_name: Optional[Union[str, int]] = 'final'):
+    """Plot parity plot comparing the ground true 
+    objective function values against predicted model mean
+    Using Experiment object
 
     Parameters
     ----------
-    ax :  `matplotlib.axes.Axes.axis`_
-        Ax of the plot
-    zvalue : float
-        the value on z axis which the slice is made
-    xrange : list of float
-        [left bound, right bound] of x value
-    yrange : list of float
-        [left bound, right bound] of y value
-    mesh_size : Optional[int], optional
-        mesh size on the slice, by default 100
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    design_name : Optional[Union[str, int]], optional
+        Design name to add to the figure name
+        by default 'final'
+    """
+    
+    Y_real_pred = Exp.validate_training(show_confidence=False)
 
-    Returns
-    -------
-    ax : `matplotlib.axes.Axes.axis`_
-        Axes of the plots
+    parity(y1=Exp.Y_real, 
+           y2=Y_real_pred,
+           save_fig=save_fig,
+           save_path=Exp.exp_path,
+           i_iter = design_name)
+    
+def parity_with_ci(
+    y1: MatrixLike2d, 
+    y2: MatrixLike2d, 
+    y2_lower: MatrixLike2d,
+    y2_upper: MatrixLike2d,
+    save_fig: Optional[bool] = False,
+    save_path: Optional[str] = None, 
+    i_iter: Optional[Union[str, int]] = ''):
+    """Plot parity plot comparing the ground true 
+    objective function values against predicted model mean
+    with predicted confidence interval as error bars 
 
-    .. _`matplotlib.axes.Axes.axis`: https://matplotlib.org/api/_as_gen/matplotlib.axes.Axes.axis.html
-    """    
-    colormap = cm.summer
-    X, Y = np.meshgrid(np.linspace(xrange[0], xrange[1], mesh_size), np.linspace(yrange[0], yrange[1], mesh_size), indexing = 'ij')
-    Z = zvalue * np.ones((mesh_size, mesh_size))
-    ax.plot_surface(X, Y, Z,  cmap=colormap, rstride=1 , cstride=1, shade=False, alpha = 0.7)
+    Parameters
+    ----------
+    y1 : MatrixLike2d
+        Ground truth values
+    y2 : MatrixLike2d
+        Model predicted values
+    y2_lower: MatrixLike2d
+    y2_upper: MatrixLike2d
 
-    return ax
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    i_iter: Optional[Union[str, int]], optional
+        Iteration number to add to the figure name
+        by default ''
+    """
+    y1 = np.squeeze(tensor_to_np(y1))
+    y2 = np.squeeze(tensor_to_np(y2))
+    y2_lower = np.squeeze(tensor_to_np(y2_lower))
+    y2_upper = np.squeeze(tensor_to_np(y2_upper))
+    # calculate the error margin
+    y2err = np.row_stack((np.abs(y2_lower - y2), np.abs(y2_upper - y2))) 
+    
+    fig, ax = plt.subplots(figsize=(6,6))
+    ax.errorbar(y1, y2, yerr = y2err, fmt = 'o', capsize = 2, alpha = 0.5)
+    plt.xlabel("Ground Truth")
+    plt.ylabel("Prediction")
+    
+    lims = [
+        np.min([y1.min(), y2.min()]),  # min of both axes
+        np.max([y1.max(), y2.max()]),  # max of both axes
+    ]
+    # number of sections in the axis
+    nsections = 5
+    # now plot both limits against eachother
+    ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
+    ax.set_xlim(lims)
+    ax.set_ylim(lims)
+    ax.set_xticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_yticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_xticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_yticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+
+    plt.show()
+    # save the figure as png
+    if save_fig:
+        if save_path is None: 
+            save_path = os.getcwd()
+        fig.savefig(os.path.join(save_path, 'parity_w_ci_'+ str(i_iter) + '.png'), 
+                    bbox_inches="tight")
 
 
+def parity_with_ci_exp(Exp: Experiment, 
+                       save_fig: Optional[bool] = False, 
+                       design_name: Optional[Union[str, int]] = 'final'):
+    """Plot parity plot comparing the ground true 
+    objective function values against predicted model mean
+    with predicted confidence interval as error bars 
+    Using Experiment object
+
+    Parameters
+    ----------
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    design_name : Optional[Union[str, int]], optional
+        Design name to add to the figure name
+        by default 'final'
+    """
+    
+    Y_real_pred, Y_lower_real_pred, Y_upper_real_pred = \
+        Exp.validate_training(show_confidence=True)
+
+    parity_with_ci(y1=Exp.Y_real, 
+                   y2=Y_real_pred,
+                   y2_lower=Y_lower_real_pred,
+                   y2_upper=Y_upper_real_pred,
+                   save_fig=save_fig,
+                   save_path=Exp.exp_path,
+                   i_iter = design_name)
+
+
+#%% Functions for 1 dimensional systems
 def acq_func_1d(
     acq_func: AcquisitionFunction, 
     X_test: MatrixLike2d, 
@@ -447,187 +524,394 @@ def objective_func_1d_exp(
                      i_iter = Exp.n_points - Exp.n_points_init)
 
 
-def parity(
-    y1: MatrixLike2d, 
-    y2: MatrixLike2d, 
-    save_fig: Optional[bool] = False,
-    save_path: Optional[str] = None, 
-    i_iter: Optional[Union[str, int]] = ''):
-    """Plot parity plot comparing the ground true 
-    objective function values against predicted model mean
+#%% Functions for 2 dimensional problems
+def set_axis_values(
+    xi_range: ArrayLike1d, 
+    n_sections: Optional[int] = 2, 
+    decimals: Optional[int] = 1
+) -> ArrayLike1d:
+    """Divide xi_range into n_sections
 
     Parameters
     ----------
-    y1 : MatrixLike2d
-        Ground truth values
-    y2 : MatrixLike2d
-        Model predicted values
+    xi_range : ArrayLike1d
+        range of x, [left bound, right bound]
+    n_sections : Optional[int], optional
+        number of sections, by default 2
+    decimals : Optional[int], optional
+        number of decimal places to keep, by default 1
+
+    Returns
+    -------
+    axis_values: ArrayLike1d
+        axis values with rounding up
+        Number of values is n_sections + 1
+    """
+    lb = xi_range[0]
+    rb = xi_range[1] + (xi_range[1]-xi_range[0])/n_sections
+    interval = (xi_range[1]-xi_range[0])/n_sections
+    axis_values = np.arange(lb, rb, interval)
+    axis_values = np.around(axis_values, decimals = decimals)
+
+    return axis_values
+
+
+def sampling_2d(
+    Xs: Union[MatrixLike2d, List[MatrixLike2d]], 
+    X_ranges: Optional[MatrixLike2d] = None,
+    X_names: Optional[List[str]] = None,
+    design_names: Optional[Union[str, List[str]]] = None,
+    save_fig: Optional[bool] = False,
+    save_path: Optional[str] = None, 
+    ):
+    """Plot 2 dimensional sampling plan
+
+    Parameters
+    ----------
+    Xs : Union[MatrixLike2d, List[MatrixLike2d]]
+        The set of sampling plans,
+        Can be a list of matrices or one matrix
+    design_names : Optional[List[str]], optional
+        Names of the designs, by default None
     save_fig: Optional[bool], optional
         if true save the plot 
         by default False
     save_path: Optional[str], optional
         Path where the figure is being saved
         by default the current directory
-    i_iter: Optional[Union[str, int]], optional
-        Iteration number to add to the figure name
-        by default ''
     """
-    y1 = np.squeeze(tensor_to_np(y1))
-    y2 = np.squeeze(tensor_to_np(y2))
+    # if only one set of design is input, convert to list
+    if not isinstance(Xs, list):
+        Xs = [Xs]
+    # set the design names if none
+    if design_names is None:
+        design_names = ['design' + str(i) for i in range(len(Xs))]
+    # set the file name
+    # if only one set of design, use that design name
+    # else use comparison in the name
+    file_name = 'sampling_2d_'
+    if not isinstance(design_names, list):
+        file_name += design_names
+    else:
+        file_name += 'comparison'
+    # set the colors
+    colors = colormap(np.linspace(0, 1, len(Xs)))
+    
+    n_dim = Xs.shape[1]
+    if X_names is None:
+            X_names = ['x' + str(i+1) for i in range(n_dim)]
+    # Set the default [0,1] range for a unit scale
+    if X_ranges is None:
+        X_ranges = [[0,1]] * n_dim
 
-    fig, ax = plt.subplots(figsize=(6,6))
-    ax.scatter(y1, y2, s=60, alpha = 0.5)
-    plt.xlabel("Ground Truth")
-    plt.ylabel("Prediction")
-
-    lims = [
-        np.min([y1.min(), y2.min()]),  # min of both axes
-        np.max([y1.max(), y2.max()]),  # max of both axes
-    ]
-    # number of sections in the axis
-    nsections = 5
-    # now plot both limits against eachother
-    ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
-    ax.set_xlim(lims)
-    ax.set_ylim(lims)
-    ax.set_xticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
-    ax.set_yticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
-    ax.set_xticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
-    ax.set_yticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
-
+    # make the plot
+    fig,ax = plt.subplots(figsize=(6, 6))
+    for Xi, ci, name_i in zip(Xs, colors, design_names):
+        ax.scatter(Xi[:,0], Xi[:,1], c = ci , s = 60, label = name_i)
+    
+    ax.legend(bbox_to_anchor=(1.04,1), loc="upper left")
+    ax.axis('square')
+    ax.axis([0, 1, 0, 1])
+    ax.set_xlabel(X_names[0])
+    ax.set_ylabel(X_names[1])
+    ax.set_xticks(set_axis_values(X_ranges, 4))
+    ax.set_yticks(set_axis_values(X_ranges, 4))
     plt.show()
 
     # save the figure as png
     if save_fig:
         if save_path is None: 
             save_path = os.getcwd()
-        fig.savefig(os.path.join(save_path, 'parity_'+ str(i_iter) + '.png'), 
+        fig.savefig(os.path.join(save_path, file_name + '.png'), 
                     bbox_inches="tight")
 
 
-def parity_exp(Exp: Experiment, 
-               save_fig: Optional[bool] = False, 
-               design_name: Optional[Union[str, int]] = 'final'):
-    """Plot parity plot comparing the ground true 
-    objective function values against predicted model mean
-    Using Experiment object
+
+def add_x_slice_2d(
+    ax: Axes, 
+    xvalue: float, 
+    yrange: List[float], 
+    zrange: List[float], 
+    mesh_size: Optional[int] = 100
+) -> Axes:
+    """Adds a 2-dimensional plane on x axis, parallel to y-z plane
+    in the 3-dimensional (x, y, z) space
 
     Parameters
     ----------
-    save_fig: Optional[bool], optional
-        if true save the plot 
-        by default False
-    save_path: Optional[str], optional
-        Path where the figure is being saved
-        by default the current directory
-    design_name : Optional[Union[str, int]], optional
-        Design name to add to the figure name
-        by default 'final'
-    """
-    
-    Y_real_pred = Exp.validate_training(show_confidence=False)
+    ax :  `matplotlib.axes.Axes.axis`_
+        Ax of the plot
+    xvalue : float
+        the value on x axis which the slice is made
+    yrange : list of float
+        [left bound, right bound] of y value
+    zrange : list of float
+        [left bound, right bound] of z value
+    mesh_size : Optional[int], optional
+        mesh size on the slice, by default 100
 
-    parity(y1=Exp.Y_real, 
-           y2=Y_real_pred,
-           save_fig=save_fig,
-           save_path=Exp.exp_path,
-           i_iter = design_name)
-    
-def parity_with_ci(
-    y1: MatrixLike2d, 
-    y2: MatrixLike2d, 
-    y2_lower: MatrixLike2d,
-    y2_upper: MatrixLike2d,
+    Returns
+    -------
+    ax : `matplotlib.axes.Axes.axis`_
+        Axes of the plots
+
+    .. _`matplotlib.axes.Axes.axis`: https://matplotlib.org/api/_as_gen/matplotlib.axes.Axes.axis.html
+    """    
+    colormap = cm.summer
+    Y, Z = np.meshgrid(np.linspace(yrange[0], yrange[1], mesh_size), np.linspace(zrange[0], zrange[1], mesh_size), indexing = 'ij')
+    X = xvalue * np.ones((mesh_size, mesh_size))
+    ax.plot_surface(X, Y, Z,  cmap=colormap, rstride=1 , cstride=1, shade=False, alpha = 0.7)
+
+    return ax
+
+
+def add_y_slice_2d(
+    ax: Axes, 
+    yvalue: float, 
+    xrange: List[float], 
+    zrange: List[float], 
+    mesh_size: Optional[int] = 100
+) -> Axes:
+    """Adds a 2-dimensional plane on y axis, parallel to x-z plane
+    in the 3-dimensional (x, y, z) space
+
+    Parameters
+    ----------
+    ax :  `matplotlib.axes.Axes.axis`_
+        Ax of the plot
+    yvalue : float
+        the value on y axis which the slice is made
+    xrange : list of float
+        [left bound, right bound] of x value
+    zrange : list of float
+        [left bound, right bound] of z value
+    mesh_size : Optional[int], optional
+        mesh size on the slice, by default 100
+
+    Returns
+    -------
+    ax : `matplotlib.axes.Axes.axis`_
+        Axes of the plots
+
+    .. _`matplotlib.axes.Axes.axis`: https://matplotlib.org/api/_as_gen/matplotlib.axes.Axes.axis.html
+    """    
+    colormap = cm.summer
+    Y, Z = np.meshgrid(np.linspace(xrange[0], xrange[1], mesh_size), np.linspace(zrange[0], zrange[1], mesh_size), indexing = 'ij')
+    X = yvalue * np.ones((mesh_size, mesh_size))
+    ax.plot_surface(X, Y, Z,  cmap=colormap, rstride=1 , cstride=1, shade=False, alpha = 0.7)
+
+    return ax
+
+
+def add_z_slice_2d(
+    ax: Axes, 
+    zvalue: float, 
+    xrange: List[float], 
+    yrange: List[float], 
+    mesh_size: Optional[int] = 100
+) -> Axes:
+    """Adds a 2-dimensional plane on z axis, parallel to x-y plane
+    in the 3-dimensional (x, y, z) space
+
+    Parameters
+    ----------
+    ax :  `matplotlib.axes.Axes.axis`_
+        Ax of the plot
+    zvalue : float
+        the value on z axis which the slice is made
+    xrange : list of float
+        [left bound, right bound] of x value
+    yrange : list of float
+        [left bound, right bound] of y value
+    mesh_size : Optional[int], optional
+        mesh size on the slice, by default 100
+
+    Returns
+    -------
+    ax : `matplotlib.axes.Axes.axis`_
+        Axes of the plots
+
+    .. _`matplotlib.axes.Axes.axis`: https://matplotlib.org/api/_as_gen/matplotlib.axes.Axes.axis.html
+    """    
+    colormap = cm.summer
+    X, Y = np.meshgrid(np.linspace(xrange[0], xrange[1], mesh_size), np.linspace(yrange[0], yrange[1], mesh_size), indexing = 'ij')
+    Z = zvalue * np.ones((mesh_size, mesh_size))
+    ax.plot_surface(X, Y, Z,  cmap=colormap, rstride=1 , cstride=1, shade=False, alpha = 0.7)
+
+    return ax
+
+#%%
+def sampling_3d(
+    Xs: Union[MatrixLike2d, List[MatrixLike2d]], 
+    X_ranges: Optional[MatrixLike2d] = None,
+    X_names: Optional[List[str]] = None, 
+    slice_axis: Optional[str] = None, 
+    slice_value: Optional[float] = None, 
+    design_names: Optional[Union[str, List[str]]] = None,
     save_fig: Optional[bool] = False,
-    save_path: Optional[str] = None, 
-    i_iter: Optional[Union[str, int]] = ''):
-    """Plot parity plot comparing the ground true 
-    objective function values against predicted model mean
-    with predicted confidence interval as error bars 
-
-    Parameters
-    ----------
-    y1 : MatrixLike2d
-        Ground truth values
-    y2 : MatrixLike2d
-        Model predicted values
-    y2_lower: MatrixLike2d
-    y2_upper: MatrixLike2d
-
-    save_fig: Optional[bool], optional
-        if true save the plot 
-        by default False
-    save_path: Optional[str], optional
-        Path where the figure is being saved
-        by default the current directory
-    i_iter: Optional[Union[str, int]], optional
-        Iteration number to add to the figure name
-        by default ''
-    """
-    y1 = np.squeeze(tensor_to_np(y1))
-    y2 = np.squeeze(tensor_to_np(y2))
-    y2_lower = np.squeeze(tensor_to_np(y2_lower))
-    y2_upper = np.squeeze(tensor_to_np(y2_upper))
-    # calculate the error margin
-    y2err = np.row_stack((np.abs(y2_lower - y2), np.abs(y2_upper - y2))) 
+    save_path: Optional[str] = None):
     
-    fig, ax = plt.subplots(figsize=(6,6))
-    ax.errorbar(y1, y2, yerr = y2err, fmt = 'o', capsize = 2, alpha = 0.5)
-    plt.xlabel("Ground Truth")
-    plt.ylabel("Prediction")
-    
-    lims = [
-        np.min([y1.min(), y2.min()]),  # min of both axes
-        np.max([y1.max(), y2.max()]),  # max of both axes
-    ]
-    # number of sections in the axis
-    nsections = 5
-    # now plot both limits against eachother
-    ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
-    ax.set_xlim(lims)
-    ax.set_ylim(lims)
-    ax.set_xticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
-    ax.set_yticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
-    ax.set_xticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
-    ax.set_yticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    # if only one set of design is input, convert to list
+    if not isinstance(Xs, list):
+        Xs = [Xs]
+    # set the design names if none
+    if design_names is None:
+        design_names = ['design' + str(i) for i in range(len(Xs))]
+    # set the file name
+    # if only one set of design, use that design name
+    # else use comparison in the name
+    file_name = 'sampling_3d_'
+    if not isinstance(design_names, list):
+        file_name += design_names
+    else:
+        file_name += 'comparison'
+    # set the colors
+    colors = colormap(np.linspace(0, 1, len(Xs)))
 
+    n_dim = Xs.shape[1]
+    if X_names is None:
+            X_names = ['x' + str(i+1) for i in range(n_dim)]
+    # Set the default [0,1] range for a unit scale
+    if X_ranges is None:
+        X_ranges = [[0,1]] * n_dim
+    
+    # Visualize sampling plan - a 3D scatter plot
+    fig  = plt.figure(figsize = (8,8))
+    ax = fig.add_subplot(111, projection='3d')
+    for Xi, ci, name_i in zip(Xs, colors, design_names):
+        ax.scatter(Xi[:,0], Xi[:,1], Xi[:,2], \
+            c=ci, marker='o', s = 50, alpha = 0.6, label = name_i)
+    # set axis labels and ticks
+    ax.set_xlabel(X_names[0], labelpad= 15)
+    ax.set_ylabel(X_names[1],labelpad= 15)
+    ax.set_zlabel(X_names[2],labelpad=3)
+    ax.set_xticks(set_axis_values(X_ranges[0]))
+    ax.set_yticks(set_axis_values(X_ranges[1]))
+    ax.set_zticks(set_axis_values(X_ranges[2]))
+    ax.view_init(30, 45)
+    # Add a 2d slide if required
+    if slice_axis is not None:
+        if slice_value is None:
+            raise ValueError("Input a slice value")
+        if slice_axis == 'x': 
+            add_x_slice_2d(ax, slice_value, X_ranges[1], X_ranges[2])
+            file_name += '_slice_x'
+        if slice_axis == 'y': 
+            add_y_slice_2d(ax, X_ranges[0], slice_value, X_ranges[2])
+            file_name += '_slice_y'
+        if slice_axis == 'z': 
+            add_z_slice_2d(ax, X_ranges[0], X_ranges[1], slice_value)
+            file_name += '_slice_z'
+        else: 
+            raise ValueError("Input slice_axis is not valid, must be x, y or z")
     plt.show()
+    
     # save the figure as png
     if save_fig:
         if save_path is None: 
             save_path = os.getcwd()
-        fig.savefig(os.path.join(save_path, 'parity_w_ci_'+ str(i_iter) + '.png'), 
+        fig.savefig(os.path.join(save_path, file_name + '.png'), 
                     bbox_inches="tight")
 
 
-def parity_with_ci_exp(Exp: Experiment, 
-                       save_fig: Optional[bool] = False, 
-                       design_name: Optional[Union[str, int]] = 'final'):
-    """Plot parity plot comparing the ground true 
-    objective function values against predicted model mean
-    with predicted confidence interval as error bars 
-    Using Experiment object
+#%%
 
-    Parameters
-    ----------
-    save_fig: Optional[bool], optional
-        if true save the plot 
-        by default False
-    save_path: Optional[str], optional
-        Path where the figure is being saved
-        by default the current directory
-    design_name : Optional[Union[str, int]], optional
-        Design name to add to the figure name
-        by default 'final'
-    """
+
+def heatmap(Y_real,  X_range, Xsample = [], plotting_axis = (0,2)):  
+    '''
+    Takes in the function value X, sampling plan X
+    Makes heat map and show the locations of sampling points
+    all input are numpy matrices
+    '''  
+    n_tick_sections  = 4
+    # X1 bound
+    Xranges = copy.deepcopy(Xreal_range)
+    Xranges = np.transpose(Xranges)
     
-    Y_real_pred, Y_lower_real_pred, Y_upper_real_pred = \
-        Exp.validate_training(show_confidence=True)
+    fig,ax = plt.subplots(figsize=(6, 6))
+    im = ax.imshow(Y_real, cmap = 'jet', interpolation = 'gaussian',  vmin = 0, vmax = 50, 
+                     origin = 'lower') 
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax = cax)
+    
+    if not type(Xsample) == list:
+        ax.scatter(Xsample[:,0], Xsample[:,1],c = 'white', edgecolors= 'k' )
+    ax.set_xlabel(X_name_with_unit[plotting_axis[0]])
+    ax.set_ylabel(X_name_with_unit[plotting_axis[1]])
+    ax.set_xticks(np.arange(0, Y_real.shape[0], n_tick_sections+1))
+    ax.set_xticklabels(set_range(Xranges[plotting_axis[0]], n_tick_sections))
+    ax.set_yticks(np.arange(0, Y_real.shape[1], n_tick_sections+1))
+    ax.set_yticklabels(set_range(Xranges[plotting_axis[1]], n_tick_sections))
+    
+    return fig
+    
+    
+def heatmap_error(Y_err,  X_range, Xsample = [], plotting_axis = (0,2)):  
+    '''
+    Takes in the function value X, sampling plan X
+    Makes heat map of error and show the locations of sampling points
+    the error is not normalized (future work)
+    ''' 
+    Yerror_log = np.log10(abs(Y_err))
+    n_tick_sections  = 4
+    # X1 bound
+    Xranges = copy.deepcopy(Xreal_range)
+    Xranges = np.transpose(Xranges)
+    
+    fig,ax = plt.subplots(figsize=(6, 6))
+    im = ax.imshow(Yerror_log, cmap = 'jet', interpolation = 'gaussian',  vmin = -2, vmax = 2, 
+                     origin = 'lower') 
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax = cax)
+    
+    if not type(Xsample) == list:
+        ax.scatter(Xsample[:,0], Xsample[:,1],c = 'white', edgecolors= 'k' )
+    ax.set_xlabel(X_name_with_unit[plotting_axis[0]])
+    ax.set_ylabel(X_name_with_unit[plotting_axis[1]])
+    ax.set_xticks(np.arange(0, Y_err.shape[0], n_tick_sections+1))
+    ax.set_xticklabels(set_range(Xranges[plotting_axis[0]], n_tick_sections))
+    ax.set_yticks(np.arange(0, Y_err.shape[1], n_tick_sections+1))
+    ax.set_yticklabels(set_range(Xranges[plotting_axis[1]], n_tick_sections))
+    
+    return fig
 
-    parity_with_ci(y1=Exp.Y_real, 
-                   y2=Y_real_pred,
-                   y2_lower=Y_lower_real_pred,
-                   y2_upper=Y_upper_real_pred,
-                   save_fig=save_fig,
-                   save_path=Exp.exp_path,
-                   i_iter = design_name)
+def surfaceplots(Y_real,  X_range, Xsample = [], Y_lower = [], Y_upper = [], plotting_axis = (0,2)):  
+    '''
+    Takes in the function value X, sampling plan X
+    Makes heat map and show the locations of sampling points
+    all input are numpy matrices
+    '''  
+    n_tick_sections  = 4
+    # X1 bound
+    Xranges = copy.deepcopy(Xreal_range)
+    Xranges = np.transpose(Xranges)
+    
+    fig  = plt.figure(figsize = (10,10))
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.plot_surface(test_x1, test_x2, Y_real, cmap = 'jet', vmin = 0, vmax = 50) 
+
+
+    if not type(Y_lower) == list:
+        ax.plot_surface(test_x1, test_x2, Y_lower, cmap = 'Blues', alpha = 0.7, vmin = 0, vmax = 50) 
+    if not type(Y_upper) == list:
+        ax.plot_surface(test_x1, test_x2, Y_upper, cmap = 'Reds', alpha = 0.7, vmin = 0, vmax = 50, ) 
+
+    if not type(Xsample) == list:
+        ax.scatter(Xsample[:,0], Xsample[:,1],c = 'white', edgecolors= 'k' )
+    
+    ax.set_xlabel(X_name_with_unit[plotting_axis[0]], labelpad=15)
+    ax.set_ylabel(X_name_with_unit[plotting_axis[1]], labelpad=15)
+    ax.set_zlabel(Y_name_with_unit, labelpad=10)
+    
+    ax.set_xticks(np.linspace(0, 1, n_tick_sections+1))
+    ax.set_xticklabels(set_range(Xranges[plotting_axis[0]], n_tick_sections))
+    
+    ax.set_yticks(np.linspace(0, 1, n_tick_sections+1))
+    ax.set_yticklabels(set_range(Xranges[plotting_axis[1]], n_tick_sections))
+    
+    ax.view_init(30, 45)
+
+    return fig   

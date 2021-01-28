@@ -116,8 +116,8 @@ def eval_objective_func(
         X in a unit scale
     X_range : MatrixLike2d, matrix or 2d tensor
         list of x ranges
-    test_function : function object
-        a test function which evaluate np arrays
+    objective_func : function object
+        a objective function to optimize
     return_type: Optional[str], optional
         either 'tensor' or 'np'
 

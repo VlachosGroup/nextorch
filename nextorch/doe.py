@@ -29,7 +29,7 @@ def full_factorial(levels: List[int]) -> Matrix:
 
     Returns
     -------
-    X_norm: Matrix
+    X_unit: Matrix
         Normalized sampling plan with the shape of prod(level_i) * m
     """    
     # Import DOE function
@@ -38,16 +38,16 @@ def full_factorial(levels: List[int]) -> Matrix:
 
     # Normailize X_real
     X_ranges = np.transpose([[0, i-1] for i in levels]) #-1 for python index
-    X_norm = ut.norm_X(X_real, X_range = X_ranges)
+    X_unit = ut.unitscale_X(X_real, X_range = X_ranges)
     
-    return X_norm
+    return X_unit
 
 
 
 def latin_hypercube(
     n_dim: int, 
     n_points: int, 
-    random_seed: Optional[int] = None, 
+    seed: Optional[int] = None, 
     criterion: Optional[str] = None
 ) -> Matrix:
     """Generates latin hypercube design
@@ -58,7 +58,7 @@ def latin_hypercube(
         Number of independent variables
     n_points : int
         Total number of points in the design
-    random_seed : Optional[int], optional
+    seed : Optional[int], optional
         Random seed, by default None
     criterion : Optional[str], optional
         String that tells lhs how to sample the points, by default None 
@@ -68,12 +68,12 @@ def latin_hypercube(
 
     Returns
     -------
-    X_norm: Matrix
+    X_unit: Matrix
         Normalized sampling plan with the shape of n_point * n_dim
     """    
-    X_norm = DOE.lhs(n_dim, samples = n_points, criterion = criterion, random_state= random_seed)
+    X_unit = DOE.lhs(n_dim, samples = n_points, criterion = criterion, random_state= seed)
 
-    return X_norm
+    return X_unit
 
 
 def randomized_design(
@@ -123,12 +123,12 @@ def randomized_design_w_levels(
 
     Returns
     -------
-    X_norm: Matrix
+    X_unit: Matrix
         Normalized sampling plan with the shape of prod(level_i) * m
     """    
     n_dim = len(levels)
     n_points = np.prod(levels)  # number of points
-    X_norm = np.zeros((n_points, n_dim))
+    X_unit = np.zeros((n_points, n_dim))
     x_vectors = []
     # Each dimension has 1d random design of level_i points
     for i, level_i in enumerate(levels):
@@ -140,9 +140,9 @@ def randomized_design_w_levels(
     # Combination and assign back to X
     combo = list(itertools.product(*x_vectors))
     for i, ci in enumerate(combo):
-        X_norm[i,:] = np.array(ci)
+        X_unit[i,:] = np.array(ci)
 
-    return X_norm
+    return X_unit
 
 
 def norm_transform(X_norm: Matrix, means: List[float], stdvs: List[float]) -> Matrix:

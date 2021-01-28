@@ -52,6 +52,57 @@ def get_ranges_X(X: MatrixLike2d) -> list:
     
     return X_ranges
 
+def expand_list(list_1d: list) -> list:
+    """Expand 1d list to 2d
+
+    Parameters
+    ----------
+    list_1d : list
+        input list
+
+    Returns
+    -------
+    list_2d: list
+        output 2d list
+    """
+    list_2d = copy.deepcopy(list_1d)
+    if not isinstance(list_1d[0], list):
+        list_2d = [list_2d]
+
+    return list_2d
+
+def expand_ranges_X(X_ranges: MatrixLike2d) -> list:
+    """Expand 1d X_range to 2d list
+
+    Parameters
+    ----------
+    X_ranges : MatrixLike2d
+        list of x ranges (in 1d)
+
+    Returns
+    -------
+    X_ranges: list
+        X ranges in 2d list
+
+    Raises
+    ------
+    ValueError
+        Input type other than tensor/list/numpy matrix
+    """
+    # if tensor, convert to numpy matrix first
+    if isinstance(X_ranges, Tensor):
+        X_ranges = tensor_to_np(X_ranges)
+
+    if isinstance(X_ranges, np.ndarray):
+        if len(X_ranges.shape)<2:
+            X_ranges = copy.deepcopy(X_ranges)
+            X_ranges = np.array([X_ranges])
+    elif isinstance(X_ranges, list):
+        X_ranges = expand_list(X_ranges)
+    else:
+        raise ValueError("Input type not allowed, must be a Tensor/list/numpy matrix")
+
+    return X_ranges
 
 def unitscale_xv(xv: ArrayLike1d, xi_range: ArrayLike1d) -> ArrayLike1d:
     """
@@ -77,10 +128,10 @@ def unitscale_xv(xv: ArrayLike1d, xi_range: ArrayLike1d) -> ArrayLike1d:
     
     return xunit
 
+
 def unitscale_X(
     X: MatrixLike2d,  
     X_ranges: Optional[MatrixLike2d] = None, 
-    unit_flag: Optional[bool] = False,
     log_flags: Optional[list] = None, 
     decimals: Optional[int] = None
 ) -> Matrix:
@@ -93,10 +144,6 @@ def unitscale_X(
         original matrix in a real scale
     X_ranges : Optional[MatrixLike2d], optional
         list of x ranges, by default None
-    unit_flag: Optional[bool], optional,
-        by default, False 
-        If true, the X is in a unit scale so
-        the function is used to scale X to a log scale
     log_flags : Optional[list], optional
         list of boolean flags
         True: use the log scale on this dimensional
@@ -117,12 +164,10 @@ def unitscale_X(
         X = np.expand_dims(X, axis=1) #If 1D, make it 2D array
         
     n_dim = X.shape[1] #the number of column in X
-    
-    if unit_flag: #the X are in unit scale
-        X_ranges = [[0,1]] * n_dim
-    else:
-        if X_ranges is None: # X_ranges not defined
-            X_ranges = get_ranges_X(X)
+
+    if X_ranges is None: # X_ranges not defined
+        X_ranges = get_ranges_X(X)
+    X_ranges = expand_ranges_X(X_ranges) #expand to 2d
     
     if log_flags is None: log_flags = [False] * n_dim
     
@@ -170,7 +215,6 @@ def inverse_unitscale_xv(xv: ArrayLike1d, xi_range: ArrayLike1d) -> ArrayLike1d:
 def inverse_unitscale_X(
     X: MatrixLike2d, 
     X_ranges: Optional[MatrixLike2d]= None,
-    unit_flag: Optional[bool] = False,
     log_flags: Optional[list] = None, 
     decimals: Optional[int] = None
 ) -> Matrix:
@@ -183,10 +227,6 @@ def inverse_unitscale_X(
         original matrix in a unit scale
     X_ranges : Optional[MatrixLike2d], optional
         list of x ranges, by default None
-    unit_flag: Optional[bool], optional,
-        by default, False 
-        If true, the X is in a unit scale so
-        the function is used to scale X to a log scale
     log_flags : Optional[list], optional
         list of boolean flags
         True: use the log scale on this dimensional
@@ -207,11 +247,9 @@ def inverse_unitscale_X(
     
     n_dim = X.shape[1]  #the number of column in X
     
-    if unit_flag: #the X are in unit scale
-        X_ranges = [[0,1]] * n_dim
-    else:
-        if X_ranges is None: # X_ranges not defined
-            X_ranges = get_ranges_X(X)
+    if X_ranges is None: # X_ranges not defined
+        X_ranges = get_ranges_X(X)
+    X_ranges = expand_ranges_X(X_ranges) #expand to 2d
     
     if log_flags is None: log_flags = [False] * n_dim
     

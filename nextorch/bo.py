@@ -246,7 +246,7 @@ def predict_real(
     if return_type == 'np':
         Y_test_real = tensor_to_np(Y_test_real)
         Y_test_lower_real = tensor_to_np(Y_test_lower_real)
-        Y_test_upper_real = tensor_to_np(Y_test_upper)
+        Y_test_upper_real = tensor_to_np(Y_test_upper_real)
     
     return Y_test_real, Y_test_lower_real, Y_test_upper_real
 
@@ -268,7 +268,7 @@ def predict_real(
 def get_acq_func(
         model: Model,
         acq_func_name: str, 
-        minmize: Optional[bool] = True, 
+        minimize: Optional[bool] = True, 
         beta: Optional[float] = 0.2,
         best_f: Optional[float] = 1.0,
         **kwargs
@@ -282,7 +282,7 @@ def get_acq_func(
     acq_func_name : str
         Name of the acquisition function
         Must be one of "EI", "PI", "UCB", "qEI", "qPI", "qUCB"
-    minmize : Optional[bool], optional
+    minimize : Optional[bool], optional
         whether the goal is to minimize objective function, 
         by default True
     beta : Optional[float], optional
@@ -318,11 +318,11 @@ def get_acq_func(
     acq_object = acq_dict[acq_func_name]
     # input key parameters
     if acq_func_name == 'EI':
-        acq_func = acq_object(model, best_f = best_f, maximize = (not minmize), **kwargs)
+        acq_func = acq_object(model, best_f = best_f, maximize = (not minimize), **kwargs)
     elif acq_func_name == 'PI':
-        acq_func = acq_object(model, best_f = best_f, maximize = (not minmize), **kwargs)
+        acq_func = acq_object(model, best_f = best_f, maximize = (not minimize), **kwargs)
     elif acq_func_name == 'UCB':
-        acq_func = acq_object(model, beta = beta, maximize = (not minmize), **kwargs)
+        acq_func = acq_object(model, beta = beta, maximize = (not minimize), **kwargs)
     elif acq_func_name == 'qEI':
         acq_func = acq_object(model, best_f = best_f, **kwargs)
     elif acq_func_name == 'qPI':
@@ -424,8 +424,7 @@ class Experiment():
             list of x ranges, by default None
         unit_flag: Optional[bool], optional,
             by default, False 
-            If true, the X is in a unit scale so
-            the function is used to scale X to a log scale
+            If true, the X is in a unit scale (from DOE) 
         log_flags : Optional[list], optional
             list of boolean flags
             True: use the log scale on this dimensional
@@ -435,18 +434,10 @@ class Experiment():
             Number of decimal places to keep
             by default None, i.e. no rounding up
 
-        Raises
-        ------
-        ValueError
-            When inputting X_ranges and unit_flag is True 
         """
-
-        self.X_real = X_real  # independent variable in real unit, numpy array
-        self.Y_real = Y_real  # dependent variable in real unit, numpy array
-
-        err_msg = "Variable ranges not needed if they are in a unit scale. \
-                    Consider dropping X_ranges input or setting unit_flag as False"
-
+        X_real = tensor_to_np(X_real)
+        Y_real = tensor_to_np(Y_real)
+        
         # Case 1, Input is Tensor, preprocessed
         # X is in a unit scale and 
         # Y is standardized with a zero mean and a unit variance
@@ -455,30 +446,44 @@ class Experiment():
             Y = np_to_tensor(self.Y_real)  
             Y_mean = torch.zeros(self.n_objectives)
             Y_std = torch.ones(self.n_objectives)
-            
+            # Update X_ranges
             if X_ranges is None:
                 X_ranges = [[0,1]] * self.n_dim
-            else:
-                raise ValueError(err_msg)
+
+            #  X_real needs to be computed 
+            X_real = ut.inverse_unitscale_X(X_real, 
+                                            X_ranges = X_ranges, 
+                                            unit_flag = unit_flag, 
+                                            log_flags = log_flags, 
+                                            decimals = decimals)
         
         # Case 2, Input is numpy matrix, not processed
+        # Handle X first than Y
         else: 
-            # Set X_ranges
-            if X_ranges is None:
-                if unit_flag:
-                    X_ranges = [[0,1]] * self.n_dim
-                else:
-                    X_ranges = ut.get_ranges_X(X_real)
+            # Case 2.1, Input X is in a unit scale, an DOE plan for example
+            if unit_flag:
+                # X is the input X_real
+                X = X_real.copy()
+                # Set X_ranges
+                if X_ranges is None:
+                    X_ranges = [[0,1]] * self.n_dim    
+                # X_real needs to be computed
+                X_real = ut.inverse_unitscale_X(X_real, 
+                                                X_ranges = X_ranges, 
+                                                log_flags = log_flags, 
+                                                decimals = decimals)
+            # Case 2.2 Input X is in a real scale
             else:
-                if unit_flag:
-                    raise ValueError(err_msg)
+                # Set X_ranges
+                if X_ranges is None:
+                    X_ranges = ut.get_ranges_X(X_real)
+                    
+                # Scale X to a unit scale
+                X = ut.unitscale_X(X_real, 
+                                   X_ranges = X_ranges, 
+                                   log_flags = log_flags, 
+                                   decimals = decimals)
 
-            # Scale X
-            X = ut.unitscale_X(X_real, 
-                                X_ranges = X_ranges, 
-                                unit_flag = unit_flag, 
-                                log_flags = log_flags, 
-                                decimals = decimals)
             # Standardize Y
             Y = ut.standardize_X(Y_real)
             # Convert to Tensor
@@ -489,17 +494,21 @@ class Experiment():
             Y_std = np_to_tensor(Y_real.std(axis = 0))
 
         # Assign to self
-        self.X = X
-        self.Y = Y
-        self.X_init = X.detach().clone()
-        self.Y_init = Y.detach().clone()
-        self.X_ranges = X_ranges
-        self.Y_mean = Y_mean
-        self.Y_std = Y_std
+        self.X = X # in a unit scale, tensor
+        self.Y = Y # in a unit scale, tensor
+        self.X_init = X.detach().clone() # in a unit scale, tensor
+        self.Y_init = Y.detach().clone() # in a unit scale, tensor
+        self.X_ranges = ut.expand_ranges_X(X_ranges) # 2d list
+        self.Y_mean = Y_mean # tensor
+        self.Y_std = Y_std # tensor
 
-        self.unit_flag = unit_flag
-        self.log_flags = log_flags
-        self.decimals =decimals
+        self.log_flags = log_flags # list of bool
+        self.decimals =decimals # list of int
+
+        self.X_real = X_real  # in a real scale, numpy array
+        self.Y_real = Y_real  # in a real scale, numpy array
+        self.X_init_real = X_real.copy()  # in a real scale, numpy array
+        self.Y_init_real = Y_real.copy()  # in a real scale, numpy array
 
 
     def input_data(self,
@@ -547,6 +556,11 @@ class Experiment():
             Number of decimal places to keep
             by default None, i.e. no rounding up
         """
+        # expand to 2D
+        if len(X_real.shape)<2:
+            X_real = np.expand_dims(X_real, axis=1) #If 1D, make it 2D array
+        if len(Y_real.shape)<2:
+            Y_real = np.expand_dims(Y_real, axis=1) #If 1D, make it 2D array
 
         # get specs of the data
         self.n_dim = X_real.shape[1] # number of independent variables
@@ -556,9 +570,9 @@ class Experiment():
 
         # assign variable names
         if X_names is None:
-            X_names = ['X' + str(i+1) for i in range(self.n_dim)]
+            X_names = ['x' + str(i+1) for i in range(self.n_dim)]
         if Y_names is None:
-            Y_names = ['Y' + str(i+1) for i in range(self.n_objectives)]
+            Y_names = ['y' + str(i+1) for i in range(self.n_objectives)]
         self.X_names = X_names
         self.Y_names = Y_names
 
@@ -588,7 +602,7 @@ class Experiment():
         best_value_scalar: Tensor
             a scalar saved in Tensor object
         """
-        if self.minmize:
+        if self.minimize:
             best_values = self.Y.min(dim=0)[0]
         else: 
             best_values = self.Y.max(dim=0)[0]
@@ -601,7 +615,7 @@ class Experiment():
     def set_optim_specs(self,
         objective_func: Optional[object] = None,  
         model: Optional[Model] = None, 
-        minmize: Optional[bool] = True,
+        minimize: Optional[bool] = True,
     ):  
         """Set the specs for Bayseian Optimization
 
@@ -611,7 +625,7 @@ class Experiment():
             objective function that is being optimized
         model : Optional['botorch.models.model.Model'_], optional
             pre-trained GP model, by default None
-        minmize : Optional[bool], optional
+        minimize : Optional[bool], optional
             by default True, minimize the objective function
             Otherwise False, maximize the objective function
         
@@ -622,7 +636,7 @@ class Experiment():
         if model is None:
             self.model = create_and_fit_gp(self.X, self.Y)
 
-        self.minmize = minmize
+        self.minimize = minimize
 
     def generate_next_point(self, 
         acq_func_name: Optional[str] = 'EI', 
@@ -668,7 +682,7 @@ class Experiment():
         # Set parameters for acquisition function
         acq_func = get_acq_func(self.model, 
                                 self.acq_func_name, 
-                                minmize= self.minmize, 
+                                minimize= self.minimize, 
                                 beta = self.beta,
                                 best_f = best_f,
                                 **kwargs)
@@ -688,7 +702,6 @@ class Experiment():
         # Get X_new_real
         X_new_real = ut.inverse_unitscale_X(X_new, 
                                             X_ranges = self.X_ranges, 
-                                            unit_flag= self.unit_flag,
                                             log_flags= self.log_flags,
                                             decimals = self.decimals)
 
@@ -824,7 +837,7 @@ class Experiment():
 
         tol = 1e-6 #tolerance for finding match
         # Use np.ufunc.accumulate to find the bestseen min/max
-        if self.minmize:
+        if self.minimize:
             y_opt_accum = np.minimum.accumulate(self.Y_real) 
             y_opt = np.min(y_opt_accum)
         else:

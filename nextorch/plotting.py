@@ -596,7 +596,7 @@ def parity_with_ci(
     if save_fig:
         if save_path is None: 
             save_path = os.getcwd()
-        fig.savefig(os.path.join(save_path, 'parity_w_ci'+ str(i_iter) + '.png'), 
+        fig.savefig(os.path.join(save_path, 'parity_w_ci_'+ str(i_iter) + '.png'), 
                     bbox_inches="tight")
 
 

@@ -79,7 +79,7 @@ def latin_hypercube(
 def randomized_design(
     n_dim: int, 
     n_points: int, 
-    random_seed: Optional[int] = None
+    seed: Optional[int] = None
 ) -> Matrix:
     """Generates randomized design
 
@@ -89,7 +89,7 @@ def randomized_design(
         Number of independent variables
     n_points : int
         Total number of points in the design
-    random_seed : Optional[int], optional
+    seed : Optional[int], optional
             Random seed, by default None
 
     Returns
@@ -98,10 +98,10 @@ def randomized_design(
         Normalized sampling plan with the shape of n_point * n_dim
     """    
     # Set the random state
-    if random_seed is None:
+    if seed is None:
         random_state = np.random.RandomState()
     else:
-        random_state = np.random.RandomState(random_seed)
+        random_state = np.random.RandomState(seed)
     X_norm = random_state.rand(n_points, n_dim)
     
     return X_norm
@@ -109,7 +109,7 @@ def randomized_design(
 
 def randomized_design_w_levels(
     levels: List[int], 
-    random_seeds: Optional[List[int]] = None
+    seeds: Optional[List[int]] = None
 ) -> Matrix:
     """Generates randomized design with levels in each dimension
 
@@ -118,7 +118,7 @@ def randomized_design_w_levels(
     levels : list of int
         Each number is a discrete level of each independent variable
         m is the number of variables or the size of the list
-    random_seeds : Optional[list of int], optional
+    seeds : Optional[list of int], optional
         List of random seeds, same size as levels, by default None
 
     Returns
@@ -132,10 +132,10 @@ def randomized_design_w_levels(
     x_vectors = []
     # Each dimension has 1d random design of level_i points
     for i, level_i in enumerate(levels):
-        if random_seeds is None:
+        if seeds is None:
             x_vector_i = randomized_design(1, level_i)
         else:
-            x_vector_i = randomized_design(1, level_i, random_seeds[i])
+            x_vector_i = randomized_design(1, level_i, seeds[i])
         x_vectors.append(x_vector_i.flatten())
     # Combination and assign back to X
     combo = list(itertools.product(*x_vectors))

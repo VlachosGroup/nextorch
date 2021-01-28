@@ -1,17 +1,25 @@
-# -*- coding: utf-8 -*-
 """
-Example of Bayesian Optimization for 1D example
-Use Gaussian Process regression to fit the model 
-Use one type of acqucision functions to predict the next infill point
-For minmization
+Example 1
+
+Goal: minimization
+Objective function: simple nonlinear
+    Input (X) dimension: 1
+    Output (Y) dimension: 1
+    Analytical form available: Yes
+Acqucision function: the default, expected improvement (EI)
+Initial Sampling: grid search
+Input X scale: unit
+
 """
+
 import os
 import sys
 project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_path)
 
-from nextorch import plotting, bo
 import numpy as np
+from nextorch import plotting, bo
+
 
 #%% Define the objective function
 def simple_1d(X):
@@ -48,21 +56,29 @@ objective_func = simple_1d
 
 #%% Define the initial sampling scheme
 # Assume X is already in a unit scale in [0, 1]
+# Create a grid with a 0.25 interval
 X_init = np.array([[0, 0.25, 0.5, 0.75]]).T
+
+# X_range is [0, 1], therefore we can get the reponse directly  
+# from the objective function
 # Get the initial responses
 Y_init = objective_func(X_init)
+# Equavalent to Y_init = bo.eval_objective_func(X_init, [0,1], objective_func)
 
 # Initialize an Experiment object
 # Set its name, the files will be saved under the folder with the same name
 Exp = bo.Experiment('simple_1d') 
 # Import the initial data
-Exp.input_data(X_init, Y_init,  unit_flag = True)
+Exp.input_data(X_init, Y_init, unit_flag = True)
 # Set the optimization specifications 
 # here we set the objective function, minimization by default
-Exp.set_optim_specs(objective_func = simple_1d)
+Exp.set_optim_specs(objective_func = objective_func)
 
 # Create test data points for plotting
 X_test = np.linspace(0, 1, 1000)
+
+# Set a flag for saving png figures
+save_fig_flag = False
 
 #%% Optimization loop
 # Set the number of iterations  
@@ -74,8 +90,8 @@ for i in range(n):
     Y_new_real = objective_func(X_new_real)
     
     # Plot the objective functions, and acqucision function
-    plotting.objective_func_1d_exp(Exp, X_test = X_test, X_new = X_new, save_fig = True)
-    plotting.acq_func_1d_exp(Exp, X_test = X_test, X_new = X_new, save_fig = True)
+    plotting.objective_func_1d_exp(Exp, X_test = X_test, X_new = X_new, save_fig = save_fig_flag)
+    plotting.acq_func_1d_exp(Exp, X_test = X_test, X_new = X_new, save_fig = save_fig_flag)
     
     # Retrain the model by input the next point into Exp object
     Exp.run_trial(X_new, X_new_real, Y_new_real)
@@ -84,5 +100,5 @@ for i in range(n):
 #%%
 # Validation 
 y_opt, X_opt, index_opt = Exp.get_optim()
-plotting.parity_exp(Exp, save_fig = True)
-plotting.parity_with_ci_exp(Exp, save_fig = True)
+plotting.parity_exp(Exp, save_fig = save_fig_flag)
+plotting.parity_with_ci_exp(Exp, save_fig = save_fig_flag)

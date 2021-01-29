@@ -25,6 +25,50 @@ MatrixLike2d = Union[list, Matrix, Tensor]
 dtype = torch.float
 torch.set_default_dtype(dtype)
 
+#%% Type conversion
+
+def np_to_tensor(X: MatrixLike2d) -> Tensor:
+    """Converts numpy objects to tensor objects
+    Returns a copy
+
+    Parameters
+    ----------
+    X : MatrixLike2D
+        numpy objects
+
+    Returns
+    -------
+    X: Tensor
+        tensor objects
+    """
+    if not isinstance(X, Tensor): 
+        X = torch.tensor(X, dtype= dtype)
+    else:
+        X = X.detach().clone()
+
+    return X
+
+
+def tensor_to_np(X: MatrixLike2d) -> Matrix:
+    """Convert tensor objects to numpy array objects
+    Returns a copy with no gradient information
+    Parameters
+    ----------
+    X : MatrixLike2d
+        tensor objects
+
+    Returns
+    -------
+    Matrix
+        numpy objects
+    """
+    if not isinstance(X, np.ndarray):
+        X = X.detach().cpu().numpy()
+    else: 
+        X = X.copy()
+
+    return X
+
 
 #%% Scaling helper functions 
 def get_ranges_X(X: MatrixLike2d) -> list:
@@ -148,7 +192,7 @@ def unitscale_X(
         list of boolean flags
         True: use the log scale on this dimensional
         False: use the normal scale 
-        by default []
+        by default None
     decimals : Optional[int], optional
         Number of decimal places to keep
         by default None, i.e. no rounding up 
@@ -379,7 +423,8 @@ def inverse_standardize_X(
 
 
 #%% 2-dimensional system specific functions
-def create_2D_mesh_X(mesh_size = 41) -> Tuple[Matrix, Matrix, Matrix]:   
+def create_2D_mesh_X(mesh_size: Optional[int] = 41
+) -> Tuple[Matrix, Matrix, Matrix]:   
     """Create 2D mesh for testing
 
     Parameters
@@ -411,6 +456,37 @@ def create_2D_mesh_X(mesh_size = 41) -> Tuple[Matrix, Matrix, Matrix]:
     
     return X_test, X1, X2
 
+  
+def transform_2D_mesh_Y(X: ArrayLike1d, mesh_size: Optional[int] = 41
+) -> Matrix:
+    """takes in 1 column of X tensor 
+    predict the Y values
+    convert to real units and return a 2D numpy array 
+    in the size of mesh_size*mesh_size
+
+    Parameters
+    ----------
+    X : ArrayLike1d
+        1d tensor or numpy array
+    mesh_size : int, optional
+        mesh size, by default 41
+        
+    Returns
+    -------
+    X_plot2D: numpy matrix
+        in real units for plotting
+        
+    """
+    X = tensor_to_np(X)
+
+    # Convert to numpy for plotting
+    X_plot2D = np.reshape(X, (mesh_size, mesh_size))
+    
+    return X_plot2D
+    
+
+
+#%%
 def transform_2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
 ) -> Tuple[Matrix, Matrix]:
     """Transform X1 and X2 in unit scale to real scales for plotting
@@ -431,90 +507,10 @@ def transform_2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
     X2: Matrix
         X2 in a real scale
     """
-    X_ranges = np.array(X_ranges).T
     X1 = inverse_unitscale_xv(X1, X_ranges[0])
     X2 = inverse_unitscale_xv(X2, X_ranges[1])
     
     return X1, X2
-  
-def transform_2D_mesh_Y(X: Tensor, X_mean: Tensor, X_std: Tensor, mesh_size: int
-) -> Matrix:
-    """takes in 1 column of X tensor 
-    predict the Y values
-    convert to real units and return a 2D numpy array 
-    in the size of mesh_size*mesh_size
-
-    Parameters
-    ----------
-    X : Tensor
-        1d tensor
-    X_mean : Tensor
-        means 
-    X_std : Tensor
-        standard deviations
-    mesh_size : int
-        mesh size
-
-    Returns
-    -------
-    X_plot2D: numpy matrix
-        in real units for plotting
-        
-    """
-    X = X.clone()
-    # Inverse the standardization
-    X_real = inverse_standardize_X(X, X_mean, X_std)
-
-    # Convert to numpy for plotting
-    X_plot2D = np.reshape(X_real.detach().numpy(), (mesh_size, mesh_size))
-    
-    return X_plot2D
-    
-
-def np_to_tensor(X: MatrixLike2d) -> Tensor:
-    """Converts numpy objects to tensor objects
-    Returns a copy
-
-    Parameters
-    ----------
-    X : MatrixLike2D
-        numpy objects
-
-    Returns
-    -------
-    X: Tensor
-        tensor objects
-    """
-    if not isinstance(X, Tensor): 
-        X = torch.tensor(X, dtype= dtype)
-    else:
-        X = X.detach().clone()
-
-    return X
-
-
-def tensor_to_np(X: MatrixLike2d) -> Matrix:
-    """Convert tensor objects to numpy array objects
-    Returns a copy with no gradient information
-    Parameters
-    ----------
-    X : MatrixLike2d
-        tensor objects
-
-    Returns
-    -------
-    Matrix
-        numpy objects
-    """
-    if not isinstance(X, np.ndarray):
-        X = X.detach().cpu().numpy()
-    else: 
-        X = X.copy()
-
-    return X
-
-
-
 # experiments are in tensor
 # plot in numpy
 # util functions works for both tensor and numpy

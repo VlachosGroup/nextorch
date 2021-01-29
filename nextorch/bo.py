@@ -149,7 +149,7 @@ def eval_objective_func(
 
     return Y
 
-def predict_model(
+def model_predict(
     model: Model, 
     X_test: MatrixLike2d,
     return_type: Optional[str] = 'tensor'
@@ -201,7 +201,7 @@ def predict_model(
     return Y_test, Y_test_lower, Y_test_upper
 
 
-def predict_real(
+def model_predict_real(
     model: Model, 
     X_test: MatrixLike2d, 
     Y_mean: MatrixLike2d, 
@@ -237,7 +237,7 @@ def predict_real(
         raise ValueError('return_type must be either tensor or np')
 
     # Make standardized predictions using the model
-    Y_test, Y_test_lower, Y_test_upper = predict_model(model, X_test)
+    Y_test, Y_test_lower, Y_test_upper = model_predict(model, X_test)
     # Inverse standardize and convert it to numpy matrix
     Y_test_real = ut.inverse_standardize_X(Y_test, Y_mean, Y_std)
     Y_test_lower_real = ut.inverse_standardize_X(Y_test_lower, Y_mean, Y_std)
@@ -570,9 +570,15 @@ class Experiment():
 
         # assign variable names
         if X_names is None:
-            X_names = ['x' + str(i+1) for i in range(self.n_dim)]
+            if self.n_dim > 1:
+                X_names = ['x' + str(i+1) for i in range(self.n_dim)]
+            else:
+                X_names = ['x']
         if Y_names is None:
-            Y_names = ['y' + str(i+1) for i in range(self.n_objectives)]
+            if self.n_objectives > 1:
+                Y_names = ['y' + str(i+1) for i in range(self.n_objectives)]
+            else:
+                Y_names = ['y']
         self.X_names = X_names
         self.Y_names = Y_names
 
@@ -762,7 +768,7 @@ class Experiment():
 
     def predict(self, 
         X_test: Tensor, 
-        show_confidence: Optional[bool] = False
+        show_confidence: Optional[bool] = False,
     ) -> Union[Tensor, Tuple[Tensor, Tensor, Tensor]]:
         """Use GP model for prediction at X_test
 
@@ -784,11 +790,45 @@ class Experiment():
         Y_test_upper: Tensor, optional
             The upper confidence interval   
         """
-        Y_test, Y_test_lower, Y_test_upper = predict_model(self.model, X_test)
+        
+        Y_test, Y_test_lower, Y_test_upper = model_predict(self.model, X_test)
+
         if show_confidence:
             return Y_test, Y_test_lower, Y_test_upper
         
         return Y_test
+
+    def predict_real(self, 
+                    X_test,
+                    show_confidence: Optional[bool] = False
+    ) -> Union[Matrix, Tuple[Matrix, Matrix, Matrix]]:
+        """Use GP model for prediction at X_test
+
+        Parameters
+        ----------
+        show_confidence : Optional[bool], optional
+            by default False, only return posterior mean
+            If True, return the mean, and lower, upper confidence interval
+
+        Returns
+        -------
+        Y_test_real: numpy matrix
+            predictions in a real scale
+        Y_test_lower_real: numpy matrix 
+            The lower confidence interval in a real scale
+        Y_test_upper_real: numpy matrix 
+            The upper confidence interval in a real scale
+        """
+        Y_real, Y_lower_real, Y_upper_real = model_predict_real(self.model, 
+                                                                X_test, 
+                                                                self.Y_mean, 
+                                                                self.Y_std, 
+                                                                return_type='np')
+        if show_confidence:
+            return Y_real, Y_lower_real, Y_upper_real
+        
+        return Y_real
+
 
     def validate_training(self, show_confidence: Optional[bool] = False
     ) -> Union[Matrix, Tuple[Matrix, Matrix, Matrix]]:
@@ -810,11 +850,11 @@ class Experiment():
         Y_test_upper_real: numpy matrix 
             The upper confidence interval in a real scale
         """
-        Y_real, Y_lower_real, Y_upper_real = predict_real(self.model, 
-                                                          self.X, 
-                                                          self.Y_mean, 
-                                                          self.Y_std, 
-                                                          return_type='np')
+        Y_real, Y_lower_real, Y_upper_real = model_predict_real(self.model, 
+                                                                self.X, 
+                                                                self.Y_mean, 
+                                                                self.Y_std, 
+                                                                return_type='np')
         if show_confidence:
             return Y_real, Y_lower_real, Y_upper_real
         

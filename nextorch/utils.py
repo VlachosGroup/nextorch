@@ -468,7 +468,7 @@ def transform_2D_mesh_Y(X: ArrayLike1d, mesh_size: Optional[int] = 41
     ----------
     X : ArrayLike1d
         1d tensor or numpy array
-    mesh_size : int, optional
+    mesh_size : Optional[int], optional
         mesh size, by default 41
         
     Returns

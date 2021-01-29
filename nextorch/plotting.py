@@ -956,6 +956,7 @@ def response_heatmap(
         Response in a real scale
     Y_real_range : ArrayLike1d
         Ranges of the response, [lb, rb]
+        to show on the plot, by default None
     Y_name : Optional[str], optional
         Name of Y variable, by default ''
     log_flag : Optional[bool], optional
@@ -1038,21 +1039,38 @@ def response_heatmap(
                     bbox_inches="tight")
     
 
-
-
 def response_heatmap_exp(
     Exp: Experiment,
+    Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
-    Y_real_range: Optional[ArrayLike1d] = None, 
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False):
-
+    """Show a heat map for the response in a real scale
+    Using the experiment object
+    Parameters
+    ----------
+    Exp : Experiment
+        Experiment object
+    Y_real_range : Optional[ArrayLike1d], optional
+        Ranges of the response, [lb, rb]
+        to show on the plot, by default None
+    log_flag : Optional[bool], optional
+        flag to plot in a log scale
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
+    mesh_size : Optional[int], optional
+        mesh size, by default 41
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    """
+    # Create 2D mesh test points and 
+    # Make prediction using the GP model
     X_test, _, _ = create_2D_mesh_X(mesh_size)
     Y_test = Exp.predict_real(X_test)
     Y_test_2D = transform_2D_mesh_Y(Y_test)
-
-
+    
     response_heatmap(Y_real=Y_test_2D,
                     Y_real_range = Y_real_range,
                     Y_name = Exp.Y_names,
@@ -1064,26 +1082,83 @@ def response_heatmap_exp(
                     save_path=Exp.exp_path,
                     i_iter=Exp.n_points - Exp.n_points_init)
     
-def objective_heatmap_exp():
-    pass
+
+def objective_heatmap_exp(
+    Exp: Experiment,
+    Y_real_range: Optional[ArrayLike1d] = None, 
+    log_flag: Optional[bool] = False,
+    x_indices: Optional[List[int]] = [0, 1],
+    mesh_size: Optional[int] = 41,
+    save_fig: Optional[bool] = False):
+    """Show a heat map for objective function in a real scale
+    Using the experiment object
+    Parameters
+    ----------
+    Exp : Experiment
+        Experiment object
+    Y_real_range : Optional[ArrayLike1d], optional
+        Ranges of the response, [lb, rb]
+        to show on the plot, by default None
+    log_flag : Optional[bool], optional
+        flag to plot in a log scale
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
+    mesh_size : Optional[int], optional
+        mesh size, by default 41
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    """
+    # Create 2D mesh test points and 
+    # Calculate objective function value 
+    X_test, _, _ = create_2D_mesh_X(mesh_size)
+    Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
+    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test)
+    
+    response_heatmap(Y_real=Y_obj_test_2D,
+                    Y_real_range = Y_real_range,
+                    Y_name = Exp.Y_names,
+                    log_flag= log_flag,
+                    x_indices=x_indices,
+                    X_ranges=Exp.X_ranges,
+                    X_train=Exp.X,
+                    save_fig=save_fig,
+                    save_path=Exp.exp_path,
+                    i_iter=Exp.n_points - Exp.n_points_init)
 
 
 def response_heatmap_err_exp(
     Exp: Experiment,
+    Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
-    Y_real_range: Optional[ArrayLike1d] = None, 
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False):
-    '''
-    Takes in the function value X, sampling plan X
-    Makes heat map of error and show the locations of sampling points
-    the error is not normalized (future work)
-    ''' 
+    """Show a heat map for percentage error 
+    (objective - response)/objective in a real scale
+    Using the experiment object
+    Parameters
+    ----------
+    Exp : Experiment
+        Experiment object
+    Y_real_range : Optional[ArrayLike1d], optional
+        Ranges of the response, [lb, rb]
+        to show on the plot, by default None
+    log_flag : Optional[bool], optional
+        flag to plot in a log scale
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
+    mesh_size : Optional[int], optional
+        mesh size, by default 41
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    """
+    # Create 2D mesh test points  
     X_test, _, _ = create_2D_mesh_X(mesh_size)
+    # Make prediction using the GP model
     Y_test = Exp.predict_real(X_test)
     Y_test_2D = transform_2D_mesh_Y(Y_test)
-
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
     Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test)
@@ -1101,9 +1176,6 @@ def response_heatmap_err_exp(
                     i_iter=Exp.n_points - Exp.n_points_init)
     
     
-    
-
-
 def response_surface(
     X1_test: MatrixLike2d,
     X2_test: MatrixLike2d,
@@ -1222,26 +1294,46 @@ def response_surface(
 
 def response_surface_exp(
     Exp: Experiment,
+    Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
-    Y_real_range: Optional[ArrayLike1d] = None, 
     show_confidence: Optional[bool] = False,
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False):
-    
+    """Show a 3-dimensional response surface 
+    in a real scale 
+    Using the experiment object
+
+    Parameters
+    ----------
+    Exp : Experiment
+        Experiment object
+    Y_real_range : Optional[ArrayLike1d], optional
+        Ranges of the response, [lb, rb]
+        to show on the plot, by default None
+    log_flag : Optional[bool], optional
+        flag to plot in a log scale
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
+    mesh_size : Optional[int], optional
+        mesh size, by default 41
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    """
+    # Create 2D mesh test points  
     X_test, X1_test, X2_test = create_2D_mesh_X(mesh_size)
-
+    # Make predictions using the GP model
     if show_confidence:
-        Y_test = Exp.predict_real(X_test)
-        Y_test_2D = transform_2D_mesh_Y(Y_test, mesh_size)
-        Y_test_lower_2D, Y_test_upper_2D = None, None
-
-    else:
         Y_test, Y_test_lower, Y_test_upper = Exp.predict_real(X_test, show_confidence = True)
         Y_test_2D = transform_2D_mesh_Y(Y_test, mesh_size)
         Y_test_lower_2D = transform_2D_mesh_Y(Y_test_lower, mesh_size)
         Y_test_upper_2D = transform_2D_mesh_Y(Y_test_upper, mesh_size)
-
+    else:
+        Y_test = Exp.predict_real(X_test)
+        Y_test_2D = transform_2D_mesh_Y(Y_test, mesh_size)
+        Y_test_lower_2D, Y_test_upper_2D = None, None
+        
     response_surface(X1_test=X1_test,
                      X2_test=X2_test,
                      Y_real=Y_test_2D,  
@@ -1258,6 +1350,53 @@ def response_surface_exp(
                      i_iter=Exp.n_points - Exp.n_points_init)
 
 
-def objective_surface_exp():
-    pass
+def objective_surface_exp(
+    Exp: Experiment,
+    Y_real_range: Optional[ArrayLike1d] = None, 
+    log_flag: Optional[bool] = False,
+    x_indices: Optional[List[int]] = [0, 1],
+    mesh_size: Optional[int] = 41,
+    save_fig: Optional[bool] = False):
+    """Show a 3-dimensional response surface 
+    in a real scale 
+    Using the experiment object
+
+    Parameters
+    ----------
+    Exp : Experiment
+        Experiment object
+    Y_real_range : Optional[ArrayLike1d], optional
+        Ranges of the response, [lb, rb]
+        to show on the plot, by default None
+    log_flag : Optional[bool], optional
+        flag to plot in a log scale
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
+    mesh_size : Optional[int], optional
+        mesh size, by default 41
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    """
+    # Create 2D mesh test points  
+    X_test, X1_test, X2_test = create_2D_mesh_X(mesh_size)
+    # Calculate objective function value 
+    Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
+    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test)
+    Y_obj_lower_2D, Y_obj_upper_2D = None, None
+    
+    response_surface(X1_test=X1_test,
+                     X2_test=X2_test,
+                     Y_real=Y_obj_test_2D,  
+                     Y_real_lower=Y_obj_lower_2D, 
+                     Y_real_upper=Y_obj_upper_2D, 
+                     Y_real_range=Y_real_range,
+                     Y_name=Exp.Y_names,
+                     log_flag=log_flag,
+                     x_indices=x_indices,
+                     X_ranges=Exp.X_ranges,
+                     X_names= Exp.X_names, 
+                     save_fig=save_fig,
+                     save_path=Exp.exp_path,
+                     i_iter=Exp.n_points - Exp.n_points_init)
 

@@ -862,6 +862,7 @@ def sampling_3d_exp():
 def response_heatmap(
     Y_real: MatrixLike2d,  
     Y_real_range: ArrayLike1d, 
+    Y_name: Optional[str] = '',
     X_ranges: Optional[MatrixLike2d] = None,
     X_names: Optional[List[str]] = None, 
     X_train: Optional[MatrixLike2d] = None, 
@@ -884,7 +885,7 @@ def response_heatmap(
     if X_names is None:
             X_names = ['x' + str(i+1) for i in variable_indices]
     # set the file name
-    filename = 'heatmap_var_'+ str(x_index) + str(y_index) + '_i_' + str(i_iter) 
+    filename = 'heatmap_'+ Y_name + str(x_index) + str(y_index) + '_i_' + str(i_iter) 
     
     # Set default [0,1] range for a unit scale
     if X_ranges is None:

@@ -397,7 +397,6 @@ class Experiment():
         # Set up the path to save graphical results
         parent_dir = os.getcwd()
         exp_path = os.path.join(parent_dir, self.name)
-        if not os.path.exists(exp_path): os.makedirs(exp_path)
         self.exp_path = exp_path
 
     def preprocess_data(self, 

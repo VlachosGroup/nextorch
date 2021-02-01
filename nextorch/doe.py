@@ -37,8 +37,8 @@ def full_factorial(levels: List[int]) -> Matrix:
     X_real = DOE_function(levels)
 
     # Normailize X_real
-    X_ranges = np.transpose([[0, i-1] for i in levels]) #-1 for python index
-    X_unit = ut.unitscale_X(X_real, X_range = X_ranges)
+    X_ranges = [[0, i-1] for i in levels] #-1 for python index
+    X_unit = ut.unitscale_X(X_real, X_ranges = X_ranges)
     
     return X_unit
 

@@ -24,13 +24,14 @@ from nextorch import plotting, bo, utils, doe
 # Objective function
 objective_func = lambda x: np.sin(x)
 
+# Set the ranges
+X_range = [0, np.pi*2]
+
+#%% Initial Sampling 
 # Randomly choose some points
 # Sampling X is in a unit scale in [0, 1]
 X_init = doe.randomized_design(n_dim = 1, n_points = 4, seed = 0)
 #or we can do np.random.rand(4,1)
-
-# Set the ranges
-X_range = [0, np.pi*2]
 
 # Get the initial responses
 Y_init_real = bo.eval_objective_func(X_init, X_range, objective_func)
@@ -40,7 +41,7 @@ X_init_real = utils.inverse_unitscale_X(X_init, X_range)
 # The reponse can be obtained via
 # Y_init_real = objective_func(X_init_real)
 
-# Initialize an Experiment object
+#%% Initialize an Experiment object
 # Set its name, the files will be saved under the folder with the same name
 Exp = bo.Experiment('sin_1d') 
 # Import the initial data
@@ -58,8 +59,8 @@ save_fig_flag = True
 
 #%% Optimization loop
 # Set the number of iterations  
-n = 10
-for i in range(n):
+n_trials = 10
+for i in range(n_trials):
     # Generate the next experiment point
     X_new, X_new_real, acq_func = Exp.generate_next_point()
     # Get the reponse at this point

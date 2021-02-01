@@ -20,7 +20,7 @@ from botorch.models.model import Model
 
 from typing import Optional, TypeVar, Union, Tuple, List
 from nextorch.utils import  ArrayLike1d, MatrixLike2d
-from nextorch.utils import tensor_to_np, np_to_tensor, \
+from nextorch.utils import tensor_to_np, np_to_tensor, inverse_unitscale_X, \
     standardize_X, get_ranges_X, create_2D_mesh_X, transform_2D_mesh_Y
 from nextorch.bo import eval_acq_func, \
     eval_objective_func, model_predict, model_predict_real, Experiment
@@ -95,6 +95,7 @@ def parity(
     if save_fig:
         if save_path is None: 
             save_path = os.getcwd()
+        if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, 'parity_'+ str(i_iter) + '.png'), 
                     bbox_inches="tight")
 
@@ -190,6 +191,7 @@ def parity_with_ci(
     if save_fig:
         if save_path is None: 
             save_path = os.getcwd()
+        if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, 'parity_w_ci_'+ str(i_iter) + '.png'), 
                     bbox_inches="tight")
 
@@ -291,6 +293,7 @@ def acq_func_1d(
     if save_fig:
         if save_path is None: 
             save_path = os.getcwd()
+        if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, 'acq_func_i'+ str(i_iter) + '.png'), 
                     bbox_inches="tight")
 
@@ -460,6 +463,7 @@ def objective_func_1d(
     if save_fig:
         if save_path is None: 
             save_path = os.getcwd()
+        if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, 'objective_func_i'+ str(i_iter) + '.png'), 
                     bbox_inches="tight")
 
@@ -527,7 +531,7 @@ def objective_func_1d_exp(
 def set_axis_values(
     xi_range: ArrayLike1d, 
     n_sections: Optional[int] = 2, 
-    decimals: Optional[int] = 1
+    decimals: Optional[int] = 2
 ) -> ArrayLike1d:
     """Divide xi_range into n_sections
 
@@ -538,7 +542,7 @@ def set_axis_values(
     n_sections : Optional[int], optional
         number of sections, by default 2
     decimals : Optional[int], optional
-        number of decimal places to keep, by default 1
+        number of decimal places to keep, by default 2
 
     Returns
     -------
@@ -547,12 +551,13 @@ def set_axis_values(
         Number of values is n_sections + 1
     """
     lb = xi_range[0]
-    rb = xi_range[1] + (xi_range[1]-xi_range[0])/n_sections
-    interval = (xi_range[1]-xi_range[0])/n_sections
-    axis_values = np.arange(lb, rb, interval)
+    rb = xi_range[1]
+    
+    axis_values = np.linspace(lb, rb, n_sections+1, endpoint = True)
     axis_values = np.around(axis_values, decimals = decimals)
 
     return axis_values
+
 
 
 def sampling_2d(
@@ -599,32 +604,41 @@ def sampling_2d(
     else:
         file_name += 'comparison'  
     # Set default axis names 
-    n_dim = Xs.shape[1]
+    n_dim = Xs[0].shape[1]
     if X_names is None:
             X_names = ['x' + str(i+1) for i in range(n_dim)]
     # Set default [0,1] range for a unit scale
     if X_ranges is None:
         X_ranges = [[0,1]] * n_dim
+    # Set default number of sections
+    n_tick_sections  = 5
 
     # set the colors
     colors = colormap(np.linspace(0, 1, len(Xs)))
     # make the plot
     fig,ax = plt.subplots(figsize=(6, 6))
     for Xi, ci, name_i in zip(Xs, colors, design_names):
-        ax.scatter(Xi[:,0], Xi[:,1], c = ci , s = 60, label = name_i)
+        ax.scatter(Xi[:,0], Xi[:,1], color = ci , s = 60, label = name_i,  alpha = 0.6)
+    
+    # Get axes limits
+    xlim_plot = list(ax.set_xlim(0, 1))
+    ylim_plot = list(ax.set_ylim(0, 1))
     ax.legend(bbox_to_anchor=(1.04,1), loc="upper left")
     ax.axis('square')
-    ax.axis([0, 1, 0, 1])
+    #ax.axis([0, 1, 0, 1])
     ax.set_xlabel(X_names[0])
     ax.set_ylabel(X_names[1])
-    ax.set_xticks(set_axis_values(X_ranges, 4))
-    ax.set_yticks(set_axis_values(X_ranges, 4))
+    ax.set_xticks(set_axis_values(xlim_plot, n_tick_sections))
+    ax.set_xticklabels(set_axis_values(X_ranges[0], n_tick_sections))
+    ax.set_yticks(set_axis_values(ylim_plot, n_tick_sections))
+    ax.set_yticklabels(set_axis_values(X_ranges[1], n_tick_sections))
     plt.show()
 
     # save the figure as png
     if save_fig:
         if save_path is None: 
             save_path = os.getcwd()
+        if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, file_name + '.png'), 
                     bbox_inches="tight")
 
@@ -840,12 +854,14 @@ def sampling_3d(
     else:
         file_name += 'comparison' # for multiple designs, use "comparison"
     # Set default axis names 
-    n_dim = Xs.shape[1]
+    n_dim = Xs[0].shape[1]
     if X_names is None:
             X_names = ['x' + str(i+1) for i in range(n_dim)]
     # Set default [0,1] range for a unit scale
     if X_ranges is None:
         X_ranges = [[0,1]] * n_dim
+    # Set default number of sections
+    n_tick_sections  = 5
     
     # set the colors
     colors = colormap(np.linspace(0, 1, len(Xs)))
@@ -854,14 +870,21 @@ def sampling_3d(
     ax = fig.add_subplot(111, projection='3d')
     for Xi, ci, name_i in zip(Xs, colors, design_names):
         ax.scatter(Xi[:,0], Xi[:,1], Xi[:,2], \
-            c=ci, marker='o', s = 50, alpha = 0.6, label = name_i)
+            c=ci, marker='o', s = 60, alpha = 0.6, label = name_i)
+    # Get axes limits
+    xlim_plot = list(ax.set_xlim(0, 1))
+    ylim_plot = list(ax.set_ylim(0, 1))
+    zlim_plot = list(ax.set_zlim(0, 1))
     # set axis labels and ticks
     ax.set_xlabel(X_names[0], labelpad= 15)
     ax.set_ylabel(X_names[1],labelpad= 15)
     ax.set_zlabel(X_names[2],labelpad=3)
-    ax.set_xticks(set_axis_values(X_ranges[0]))
-    ax.set_yticks(set_axis_values(X_ranges[1]))
-    ax.set_zticks(set_axis_values(X_ranges[2]))
+    ax.set_xticks(set_axis_values(xlim_plot, n_tick_sections))
+    ax.set_xticklabels(set_axis_values(X_ranges[0], n_tick_sections))
+    ax.set_yticks(set_axis_values(ylim_plot, n_tick_sections))
+    ax.set_yticklabels(set_axis_values(X_ranges[1], n_tick_sections))
+    ax.set_zticks(set_axis_values(zlim_plot, n_tick_sections))
+    ax.set_zticklabels(set_axis_values(X_ranges[2], n_tick_sections))
     ax.view_init(30, 45)
     # Add a 2d slide if required
     if slice_axis is not None:
@@ -884,6 +907,7 @@ def sampling_3d(
     if save_fig:
         if save_path is None: 
             save_path = os.getcwd()
+        if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, file_name + '.png'), 
                     bbox_inches="tight")
 
@@ -939,7 +963,7 @@ def sampling_3d_exp(
 def response_heatmap(
     Y_real: MatrixLike2d,  
     Y_real_range: Optional[ArrayLike1d] = None, 
-    Y_name: Optional[str] = '',
+    Y_name: Optional[str] = None,
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
     X_ranges: Optional[MatrixLike2d] = None,
@@ -958,7 +982,7 @@ def response_heatmap(
         Ranges of the response, [lb, rb]
         to show on the plot, by default None
     Y_name : Optional[str], optional
-        Name of Y variable, by default ''
+        Name of Y variable, by default None
     log_flag : Optional[bool], optional
         flag to plot in a log scale
     x_indices : Optional[List[int]], optional
@@ -967,6 +991,7 @@ def response_heatmap(
             list of x ranges, by default None
     X_name: Optional[List(str)], optional
         Names of X varibale shown as x,y,z-labels
+        by default None
     X_train : Optional[MatrixLike2d], optional
         [description], by default None
     save_fig: Optional[bool], optional
@@ -988,7 +1013,7 @@ def response_heatmap(
     Y_real = tensor_to_np(Y_real)
     # Set default Y_real_range
     if Y_real_range is None:
-        Y_real_range = get_ranges_X(Y_real)
+        Y_real_range = [np.min(Y_real), np.max(Y_real)]
     if log_flag:
         Y_real = np.log10(abs(Y_real))
 
@@ -1000,41 +1025,53 @@ def response_heatmap(
     # Set default axis names 
     if X_names is None:
             X_names = ['x' + str(i+1) for i in x_indices]
+    # Set Y_name in file name
+    if Y_name is None:
+        Y_name = ''
     # set the file name
     filename = 'heatmap_'+ Y_name + '_' + str(x_index) +\
          str(y_index) + '_i_' + str(i_iter) 
     
+
     # Set default [0,1] range for a unit scale
     if X_ranges is None:
         X_ranges = [[0,1]] * 2
     # Set default number of sections
-    n_tick_sections  = 4
-    n_x = Y_real.shape[0]
-    n_y = Y_real.shape[1]
+    n_tick_sections  = 5
+
     # Visualize response - a 2D heatmap
     fig,ax = plt.subplots(figsize=(6, 6))
 
     im = ax.imshow(Y_real, cmap = 'jet', interpolation = 'gaussian', \
-            vmin = Y_real_range[0], vmax = Y_real_range[1], origin = 'lower') 
-
+            vmin = Y_real_range[0], vmax = Y_real_range[1], origin = 'lower', \
+            extent = (X_ranges[x_index][0], X_ranges[x_index][1], \
+                X_ranges[y_index][0], X_ranges[y_index][1]))
+    
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
+    cax = divider.append_axes("right", size="5%", pad=0.1)
     plt.colorbar(im, cax = cax)
     # Viusalize the sampling points as scatter points 
     if X_train is not None:
-        ax.scatter(X_train[:,0], X_train[:,1], c = 'white', edgecolors= 'k' )
+        X_train_plot = inverse_unitscale_X(X_train, X_ranges)
+        ax.scatter(X_train_plot[:,x_index], X_train_plot[:,y_index], s = 60, \
+            c = 'white', edgecolors= 'k', alpha = 0.6)
+
+    #  Obtain axes limits
+    xlim_plot = list(ax.set_xlim(X_ranges[x_index]))
+    ylim_plot = list(ax.set_ylim(X_ranges[y_index]))
     # set axis labels and ticks   
     ax.set_xlabel(X_names[x_index])
     ax.set_ylabel(X_names[y_index])
-    ax.set_xticks(np.arange(0, n_x, n_tick_sections+1))
+    ax.set_xticks(set_axis_values(xlim_plot, n_tick_sections))
     ax.set_xticklabels(set_axis_values(X_ranges[x_index], n_tick_sections))
-    ax.set_yticks(np.arange(0, n_y, n_tick_sections+1))
+    ax.set_yticks(set_axis_values(ylim_plot, n_tick_sections))
     ax.set_yticklabels(set_axis_values(X_ranges[y_index], n_tick_sections))
     
     # save the figure as png
     if save_fig:
         if save_path is None: 
             save_path = os.getcwd()
+        if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, filename + '.png'), 
                     bbox_inches="tight")
     
@@ -1044,6 +1081,8 @@ def response_heatmap_exp(
     Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
+    X_names: Optional[List[str]] = None, 
+    show_samples: Optional[bool] = True,
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False):
     """Show a heat map for the response in a real scale
@@ -1059,6 +1098,12 @@ def response_heatmap_exp(
         flag to plot in a log scale
     x_indices : Optional[List[int]], optional
         indices of two x variables, by default [0, 1]
+    X_name: Optional[List(str)], optional
+        Names of X varibale shown as x,y,z-labels
+        by default None
+    show_samples: Optional[bool], optional
+        if true show the sample points   
+        by default True
     mesh_size : Optional[int], optional
         mesh size, by default 41
     save_fig: Optional[bool], optional
@@ -1069,18 +1114,22 @@ def response_heatmap_exp(
     # Make prediction using the GP model
     X_test, _, _ = create_2D_mesh_X(mesh_size)
     Y_test = Exp.predict_real(X_test)
-    Y_test_2D = transform_2D_mesh_Y(Y_test)
-    
+    Y_test_2D = transform_2D_mesh_Y(Y_test, mesh_size)
+    # select the sample points
+    X_train = None
+    if show_samples: X_train = Exp.X
+
     response_heatmap(Y_real=Y_test_2D,
-                    Y_real_range = Y_real_range,
-                    Y_name = Exp.Y_names,
-                    log_flag= log_flag,
-                    x_indices=x_indices,
-                    X_ranges=Exp.X_ranges,
-                    X_train=Exp.X,
-                    save_fig=save_fig,
-                    save_path=Exp.exp_path,
-                    i_iter=Exp.n_points - Exp.n_points_init)
+                     Y_real_range = Y_real_range,
+                     Y_name = Exp.Y_names[0],
+                     log_flag=log_flag,
+                     x_indices=x_indices,
+                     X_ranges=Exp.X_ranges,
+                     X_train=X_train,
+                     X_names = Exp.X_names,
+                     save_fig=save_fig,
+                     save_path=Exp.exp_path,
+                     i_iter=Exp.n_points - Exp.n_points_init)
     
 
 def objective_heatmap_exp(
@@ -1088,6 +1137,7 @@ def objective_heatmap_exp(
     Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
+    X_names: Optional[List[str]] = None, 
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False):
     """Show a heat map for objective function in a real scale
@@ -1103,6 +1153,9 @@ def objective_heatmap_exp(
         flag to plot in a log scale
     x_indices : Optional[List[int]], optional
         indices of two x variables, by default [0, 1]
+    X_name: Optional[List(str)], optional
+        Names of X varibale shown as x,y,z-labels
+        by default None
     mesh_size : Optional[int], optional
         mesh size, by default 41
     save_fig: Optional[bool], optional
@@ -1113,19 +1166,86 @@ def objective_heatmap_exp(
     # Calculate objective function value 
     X_test, _, _ = create_2D_mesh_X(mesh_size)
     Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
-    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test)
+    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test, mesh_size)
     
     response_heatmap(Y_real=Y_obj_test_2D,
                     Y_real_range = Y_real_range,
-                    Y_name = Exp.Y_names,
+                    Y_name = Exp.Y_names[0],
                     log_flag= log_flag,
                     x_indices=x_indices,
                     X_ranges=Exp.X_ranges,
-                    X_train=Exp.X,
+                    X_names = Exp.X_names,
+                    X_train= None,
                     save_fig=save_fig,
                     save_path=Exp.exp_path,
-                    i_iter=Exp.n_points - Exp.n_points_init)
+                    i_iter='objective')
 
+
+def objective_heatmap(
+    objective_func: object,
+    X_ranges: MatrixLike2d,
+    Y_name: Optional[str] = None,
+    Y_real_range: Optional[ArrayLike1d] = None, 
+    log_flag: Optional[bool] = False,
+    x_indices: Optional[List[int]] = [0, 1],
+    X_names: Optional[List[str]] = None, 
+    mesh_size: Optional[int] = 41,
+    save_fig: Optional[bool] = False, 
+    name: Optional[str] = 'simple_experiment'
+):
+    """Show a 3-dimensional response surface 
+    in a real scale 
+    Using the experiment object
+
+    Parameters
+    ----------
+    objective_func : function object
+        a objective function to optimize
+    X_ranges : MatrixLike2d, 
+            list of x ranges
+    Y_name : Optional[str], optional
+        Name of Y variable, by default None
+    Y_real_range : Optional[ArrayLike1d], optional
+        Ranges of the response, [lb, rb]
+        to show on the plot, by default None
+    log_flag : Optional[bool], optional
+        flag to plot in a log scale
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
+    X_name: Optional[List(str)], optional
+        Names of X varibale shown as x,y,z-labels
+        by default None
+    mesh_size : Optional[int], optional
+        mesh size, by default 41
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    name : Optional[str], optional
+            Name of the objective function, 
+            by default 'simple_experiment'
+    """
+    # Create 2D mesh test points  
+    X_test, X1_test, X2_test = create_2D_mesh_X(mesh_size)
+    # Calculate objective function value 
+    Y_obj_test = eval_objective_func(X_test, X_ranges, objective_func)
+    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test)
+
+    # Set up the path to save graphical results
+    parent_dir = os.getcwd()
+    exp_path = os.path.join(parent_dir, name)
+
+    response_heatmap(Y_real=Y_obj_test_2D,  
+                    Y_real_range = Y_real_range,
+                    Y_name = Y_name,
+                    log_flag= log_flag,
+                    x_indices=x_indices,
+                    X_ranges=X_ranges,
+                    X_train= None,
+                    X_names = X_names,
+                    save_fig=save_fig,
+                    save_path=exp_path,
+                    i_iter='objective')
+    
 
 def response_heatmap_err_exp(
     Exp: Experiment,
@@ -1163,10 +1283,10 @@ def response_heatmap_err_exp(
     Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
     Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test)
     # Calculate the percentage errors
-    Y_err_2D = (Y_obj_test_2D - Y_test_2D)/Y_obj_test_2D
+    Y_err_2D = np.abs((Y_obj_test_2D - Y_test_2D)/Y_obj_test_2D)
     response_heatmap(Y_real=Y_err_2D,
                     Y_real_range = Y_real_range,
-                    Y_name = Exp.Y_names,
+                    Y_name = Exp.Y_names[0],
                     log_flag= log_flag,
                     x_indices=x_indices,
                     X_ranges=Exp.X_ranges,
@@ -1183,7 +1303,7 @@ def response_surface(
     Y_real_lower: Optional[MatrixLike2d] = None, 
     Y_real_upper: Optional[MatrixLike2d] = None, 
     Y_real_range: Optional[ArrayLike1d] = None,
-    Y_name: Optional[str] = '',
+    Y_name: Optional[str] = None,
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
     X_ranges: Optional[MatrixLike2d] = None,
@@ -1209,7 +1329,7 @@ def response_surface(
     Y_real_range : ArrayLike1d
         Ranges of the response, [lb, rb]
     Y_name : Optional[str], optional
-        Name of Y variable, by default ''
+        Name of Y variable, by default None
     log_flag : Optional[bool], optional
         flag to plot in a log scale
     x_indices : Optional[List[int]], optional
@@ -1232,15 +1352,19 @@ def response_surface(
     X1_test = tensor_to_np(X1_test)
     X2_test = tensor_to_np(X2_test)
     Y_real = tensor_to_np(Y_real)
-    Y_real_lower = tensor_to_np(Y_real_lower)
-    Y_real_upper = tensor_to_np(Y_real_upper)
+    if Y_real_lower is not None:
+        Y_real_lower = tensor_to_np(Y_real_lower)
+    if Y_real_upper is not None:
+        Y_real_upper = tensor_to_np(Y_real_upper)
     # Set default Y_real_range
     if Y_real_range is None:
-        Y_real_range = get_ranges_X(Y_real)
+        Y_real_range = [np.min(Y_real), np.max(Y_real)]
     if log_flag:
         Y_real = np.log10(abs(Y_real))
-        Y_real_lower = np.log10(abs(Y_real_lower))
-        Y_real_upper = np.log10(abs(Y_real_upper))
+        if Y_real_lower is not None:
+            Y_real_lower = np.log10(abs(Y_real_lower))
+        if Y_real_upper is not None:
+            Y_real_upper = np.log10(abs(Y_real_upper))
     
     # Extract two variable indices for plotting
     x_indices = sorted(x_indices) 
@@ -1250,6 +1374,12 @@ def response_surface(
     # Set default axis names 
     if X_names is None:
             X_names = ['x' + str(i+1) for i in x_indices]
+    # Set Y_name in file name
+    if Y_name is None:
+        Y_name = ''
+        Y_name_plot = 'y'
+    else: 
+        Y_name_plot = Y_name
     # set the file name
     filename = 'surface_'+ Y_name + '_' + str(x_index) +\
          str(y_index) + '_i_' + str(i_iter) 
@@ -1258,15 +1388,16 @@ def response_surface(
     if X_ranges is None:
         X_ranges = [[0,1]] * 2
     # Set default number of sections
-    n_tick_sections  = 4
-    n_x = Y_real.shape[0]
-    n_y = Y_real.shape[1]
+    n_tick_sections  = 5
+
     # Visualize response - a 3D surfaceplot
     fig  = plt.figure(figsize = (10,10))
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_surface(X1_test, X2_test, Y_real, cmap = 'jet', \
         vmin = Y_real_range[0], vmax = Y_real_range[1]) 
-
+    #  Obtain axes limits
+    xlim_plot, ylim_plot = list(ax.get_xlim()), list(ax.get_ylim())
+    zlim_plot = list(ax.set_zlim(Y_real_range))
     if Y_real_lower is not None:
         ax.plot_surface(X1_test, X2_test, Y_real_lower, cmap = 'Blues', alpha = 0.7, \
             vmin = Y_real_range[0], vmax = Y_real_range[1]) 
@@ -1277,17 +1408,21 @@ def response_surface(
     # set axis labels and ticks   
     ax.set_xlabel(X_names[x_index], labelpad=15)
     ax.set_ylabel(X_names[y_index], labelpad=15)
-    ax.set_zlabel(Y_name, labelpad=10)
-    ax.set_xticks(np.arange(0, n_x, n_tick_sections+1))
+    ax.set_zlabel(Y_name_plot, labelpad=10)
+    ax.set_xticks(set_axis_values(xlim_plot, n_tick_sections))
     ax.set_xticklabels(set_axis_values(X_ranges[x_index], n_tick_sections))
-    ax.set_yticks(np.arange(0, n_y, n_tick_sections+1))
+    ax.set_yticks(set_axis_values(ylim_plot, n_tick_sections))
     ax.set_yticklabels(set_axis_values(X_ranges[y_index], n_tick_sections))
+    ax.set_zticks(set_axis_values(zlim_plot, n_tick_sections, 1))
+    ax.set_zticklabels(set_axis_values(zlim_plot, n_tick_sections, 1))
 
     ax.view_init(30, 45)
     # save the figure as png
     if save_fig:
         if save_path is None: 
             save_path = os.getcwd()
+
+        if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, filename + '.png'), 
                     bbox_inches="tight")
 
@@ -1340,7 +1475,7 @@ def response_surface_exp(
                      Y_real_lower=Y_test_lower_2D, 
                      Y_real_upper=Y_test_upper_2D, 
                      Y_real_range=Y_real_range,
-                     Y_name=Exp.Y_names,
+                     Y_name=Exp.Y_names[0],
                      log_flag=log_flag,
                      x_indices=x_indices,
                      X_ranges=Exp.X_ranges,
@@ -1391,12 +1526,85 @@ def objective_surface_exp(
                      Y_real_lower=Y_obj_lower_2D, 
                      Y_real_upper=Y_obj_upper_2D, 
                      Y_real_range=Y_real_range,
-                     Y_name=Exp.Y_names,
+                     Y_name=Exp.Y_names[0],
                      log_flag=log_flag,
                      x_indices=x_indices,
                      X_ranges=Exp.X_ranges,
                      X_names= Exp.X_names, 
                      save_fig=save_fig,
                      save_path=Exp.exp_path,
-                     i_iter=Exp.n_points - Exp.n_points_init)
+                     i_iter='objective')
 
+def objective_surface(
+    objective_func: object,
+    X_ranges: MatrixLike2d,
+    Y_name: Optional[str] = None,
+    Y_real_range: Optional[ArrayLike1d] = None, 
+    log_flag: Optional[bool] = False,
+    x_indices: Optional[List[int]] = [0, 1],
+    X_names: Optional[List[str]] = None, 
+    mesh_size: Optional[int] = 41,
+    save_fig: Optional[bool] = False, 
+    name: Optional[str] = 'simple_experiment'
+):
+    """Show a 3-dimensional response surface 
+    in a real scale 
+    Using the experiment object
+
+    Parameters
+    ----------
+    objective_func : function object
+        a objective function to optimize
+    X_ranges : MatrixLike2d, 
+            list of x ranges
+    Y_name : Optional[str], optional
+        Name of Y variable, by default None
+    Y_real_range : Optional[ArrayLike1d], optional
+        Ranges of the response, [lb, rb]
+        to show on the plot, by default None
+    log_flag : Optional[bool], optional
+        flag to plot in a log scale
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
+    X_name: Optional[List(str)], optional
+        Names of X varibale shown as x,y,z-labels
+        by default None
+    mesh_size : Optional[int], optional
+        mesh size, by default 41
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    name : Optional[str], optional
+            Name of the objective function, 
+            by default 'simple_experiment'
+    """
+    # Create 2D mesh test points  
+    X_test, X1_test, X2_test = create_2D_mesh_X(mesh_size)
+    # Calculate objective function value 
+    Y_obj_test = eval_objective_func(X_test, X_ranges, objective_func)
+    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test)
+    Y_obj_lower_2D, Y_obj_upper_2D = None, None
+
+
+    # Set up the path to save graphical results
+    parent_dir = os.getcwd()
+    exp_path = os.path.join(parent_dir, name)
+
+    response_surface(X1_test=X1_test,
+                     X2_test=X2_test,
+                     Y_real=Y_obj_test_2D,  
+                     Y_real_lower=Y_obj_lower_2D, 
+                     Y_real_upper=Y_obj_upper_2D, 
+                     Y_real_range=Y_real_range,
+                     Y_name= Y_name,
+                     log_flag=log_flag,
+                     x_indices=x_indices,
+                     X_ranges= X_ranges,
+                     X_names= X_names, 
+                     save_fig=save_fig,
+                     save_path=exp_path,
+                     i_iter='objective')
+
+
+
+# learning plot 

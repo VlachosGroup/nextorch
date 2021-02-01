@@ -65,7 +65,7 @@ X_init = np.array([[0, 0.25, 0.5, 0.75]]).T
 Y_init = objective_func(X_init)
 # Equavalent to Y_init = bo.eval_objective_func(X_init, [0,1], objective_func)
 
-# Initialize an Experiment object
+#%% Initialize an Experiment object
 # Set its name, the files will be saved under the folder with the same name
 Exp = bo.Experiment('simple_1d') 
 # Import the initial data
@@ -82,8 +82,8 @@ save_fig_flag = False
 
 #%% Optimization loop
 # Set the number of iterations  
-n = 10
-for i in range(n):
+n_trials = 10
+for i in range(n_trials):
     # Generate the next experiment point
     X_new, X_new_real, acq_func = Exp.generate_next_point()
     # Get the reponse at this point

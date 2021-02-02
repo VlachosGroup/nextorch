@@ -1,2 +1,2 @@
-# nextorch
- BoTorch Implementation of the Next Experiment Point Generation
+# NEXTorch
+ Next EXperiment toolkit implementation in PyTorch/BoTorch (NEXTorch)

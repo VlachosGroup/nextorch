@@ -144,3 +144,8 @@ plotting.objective_surface(objective_func, X_ranges, Y_real_range = [0, 25])
 plotting.response_surface_exp(Exp_lhc, Y_real_range = [0, 25])
 # full fatorial error heatmap
 plotting.response_surface_exp(Exp_ff, Y_real_range = [0, 25])
+
+
+# Compare two plans in terms optimum in each trial
+plotting.opt_per_trial([Exp_ff.Y_real, Exp_lhc.Y_real], 
+                       design_names = ['Full Fatorial', 'LHC'])

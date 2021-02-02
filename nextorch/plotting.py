@@ -845,6 +845,8 @@ def sampling_3d(
     # set default design names if none
     if design_names is None:
         design_names = ['design' + str(i) for i in range(len(Xs))]
+    if not isinstance(design_names, list):
+        design_names = [design_names]
     # set the file name
     # if only one set of design, use that design name
     # else use comparison in the name
@@ -984,7 +986,7 @@ def response_heatmap(
     Y_name : Optional[str], optional
         Name of Y variable, by default None
     log_flag : Optional[bool], optional
-        flag to plot in a log scale
+        flag to plot in a log scale, by default False
     x_indices : Optional[List[int]], optional
         indices of two x variables, by default [0, 1]
     X_ranges : Optional[MatrixLike2d], optional
@@ -1081,7 +1083,6 @@ def response_heatmap_exp(
     Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
-    X_names: Optional[List[str]] = None, 
     show_samples: Optional[bool] = True,
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False):
@@ -1098,9 +1099,6 @@ def response_heatmap_exp(
         flag to plot in a log scale
     x_indices : Optional[List[int]], optional
         indices of two x variables, by default [0, 1]
-    X_name: Optional[List(str)], optional
-        Names of X varibale shown as x,y,z-labels
-        by default None
     show_samples: Optional[bool], optional
         if true show the sample points   
         by default True
@@ -1137,7 +1135,6 @@ def objective_heatmap_exp(
     Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
-    X_names: Optional[List[str]] = None, 
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False):
     """Show a heat map for objective function in a real scale
@@ -1153,9 +1150,6 @@ def objective_heatmap_exp(
         flag to plot in a log scale
     x_indices : Optional[List[int]], optional
         indices of two x variables, by default [0, 1]
-    X_name: Optional[List(str)], optional
-        Names of X varibale shown as x,y,z-labels
-        by default None
     mesh_size : Optional[int], optional
         mesh size, by default 41
     save_fig: Optional[bool], optional
@@ -1607,4 +1601,113 @@ def objective_surface(
 
 
 
-# learning plot 
+
+def opt_per_trial(
+    Ys: Union[list, ArrayLike1d],
+    Y_real_range: Optional[ArrayLike1d] = None, 
+    Y_name: Optional[str] = None,
+    log_flag: Optional[bool] = False,
+    design_names: Optional[Union[str, List[str]]] = None,
+    save_fig: Optional[bool] = False, 
+    save_path: Optional[str] = None,
+):
+    """Discovery plot  
+    show the optimum value performance versus the trial number
+    i.e. the index of training data
+
+    Parameters
+    ----------
+    Ys : Union[list, ArrayLike1d]
+        Response of each design in a real scale
+    Y_real_range : ArrayLike1d
+        Ranges of the response, [lb, rb]
+        to show on the plot, by default None
+    Y_name : Optional[str], optional
+        Name of Y variable, by default None
+    log_flag : Optional[bool], optional
+        flag to plot in a log scale, by default False
+    design_names : Optional[List[str]], optional
+        Names of the designs, by default None
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    """
+    # if only one set of design is input, convert to list
+    if not isinstance(Ys, list):
+        Ys = [Ys]
+    # set default design names if none
+    if design_names is None:
+        design_names = ['design' + str(i) for i in range(len(Ys))]
+    if not isinstance(design_names, list):
+        design_names = [design_names]
+    # Set Y_name in file name
+    if Y_name is None:
+        Y_name = ''
+    # set the file name
+    # if only one set of design, use that design name
+    # else use comparison in the name
+    file_name = 'opt_per_trial_' + Y_name + '_'
+    if not isinstance(design_names, list):
+        file_name += design_names
+    else:
+        file_name += 'comparison'  
+
+    # set the colors
+    colors = colormap(np.linspace(0, 1, len(Ys)))
+    # make the plot
+    fig,ax = plt.subplots(figsize=(8, 6))
+
+    for yi, ci, name_i in zip(Ys, colors, design_names):
+        if log_flag:
+            yi = np.log10(abs(yi))
+        opt_yi = np.maximum.accumulate(yi)
+        ax.plot(np.arange(len(yi)), opt_yi,  '-o', color = ci, \
+            label = name_i, markersize=5, linewidth = 3, markerfacecolor="None")
+    if Y_real_range is not None:
+        ax.set_ylim(Y_real_range)
+    ax.set_xlabel('Trial Index')
+    ax.set_ylabel('Best Observed'+ Y_name)
+    ax.legend()
+
+    # save the figure as png
+    if save_fig:
+        if save_path is None: 
+            save_path = os.getcwd()
+        if not os.path.exists(save_path): os.makedirs(save_path)
+        fig.savefig(os.path.join(save_path, file_name + '.png'), 
+                    bbox_inches="tight")
+
+
+def opt_per_trial_exp(
+    Exp: Experiment, 
+    Y_real_range: Optional[ArrayLike1d] = None, 
+    log_flag: Optional[bool] = False,
+    save_fig: Optional[bool] = False):
+    """Discovery plot  
+    show the optimum value performance versus the trial number
+    i.e. the index of training data
+    Using the experiment object
+
+    Parameters
+    ----------
+    Exp : Experiment
+        Experiment object
+    Y_real_range : ArrayLike1d
+        Ranges of the response, [lb, rb]
+        to show on the plot, by default None
+    log_flag : Optional[bool], optional
+        flag to plot in a log scale, by default False
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    """
+    opt_per_trial(Ys=Exp.Y_real,
+                  Y_name=Exp.Y_names[0],
+                  Y_real_range=Y_real_range,
+                  log_flag=log_flag,
+                  save_fig=save_fig,
+                  save_path=Exp.exp_path,
+                  design_names='final')

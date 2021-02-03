@@ -8,7 +8,6 @@ Objective function: simple nonlinear
     Analytical form available: Yes
 Acqucision function: the default, expected improvement (EI)
 Initial Sampling: grid search
-Input X scale: unit
 
 """
 

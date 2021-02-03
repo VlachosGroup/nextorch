@@ -1,14 +1,13 @@
 """
 Example 3
 
-Goal: minimization
+Goal: maximization 
 Objective function: 2D Langmuir Hinshelwood mechanism
     Input (X) dimension: 2
     Output (Y) dimension: 1
     Analytical form available: Yes
 Acqucision function: the default, expected improvement (EI)
 Initial Sampling: full factorial and Latin Hypercube
-Input X scale: unit
 
 """
 
@@ -19,8 +18,6 @@ sys.path.insert(0, project_path)
 
 import numpy as np
 from nextorch import plotting, bo, doe
-import nextorch.utils as ut
-import matplotlib.pyplot as plt
 
 
 # Set a flag for saving png figures

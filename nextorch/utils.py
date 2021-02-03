@@ -2,6 +2,11 @@
 nextorch.utils
 
 Utility functions for Bayesian Optimization
+
+
+# experiments are in tensor
+# plot in numpy
+# util functions works for both tensor and numpy
 """
 
 import numpy as np
@@ -9,7 +14,7 @@ import copy
 import torch
 from torch import Tensor 
 
-from typing import Optional, TypeVar, Union, Tuple
+from typing import Optional, TypeVar, Union, Tuple, List
 # NEED TO EXPLAIN THESE IN DOCS
 # Create a type variable for 1D arrays from numpy, np.ndarray
 Array = TypeVar('Array')
@@ -86,7 +91,7 @@ def get_ranges_X(X: MatrixLike2d) -> list:
     """
     if len(X.shape)<2:
         X = copy.deepcopy(X)
-        X = np.array([X])
+        X = np.expand_dims(X, axis=1) #If 1D, make it 2D array
         
     X_ranges = []
     n_dim = X.shape[1]
@@ -435,7 +440,7 @@ def create_2D_mesh_X(mesh_size: Optional[int] = 41
     Returns
     -------
     X_test: Matrix
-        X in 2D mesh
+        X in 2D mesh, 2 columns
     X1: Matrix
         X1
     X2: Matrix
@@ -486,7 +491,6 @@ def transform_2D_mesh_Y(X: ArrayLike1d, mesh_size: Optional[int] = 41
     
 
 
-#%%
 def transform_2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
 ) -> Tuple[Matrix, Matrix]:
     """Transform X1 and X2 in unit scale to real scales for plotting
@@ -511,6 +515,109 @@ def transform_2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
     X2 = inverse_unitscale_xv(X2, X_ranges[1])
     
     return X1, X2
-# experiments are in tensor
-# plot in numpy
-# util functions works for both tensor and numpy
+
+
+def prep_full_X_unit(
+    X_test_2D: MatrixLike2d, 
+    n_dim: int, 
+    x_indices: Optional[List[int]] = [0, 1],
+    fixed_values: Optional[ArrayLike1d] = [],
+) -> MatrixLike2d:
+    """Choose two dimensions, create 2D mesh and keep the rest
+    as fixed values 
+
+    Parameters
+    ----------
+    X_test_2D : MatrixLike2d
+        X in 2D mesh, 2 columns, in a unit scale 
+    n_dim : int
+        Dimensional of X, i.e., number of columns 
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
+    fixed_values : Optional[ArrayLike1d], optional
+        fixed values in other dimensions, 
+        in a unit scale, by default []
+
+    Returns
+    -------
+    X_full: MatrixLike2d
+        Test X in a unit scale
+    """
+
+    n_points = X_test_2D.shape[0]
+    xi_list = [] # a list of the columns
+    di_fixed = 0 # index for fixed value dimensions
+    di_2d = 0
+
+    for di in range(n_dim):
+        if di in x_indices:
+            xi = X_test_2D[:, di_2d]
+            di_2d += 1
+        else:
+            # Initialize the fixed value with 0s
+            fix_value_i = 0 
+            if di_fixed < len(fixed_values):
+                fix_value_i = fixed_values[di_fixed]
+            xi = np.ones((n_points, 1)) * fix_value_i
+            di_fixed += 1
+
+        xi_list.append(xi)
+    # Stack the columns into a matrix
+    X_full = np.column_stack(xi_list)
+
+    return X_full
+
+
+def prep_full_X_real(
+    X_test_2D: MatrixLike2d, 
+    X_ranges: MatrixLike2d, 
+    x_indices: Optional[List[int]] = [0, 1],
+    fixed_values_real: Optional[ArrayLike1d] = [],
+) -> MatrixLike2d:
+    """Choose two dimensions, create 2D mesh and keep the rest
+    as fixed values 
+
+    Parameters
+    ----------
+    X_test_2D : MatrixLike2d
+        X in 2D mesh, 2 columns, in a unit scale
+    X_ranges : Optional[MatrixLike2d], optional
+        list of x ranges, by default None
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
+    fixed_values : Optional[ArrayLike1d], optional
+        fixed values in other dimensions, 
+        in a real scale, by default []
+
+    Returns
+    -------
+    X_full: MatrixLike2d
+        Test X in a unit scale
+    """
+    n_dim = len(X_ranges)
+    n_points = X_test_2D.shape[0]
+    xi_list = [] # a list of the columns
+    di_fixed = 0 # index for fixed value dimensions
+    di_2d = 0
+
+    for di in range(n_dim):
+        if di in x_indices:
+            xi = X_test_2D[:, di]
+            # Convert xi to a real scale
+            xi = inverse_unitscale_xv(xi, X_ranges[di])
+            di_2d += 1
+        else:
+            # Initialize the fixed value with left bound
+            # No need to scale 
+            fix_value_i = X_ranges[di][0] 
+            if di_fixed < len(fixed_values_real):
+                fix_value_i = fixed_values_real[di_fixed]
+            xi = np.ones((n_points, 1)) * fix_value_i
+            di_fixed += 1
+
+        xi_list.append(xi)
+    # Stack the columns into a matrix
+    X_full = np.column_stack(xi_list)
+
+    return X_full
+

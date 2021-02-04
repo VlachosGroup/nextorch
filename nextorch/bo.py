@@ -22,7 +22,7 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.optim.fit import fit_gpytorch_torch
 
 import nextorch.utils as ut
-from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d
+from nextorch.utils import Matrix, ArrayLike1d, MatrixLike2d
 from nextorch.utils import tensor_to_np, np_to_tensor
 
 # Dictionary for compatiable acqucision functions
@@ -766,7 +766,7 @@ class Experiment():
         return Y_new
 
     def predict(self, 
-        X_test: Tensor, 
+        X_test: MatrixLike2d, 
         show_confidence: Optional[bool] = False,
     ) -> Union[Tensor, Tuple[Tensor, Tensor, Tensor]]:
         """Use GP model for prediction at X_test
@@ -774,7 +774,7 @@ class Experiment():
         Parameters
         ----------
         X_test : Tensor
-            X Tensor used for testing, must have the same dimension 
+            X matrix used for testing, must have the same dimension 
             as X for training
         show_confidence : Optional[bool], optional
             by default False, only return posterior mean
@@ -798,13 +798,16 @@ class Experiment():
         return Y_test
 
     def predict_real(self, 
-                    X_test,
+                    X_test: MatrixLike2d,
                     show_confidence: Optional[bool] = False
     ) -> Union[Matrix, Tuple[Matrix, Matrix, Matrix]]:
         """Use GP model for prediction at X_test
 
         Parameters
         ----------
+        X_test : MatrixLike2d
+            X matrix used for testing, must have the same dimension 
+            as X for training
         show_confidence : Optional[bool], optional
             by default False, only return posterior mean
             If True, return the mean, and lower, upper confidence interval

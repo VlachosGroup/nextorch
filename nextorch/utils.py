@@ -442,9 +442,9 @@ def create_2D_mesh_X(mesh_size: Optional[int] = 41
     X_test: Matrix
         X in 2D mesh, 2 columns
     X1: Matrix
-        X1
+        X1 for surface plots
     X2: Matrix
-        X2
+        X2 for surface plots
     """
     nx1, nx2 = (mesh_size, mesh_size)
     x1 = np.linspace(0, 1, nx1)
@@ -521,10 +521,10 @@ def prep_full_X_unit(
     X_test_2D: MatrixLike2d, 
     n_dim: int, 
     x_indices: Optional[List[int]] = [0, 1],
-    fixed_values: Optional[ArrayLike1d] = [],
+    fixed_values: Optional[Union[ArrayLike1d, float]] = [],
 ) -> MatrixLike2d:
-    """Choose two dimensions, create 2D mesh and keep the rest
-    as fixed values 
+    """Given 2D mesh and keep the rest as fixed values 
+    returns full size X
 
     Parameters
     ----------
@@ -534,7 +534,7 @@ def prep_full_X_unit(
         Dimensional of X, i.e., number of columns 
     x_indices : Optional[List[int]], optional
         indices of two x variables, by default [0, 1]
-    fixed_values : Optional[ArrayLike1d], optional
+    fixed_values : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a unit scale, by default []
 
@@ -543,7 +543,9 @@ def prep_full_X_unit(
     X_full: MatrixLike2d
         Test X in a unit scale
     """
-
+    # Convert to a list given a single fixed value input
+    if not isinstance(fixed_values, list):
+        fixed_values = [fixed_values]
     n_points = X_test_2D.shape[0]
     xi_list = [] # a list of the columns
     di_fixed = 0 # index for fixed value dimensions
@@ -572,20 +574,20 @@ def prep_full_X_real(
     X_test_2D: MatrixLike2d, 
     X_ranges: MatrixLike2d, 
     x_indices: Optional[List[int]] = [0, 1],
-    fixed_values_real: Optional[ArrayLike1d] = [],
+    fixed_values_real: Optional[Union[ArrayLike1d, float]] = [],
 ) -> MatrixLike2d:
-    """Choose two dimensions, create 2D mesh and keep the rest
-    as fixed values 
+    """Given 2D mesh and keep the rest as fixed values 
+    returns full size X
 
     Parameters
     ----------
     X_test_2D : MatrixLike2d
         X in 2D mesh, 2 columns, in a unit scale
-    X_ranges : Optional[MatrixLike2d], optional
-        list of x ranges, by default None
+    X_ranges : MatrixLike2d
+        list of x ranges
     x_indices : Optional[List[int]], optional
         indices of two x variables, by default [0, 1]
-    fixed_values : Optional[ArrayLike1d], optional
+    fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a real scale, by default []
 
@@ -594,6 +596,10 @@ def prep_full_X_real(
     X_full: MatrixLike2d
         Test X in a unit scale
     """
+    # Convert to a list given a single fixed value input
+    if not isinstance(fixed_values_real, list):
+        fixed_values_real = [fixed_values_real]
+
     n_dim = len(X_ranges)
     n_points = X_test_2D.shape[0]
     xi_list = [] # a list of the columns
@@ -621,3 +627,64 @@ def prep_full_X_real(
 
     return X_full
 
+
+def create_2D_X_full(
+    X_ranges: MatrixLike2d, 
+    x_indices: Optional[List[int]] = [0, 1],
+    fixed_values: Optional[Union[ArrayLike1d, float]] = [],
+    fixed_values_real: Optional[Union[ArrayLike1d, float]] = [],
+    mesh_size: Optional[int] = 41
+) -> Tuple[Matrix, Matrix, Matrix]:
+    """Choose two dimensions, create 2D mesh and keep the rest
+    as fixed values 
+
+    Parameters
+    ----------
+    X_ranges : MatrixLike2d
+        list of x ranges
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
+    fixed_values : Optional[Union[ArrayLike1d, float]], optional
+        fixed values in other dimensions, 
+        in a unit scale, by default []
+    fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
+        fixed values in other dimensions, 
+        in a real scale, by default []
+    mesh_size : int, optional
+        mesh size, by default 41
+
+    Returns
+    -------
+    X_test: MatrixLike2d
+        Test X in a unit scale
+    X1: Matrix
+        X1 for surface plots
+    X2: Matrix
+        X2 for surface plots
+
+    Raises
+    ------
+    ValueError
+        When the fix values at other dimensions are missing
+    """
+    n_dim = len(X_ranges)
+    # Create 2D mesh test points  
+    X_test_2D, X1, X2 = create_2D_mesh_X(mesh_size)
+    # Get full X with fixed values at other dimensions 
+    X_test = X_test_2D
+    if n_dim > 2:
+        if fixed_values is not None:
+            X_test = prep_full_X_unit(X_test_2D=X_test_2D,
+                                    n_dim = n_dim,
+                                    x_indices = x_indices,
+                                    fixed_values=fixed_values)
+        elif fixed_values_real is None:
+            X_test = prep_full_X_real(X_test_2D=X_test_2D,
+                                     X_ranges=X_ranges,
+                                     x_indices = x_indices,
+                                     fixed_values=fixed_values)
+            X_test = unitscale_X(X_test, X_ranges=X_ranges)
+        else:
+            raise ValueError("Must input values at other dimensions")
+
+    return X_test, X1, X2

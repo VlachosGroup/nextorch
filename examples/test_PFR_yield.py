@@ -1,7 +1,7 @@
 """
 Example 4
 
-Goal: minimization
+Goal: maximization
 Objective function: PFR reaction model, yield
     Input (X) dimension: 3
     Output (Y) dimension: 1
@@ -120,13 +120,11 @@ for i in range(n_trials_lhc):
     Exp_lhc.run_trial(X_new, X_new_real, Y_new_real)
     
 #%% plots 
-from nextorch import plotting, bo, doe, utils
-
 # Check the sampling points
 # Final lhc Sampling
 x2_fixed_real = 0.7 # fixed x2 value
 Y_plot_range = [0, 50]
-
+x_indices = [0, 2]
 plotting.sampling_3d_exp(Exp_lhc, 
                          slice_axis = 'y', 
                          slice_value_real = x2_fixed_real)    
@@ -140,44 +138,46 @@ plotting.sampling_3d([Exp_ff.X, Exp_lhc.X],
 # Reponse heatmaps
 
 # Objective function heatmap
-plotting.objective_heatmap(objective_func, 
-                           X_ranges, 
-                           Y_real_range = Y_plot_range, 
-                           x_indices = [0, 2], 
-                           fixed_values = [0.7])
-# LHC heatmap
+#(this takes a long time)
+#plotting.objective_heatmap(objective_func, 
+#                           X_ranges, 
+#                           Y_real_range = Y_plot_range, 
+#                           x_indices = x_indices, 
+#                           fixed_values_real = x2_fixed_real)
+# LHC heatmap 
 plotting.response_heatmap_exp(Exp_lhc, 
                               Y_real_range = Y_plot_range, 
-                              x_indices = [0, 2], 
-                              fixed_values = [0.7])
+                              x_indices = x_indices, 
+                              fixed_values_real = x2_fixed_real)
 # full factorial heatmap
 plotting.response_heatmap_exp(Exp_ff, 
                               Y_real_range = Y_plot_range,
-                              x_indices = [0, 2], 
-                              fixed_values = [0.7])
+                              x_indices = x_indices, 
+                              fixed_values_real = x2_fixed_real)
 
 
+#%%
+# Suface plots   
+# Objective function surface plot  
+#(this takes a long time)
+#plotting.objective_surface(objective_func, 
+#                           X_ranges, 
+#                           Y_real_range = Y_plot_range, 
+#                           x_indices = x_indices, 
+#                           fixed_values_real = x2_fixed_real)
+# LHC heatmap
+plotting.response_surface_exp(Exp_lhc, 
+                              Y_real_range = Y_plot_range,
+                              x_indices = x_indices, 
+                              fixed_values_real = x2_fixed_real)
+# full fatorial error heatmap
+plotting.response_surface_exp(Exp_ff, 
+                              Y_real_range = Y_plot_range,
+                              x_indices = x_indices, 
+                              fixed_values_real = x2_fixed_real)
 
-# TAKE REAL FOR FIX VALUES
-# ALSO TAKE LIST AND A SINGLE FLOAT
 
-
-## LHC error heatmap
-#plotting.response_heatmap_err_exp(Exp_lhc, Y_real_range = [0, 5])
-## full fatorial error heatmap
-#plotting.response_heatmap_err_exp(Exp_ff, Y_real_range = [0, 5])
-#
-#
-## Suface plots   
-## Objective function surface plot  
-#plotting.objective_surface(objective_func, X_ranges, Y_real_range = [0, 25])
-## LHC heatmap
-#plotting.response_surface_exp(Exp_lhc, Y_real_range = [0, 25])
-## full fatorial error heatmap
-#plotting.response_surface_exp(Exp_ff, Y_real_range = [0, 25])
-#
-#
-## Compare two plans in terms optimum in each trial
-#plotting.opt_per_trial([Exp_ff.Y_real, Exp_lhc.Y_real], 
-#                       design_names = ['Full Fatorial', 'LHC'])
+# Compare two plans in terms optimum in each trial
+plotting.opt_per_trial([Exp_ff.Y_real, Exp_lhc.Y_real], 
+                       design_names = ['Full Fatorial', 'LHC'])
 

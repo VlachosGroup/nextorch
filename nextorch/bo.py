@@ -16,8 +16,8 @@ from typing import Optional, TypeVar, Union, Tuple, List
 from botorch.models import SingleTaskGP
 from botorch.models.model import Model
 from botorch.acquisition import AcquisitionFunction
-from botorch.acquisition.objective import LinearMCObjective
-from botorch.acquisition.analytic import ExpectedImprovement, UpperConfidenceBound, ProbabilityOfImprovement, _get_noiseless_fantasy_model
+from botorch.acquisition.objective import AcquisitionObjective, ScalarizedObjective, LinearMCObjective
+from botorch.acquisition.analytic import ExpectedImprovement, UpperConfidenceBound, ProbabilityOfImprovement
 from botorch.acquisition.monte_carlo import qExpectedImprovement, qUpperConfidenceBound, qProbabilityOfImprovement
 from botorch.optim import optimize_acqf
 from gpytorch.mlls import ExactMarginalLogLikelihood
@@ -273,7 +273,7 @@ def get_acq_func(
         minimize: Optional[bool] = True, 
         beta: Optional[float] = 0.2,
         best_f: Optional[float] = 1.0,
-        objective: Optional[LinearMCObjective] = None, 
+        objective: Optional[AcquisitionObjective] = None, 
         **kwargs
 ) -> AcquisitionFunction:
     """Get a specific type of acqucision function
@@ -292,7 +292,7 @@ def get_acq_func(
         hyperparameter used in UCB, by default 0.2
     best_f : Optional[float], optional
         best value seen so far used in PI and EI, by default 1.0
-    objective : Optional['botorch.acquisition.objective.LinearMCObjective'_], optional
+    objective : Optional['botorch.acquisition.objective.AcquisitionObjective'_], optional
         Linear objective constructed from a weight vector,
         Used for multi-ojective optimization
 
@@ -310,9 +310,9 @@ def get_acq_func(
         if input name is not a validate acquisition function
 
     :_'botorch.models.model.Model': https://botorch.org/api/models.html#botorch.models.model.Model
+    :_'botorch.acquisition.objective.AcquisitionObjective': https://botorch.org/api/acquisition.html#botorch.acquisition.objective.AcquisitionObjective
     :_'botorch.acquisition': https://botorch.org/api/acquisition.html
     :_'botorch.acquisition.AcquisitionFunction': https://botorch.org/api/acquisition.html#botorch.acquisition.acquisition.AcquisitionFunction
-    :_'botorch.acquisition.objective.LinearMCObjective': https://botorch.org/api/acquisition.html#botorch.acquisition.objective.LinearMCObjective
     
     """
 
@@ -608,6 +608,7 @@ class BasicExperiment(Database):
         objective_func: Optional[object] = None,  
         model: Optional[Model] = None, 
         minimize: Optional[bool] = True,
+        Y_weights: Optional[ArrayLike1d] = None
     ):  
         """Set the specs for Bayseian Optimization
 
@@ -620,15 +621,45 @@ class BasicExperiment(Database):
         minimize : Optional[bool], optional
             by default True, minimize the objective function
             Otherwise False, maximize the objective function
+        Y_weights : Optional[ArrayLike1d], optional
+            Weights assigned to each objective Y, sums to 1
+            by default None, each objective is treated equally
         
         :_'botorch.models.model.Model': https://botorch.org/api/models.html#botorch.models.model.Model
         """
+        # assign objective function
         self.objective_func = objective_func
-
+        # create a GP model based on input data
         if model is None:
             self.model = create_and_fit_gp(self.X, self.Y)
-
+        # set optimization goal
         self.minimize = minimize
+        # assign weights to each objective, useful only to multi-objective systems
+        if Y_weights is not None:
+            self.assign_weights(Y_weights)
+
+    def assign_weights(
+        self, 
+        Y_weights: Optional[ArrayLike1d] = None):
+        """Assign weights to each objective Y
+
+        Parameters
+        ----------
+        Y_weights : Optional[ArrayLike1d], optional
+            Weights assigned to each objective Y, sums to 1
+            by default None, each objective is treated equally
+        """
+        
+        # if no input, assign equal weights to each objective 
+        if Y_weights is None:
+            Y_weights = torch.ones(self.n_objectives)
+
+        # Normalize the weights to sum as 1
+        Y_weights = np_to_tensor(Y_weights)
+        Y_weights = torch.div(Y_weights, torch.sum(Y_weights))
+
+        self.Y_weights = Y_weights
+
 
     def run_trial(self, 
         X_new: Tensor,
@@ -682,6 +713,7 @@ class BasicExperiment(Database):
         self.model = fit_with_new_observations(self.model, X_new, Y_new)
         
         return Y_new
+
 
     def predict(self, 
         X_test: MatrixLike2d, 
@@ -781,8 +813,18 @@ class BasicExperiment(Database):
         return Y_real
 
     def run_trials_auto(self, n_trials: int):
-        """Optimization loop when objective function is defined 
-        """
+        """Automated optimization loop with one 
+        infill point added per loop
+        When objective function is defined,
+        responses are obtained from the objective function
+        otherwise, from the GP model 
+
+        Parameters
+        ----------
+        n_trials : int
+            Number of optimization loops
+            one infill point is added per loop
+        """        
         for i in range(n_trials):
             # Generate the next experiment point
             X_new, X_new_real, _ = self.generate_next_point()
@@ -928,30 +970,11 @@ class Experiment(BasicExperiment):
         
 class WeightedExperiment(BasicExperiment):
     """
-    Multiobjective (MOO) Experiment object
+    WeightedExperiment class
     Base: BasicExperiment
+    Experiments with weighted objectives
     """
-    def assign_weights(
-        self, 
-        Y_weights: Optional[ArrayLike1d] = None):
-        """Assign weights to each objective Y
-
-        Parameters
-        ----------
-        Y_weights : Optional[ArrayLike1d], optional
-            Weights assigned to each objective Y, sums to 1
-            by default None, each objective is treated equally
-        """
-        
-        # if no input, assign equal weights to each objective 
-        if Y_weights is None:
-            Y_weights = torch.ones(self.n_objectives)
-
-        # Normalize the weights to sum as 1
-        Y_weights = np_to_tensor(Y_weights)
-        Y_weights = torch.div(Y_weights, torch.sum(Y_weights))
-
-        self.Y_weights = Y_weights
+    
 
     def update_bestseen(self) -> Tensor:
         """Calculate the best seen value in Y 
@@ -1007,21 +1030,26 @@ class WeightedExperiment(BasicExperiment):
         """
         self.acq_func_name = acq_func_name
         self.beta = beta
-        # Update the best_f if necessary
+
+        # Update the best_f for analytic acq funcs
+        # Set acqucision objective; 
+        # ScalarizedObjective for analytic
+        # LinearMCObjective for MC
         best_f = None
         if self.acq_func_name in ['EI', 'PI', 'UCB']:
             best_f = self.update_bestseen()
-
-        # Set acqucision objective
-        acq_objective = LinearMCObjective(weights=self.Y_weights) 
-
+            acq_objective = ScalarizedObjective(weights=self.Y_weights) 
+        else:
+            acq_objective = LinearMCObjective(weights=self.Y_weights)
+        
+        
         # Set parameters for acquisition function
         acq_func = get_acq_func(self.model, 
                                 self.acq_func_name, 
                                 minimize= self.minimize, 
                                 beta = self.beta,
                                 best_f = best_f,
-                                objective=acq_objective
+                                objective=acq_objective,
                                 **kwargs)
         
         unit_bounds = torch.stack([torch.zeros(self.n_dim), torch.ones(self.n_dim)])
@@ -1081,7 +1109,12 @@ class WeightedExperiment(BasicExperiment):
 
 
 class MOOExperiment():
-    # this should be a super, override 
+    """
+    MOOExperiment class
+    For multi-objective optimization (MOO)
+    Currently, only supports two objectives 
+    Used for generating Pareto front
+    """
     def __init__(self, name: Optional[str] = 'MOO_experiment'):
         """Define the name of the epxeriment
 
@@ -1092,20 +1125,20 @@ class MOOExperiment():
         """
         BasicExperiment.__init__(self, name)
 
-    # input the weights matrix
+
     def set_optim_specs(self,
         weight_pairs: MatrixLike2d,
         objective_func: Optional[object] = None,  
         minimize: Optional[bool] = True,
     ):  
-        """Set the specs for Bayseian Optimization
+        """Set the specs for Pareto front Optimization
 
         Parameters
         ----------
+        weight_pairs : MatrixLike2d
+            List of weight pairs to show in Pareto front
         objective_func : Optional[object], by default None
             objective function that is being optimized
-        model : Optional['botorch.models.model.Model'_], optional
-            pre-trained GP model, by default None
         minimize : Optional[bool], optional
             by default True, minimize the objective function
             Otherwise False, maximize the objective function
@@ -1113,15 +1146,14 @@ class MOOExperiment():
         :_'botorch.models.model.Model': https://botorch.org/api/models.html#botorch.models.model.Model
         """
         self.objective_func = objective_func
-
         self.minimize = minimize
 
         # Total number of experiments
         self.n_exp = len(weight_pairs)
+        # List of experiment objects
+        experiments = [] 
 
-        experiments = [] # a list of experiment objects
-
-        # initialize weighted experimnets with weights 
+        # initialize weighted experimnets with data and weights 
         for weight_pair_i in weight_pairs:
             experiment_i = WeightedExperiment()
             experiment_i.input_data(self.X_init, 
@@ -1129,30 +1161,43 @@ class MOOExperiment():
                                     X_ranges = self.X_ranges, 
                                     unit_flag=True)
             experiment_i.set_optim_specs(objective_func=objective_func,
-                                         model=None, #or this none, start fresh
-                                         minimize=minimize)
-            experiment_i.assign_weights(weight_pair_i)
+                                         model=None, #start fresh
+                                         minimize=minimize, 
+                                         Y_weights = weight_pair_i)
             experiments.append(experiment_i)
 
         self.experiments = experiments
         
 
     def train(self, n_trials: int) -> MatrixLike2d: 
+        """Train each experiments with Bayesian Optimization
+        Extract the optimum points of each experiment
 
-        X_opts = []
-        Y_real_opts = []
+        Parameters
+        ----------
+        n_trials : int
+            Number of optimization loops
+            one infill point is added per loop
+
+        Returns
+        -------
+        Y_real_opts: MatrixLike2d
+            Optimum values given each weight pair
+        """
+
+        X_opts = [] # optimum locations, in a unit scale
+        Y_real_opts = []  # optimum values, in a real scale
 
         # train the weighted experiments one by one 
         for experiment_i in self.experiments:
             experiment_i.run_trials_auto(n_trials)
             Y_real_opt, X_opt, index_opt = experiment_i.get_weighted_optim()
-
+            # Save the optimum locations and values
             X_opts.append(X_opt)
             Y_real_opts.append(Y_real_opt)
 
         self.X_opts = X_opts
         self.Y_real_opts = np.array(Y_real_opts)
-
 
         return self.Y_real_opts
 

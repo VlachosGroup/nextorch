@@ -21,8 +21,8 @@ from botorch.models.model import Model
 from typing import Optional, TypeVar, Union, Tuple, List
 from nextorch.utils import  ArrayLike1d, MatrixLike2d, create_2D_X_full, unitscale_xv
 from nextorch.utils import tensor_to_np, standardize_X, transform_2D_mesh_Y
-from nextorch.bo import eval_acq_func, \
-    eval_objective_func, model_predict, model_predict_real, Experiment
+from nextorch.bo import eval_acq_func, eval_objective_func, \
+    model_predict, model_predict_real, Experiment, MOOExperiment
 
 
 # Set matplotlib default values
@@ -70,8 +70,8 @@ def parity(
 
     fig, ax = plt.subplots(figsize=(6,6))
     ax.scatter(y1, y2, s=60, alpha = 0.5)
-    plt.xlabel("Ground Truth")
-    plt.ylabel("Prediction")
+    ax.set_xlabel("Ground Truth")
+    ax.set_ylabel("Prediction")
 
     lims = [
         np.min([y1.min(), y2.min()]),  # min of both axes
@@ -99,9 +99,10 @@ def parity(
                     bbox_inches="tight")
 
 
-def parity_exp(Exp: Experiment, 
-               save_fig: Optional[bool] = False, 
-               design_name: Optional[Union[str, int]] = 'final'):
+def parity_exp(
+    Exp: Experiment, 
+    save_fig: Optional[bool] = False, 
+    design_name: Optional[Union[str, int]] = 'final'):
     """Plot parity plot comparing the ground true 
     objective function values against predicted model mean
     Using Experiment object
@@ -168,8 +169,8 @@ def parity_with_ci(
     
     fig, ax = plt.subplots(figsize=(6,6))
     ax.errorbar(y1, y2, yerr = y2err, fmt = 'o', capsize = 2, alpha = 0.5)
-    plt.xlabel("Ground Truth")
-    plt.ylabel("Prediction")
+    ax.set_xlabel("Ground Truth")
+    ax.set_ylabel("Prediction")
     
     lims = [
         np.min([y1.min(), y2.min()]),  # min of both axes
@@ -1830,6 +1831,107 @@ def objective_surface(
                      save_path=exp_path,
                      i_iter='objective')
 
+
+#%% Functions for Pareto front visualization
+def pareto_front(
+    y1: MatrixLike2d, 
+    y2: MatrixLike2d, 
+    Y_names: Optional[List[str]] = None, 
+    fill: Optional[bool] = True,
+    save_fig: Optional[bool] = False,
+    save_path: Optional[str] = None, 
+    i_iter: Optional[Union[str, int]] = ''):
+    """Plot parity plot comparing the ground true 
+    objective function values against predicted model mean
+
+    Parameters
+    ----------
+    y1 : MatrixLike2d
+        Ground truth values
+    y2 : MatrixLike2d
+        Model predicted values
+    fill: Optional[bool], optional
+        if true fill the space enclosed by the points 
+        by default True 
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    i_iter: Optional[Union[str, int]], optional
+        Iteration number to add to the figure name
+        by default ''
+    """
+    y1 = np.squeeze(tensor_to_np(y1))
+    y2 = np.squeeze(tensor_to_np(y2))
+    # Set default axis names 
+    if Y_names is None:
+            Y_names = ['y1', 'y2']
+
+    fig, ax = plt.subplots(figsize=(6,6))
+    ax.scatter(y1, y2, s=60, alpha = 0.5)
+    if fill:
+        ax.fill_between(y1, y2, color = 'steelblue', alpha=0.3)
+    lims = [
+        np.min([y1.min(), y2.min()]),  # min of both axes
+        np.max([y1.max(), y2.max()]),  # max of both axes
+    ]
+    # number of sections in the axis
+    nsections = 5
+    # now plot both limits against eachother
+    ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
+    ax.set_xlim(lims)
+    ax.set_ylim(lims)
+    ax.set_xticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_yticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_xticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_yticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))
+    ax.set_xlabel(Y_names[0])
+    ax.set_ylabel(Y_names[1])
+
+    plt.show()
+
+    # save the figure as png
+    if save_fig:
+        if save_path is None: 
+            save_path = os.getcwd()
+        if not os.path.exists(save_path): os.makedirs(save_path)
+        fig.savefig(os.path.join(save_path, 'pareto_'+ str(i_iter) + '.png'), 
+                    bbox_inches="tight")
+
+
+
+def pareto_front_exp(
+    Exp: MOOExperiment, 
+    save_fig: Optional[bool] = False, 
+    design_name: Optional[Union[str, int]] = 'final'):
+    """Plot parity plot comparing the ground true 
+    objective function values against predicted model mean
+    Using Experiment object
+
+    Parameters
+    ----------
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    design_name : Optional[Union[str, int]], optional
+        Design name to add to the figure name
+        by default 'final'
+    """
+    Y_real_opts = Exp.Y_real_opts
+
+    pareto_front(y1=Y_real_opts[:, 0], 
+                 y2=Y_real_opts[:, 1],
+                 Y_names=Exp.Y_names,
+                 save_fig=save_fig,
+                 save_path=Exp.exp_path,
+                 i_iter = design_name)
+
+        
 
 
 

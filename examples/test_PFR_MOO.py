@@ -35,7 +35,7 @@ for i, var in enumerate(X_name_list):
     X_name_with_unit.append(var)
     
 # One output
-Y_name_with_unit = 'Yield %'
+Y_name_with_unit = ['Yield %', 'Selectivity %']
 
 # Specify range     
 X_ranges =  [[140, 200], [0, 1], [-2, 2]]
@@ -73,30 +73,27 @@ plotting.sampling_3d(X_init_lhc,
                      X_ranges = X_ranges,
                      design_names = 'LHC')
 
-#%% Initialize an Experiment object
+#%% Initialize an multi-objective Experiment object
 # Set its name, the files will be saved under the folder with the same name
-Exp_lhc = bo.WeightedExperiment('PFR_yield_lhc')  
+Exp_lhc = bo.MOOExperiment('PFR_yield_MOO')  
 # Import the initial data
-Exp_lhc.input_data(X_init_lhc, Y_init_lhc, X_ranges = X_ranges, unit_flag = True)
+Exp_lhc.input_data(X_init_lhc, 
+                   Y_init_lhc, 
+                   X_ranges = X_ranges, 
+                   X_names = X_name_with_unit,
+                   Y_names = Y_name_with_unit,
+                   unit_flag = True)
 # Set the optimization specifications 
 # here we set the objective function, minimization by default
-Exp_lhc.set_optim_specs(objective_func = objective_func, minimize =  False)
-Exp_lhc.assign_weights([0.5, 0.5])
+# Set a weight vector for objective 1
+weights_vector = np.linspace(0, 1, 10)
+Exp_lhc.set_optim_specs(objective_func = objective_func, 
+                        minimize =  False, 
+                        weights = weights_vector)
 #%%
-# Set the number of iterations  
-n_trials_lhc = 54
-Exp_lhc.run_trials_auto(n_trials_lhc)
+# Set the number of iterations for each experiments
+n_trials_lhc = 20
+Exp_lhc.run_exp_auto(n_trials_lhc)
 
-
-#%%
-opt_y = Exp_lhc.Y_real
-
-# Pareto front plot
-import matplotlib.pyplot as plt
-
-fig,ax = plt.subplots(figsize=(6, 6))
-ax.scatter(opt_y[:,0], opt_y[:,1], s = 60, alpha = 0.7)
-#ax.plot(np.linspace(0,100,20), np.linspace(0,100,20), 'r--') # add a parity line
-ax.fill_between(opt_y[:,0], opt_y[:,1], 0, color = 'steelblue', alpha=0.3)
-ax.set_xlabel('Undesired Products Yield (%)')
-ax.set_ylabel(r'$\rm C_{2}H_{4}\ Yield\ (\%) $')
+# Make the pareto plots 
+plotting.pareto_front_exp(Exp_lhc, fill = False)

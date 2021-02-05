@@ -974,8 +974,6 @@ class WeightedExperiment(BasicExperiment):
     Base: BasicExperiment
     Experiments with weighted objectives
     """
-    
-
     def update_bestseen(self) -> Tensor:
         """Calculate the best seen value in Y 
 
@@ -1087,7 +1085,8 @@ class WeightedExperiment(BasicExperiment):
         index_opt: int
             Index of optimal point, zero indexing
         """
-        y_real_linear = torch.dot(self.Y_real, self.Y_weights)
+        Y_weights = tensor_to_np(self.Y_weights)
+        y_real_linear = np.dot(self.Y_real, Y_weights)
 
         tol = 1e-6 #tolerance for finding match
         # Use np.ufunc.accumulate to find the bestseen min/max
@@ -1108,9 +1107,10 @@ class WeightedExperiment(BasicExperiment):
 
 
 
-class MOOExperiment():
+class MOOExperiment(Database):
     """
     MOOExperiment class
+    Base: Database
     For multi-objective optimization (MOO)
     Currently, only supports two objectives 
     Used for generating Pareto front
@@ -1127,7 +1127,7 @@ class MOOExperiment():
 
 
     def set_optim_specs(self,
-        weight_pairs: MatrixLike2d,
+        weights: Union[ArrayLike1d, float],
         objective_func: Optional[object] = None,  
         minimize: Optional[bool] = True,
     ):  
@@ -1135,8 +1135,8 @@ class MOOExperiment():
 
         Parameters
         ----------
-        weight_pairs : MatrixLike2d
-            List of weight pairs to show in Pareto front
+        weights : ArrayLike1d
+            List of weights for objective 1 between 0 and 1
         objective_func : Optional[object], by default None
             objective function that is being optimized
         minimize : Optional[bool], optional
@@ -1149,12 +1149,22 @@ class MOOExperiment():
         self.minimize = minimize
 
         # Total number of experiments
-        self.n_exp = len(weight_pairs)
+        if isinstance(weights, float):
+            weights = [weights]
+        self.n_exp = len(weights)
+
+        # Compute the weight pairs 
+        # The weights for objective 2 is 1-weight_i
+        weight_pairs = []
+        for weight_i in weights:
+            weight_pairs.append([weight_i, 1-weight_i])
+        
         # List of experiment objects
         experiments = [] 
 
+        print('Initializing {} experiments'.format(self.n_exp))
         # initialize weighted experimnets with data and weights 
-        for weight_pair_i in weight_pairs:
+        for i, weight_pair_i in enumerate(weight_pairs):
             experiment_i = WeightedExperiment()
             experiment_i.input_data(self.X_init, 
                                     self.Y_init_real, 
@@ -1165,12 +1175,13 @@ class MOOExperiment():
                                          minimize=minimize, 
                                          Y_weights = weight_pair_i)
             experiments.append(experiment_i)
+            print('Initializing experiments {:.2f} % '.format((i+1)/self.n_exp *100))
 
         self.experiments = experiments
         
 
-    def train(self, n_trials: int) -> MatrixLike2d: 
-        """Train each experiments with Bayesian Optimization
+    def run_exp_auto(self, n_trials: int) -> MatrixLike2d: 
+        """run each experiments with Bayesian Optimization
         Extract the optimum points of each experiment
 
         Parameters
@@ -1188,53 +1199,20 @@ class MOOExperiment():
         X_opts = [] # optimum locations, in a unit scale
         Y_real_opts = []  # optimum values, in a real scale
 
+        print('Running {} experiments'.format(self.n_exp))
         # train the weighted experiments one by one 
-        for experiment_i in self.experiments:
+        for i, experiment_i in enumerate(self.experiments):
             experiment_i.run_trials_auto(n_trials)
             Y_real_opt, X_opt, index_opt = experiment_i.get_weighted_optim()
             # Save the optimum locations and values
             X_opts.append(X_opt)
             Y_real_opts.append(Y_real_opt)
+            print('Running experiments {:.2f} % '.format((i+1)/self.n_exp *100))
 
         self.X_opts = X_opts
         self.Y_real_opts = np.array(Y_real_opts)
 
         return self.Y_real_opts
-
-
-    
-# def predict_weighted_reponse(self, X_test: MatrixLike2d):
-#         """Use GP model for prediction at X_test
-#         return linearized reponses 
-
-#         Parameters
-#         ----------
-#         X_test : MatrixLike2d
-#             X matrix used for testing, must have the same dimension 
-#             as X for training
-
-#         Returns
-#         -------
-#         Y_test_linear: numpy matrix
-#             linear standardized predictions 
-#         """
-
-#         # Case 1, no objective function is specified
-#         # Use GP models as ground truth  
-#         if self.objective_func is None:
-#             Y_test = self.predict(X_test, show_confidence=False)
-#         # Case 2, objective function is specified
-#         else:
-#             Y_real = eval_objective_func(X_test, self.X_ranges, self.objective_func)
-#             # Standardize before or after
-#             Y_test = ut.standardize_X(Y_real, self.Y_mean, self.Y_std)
-#         # leverage the weights 
-#         Y_test_linear = torch.dot(Y_test, self.Y_weights)
-        
-#         return Y_test_linear
-        
-
-
 
 
 

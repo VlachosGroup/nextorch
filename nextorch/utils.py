@@ -75,32 +75,6 @@ def tensor_to_np(X: MatrixLike2d) -> Matrix:
     return X
 
 
-#%% Scaling helper functions 
-def get_ranges_X(X: MatrixLike2d) -> list:
-    """Calculate the ranges for X matrix
-
-    Parameters
-    ----------
-    X : MatrixLike2d
-        matrix or tensor
-
-    Returns
-    -------
-    list
-        2D list of ranges: [left bound, right bound]
-    """
-    if len(X.shape)<2:
-        X = copy.deepcopy(X)
-        X = np.expand_dims(X, axis=1) #If 1D, make it 2D array
-        
-    X_ranges = []
-    n_dim = X.shape[1]
-
-    for i in range(n_dim):
-        X_ranges.append([np.min(X[:,i]), np.max(X[:,i])])
-    
-    return X_ranges
-
 def expand_list(list_1d: list) -> list:
     """Expand 1d list to 2d
 
@@ -152,6 +126,33 @@ def expand_ranges_X(X_ranges: MatrixLike2d) -> list:
         raise ValueError("Input type not allowed, must be a Tensor/list/numpy matrix")
 
     return X_ranges
+    
+#%% Scaling helper functions 
+def get_ranges_X(X: MatrixLike2d) -> list:
+    """Calculate the ranges for X matrix
+
+    Parameters
+    ----------
+    X : MatrixLike2d
+        matrix or tensor
+
+    Returns
+    -------
+    list
+        2D list of ranges: [left bound, right bound]
+    """
+    if len(X.shape)<2:
+        X = copy.deepcopy(X)
+        X = np.expand_dims(X, axis=1) #If 1D, make it 2D array
+        
+    X_ranges = []
+    n_dim = X.shape[1]
+
+    for i in range(n_dim):
+        X_ranges.append([np.min(X[:,i]), np.max(X[:,i])])
+    
+    return X_ranges
+
 
 def unitscale_xv(xv: ArrayLike1d, xi_range: ArrayLike1d) -> ArrayLike1d:
     """

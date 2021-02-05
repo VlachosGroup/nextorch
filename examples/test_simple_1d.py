@@ -94,6 +94,9 @@ for i in range(n_trials):
     
     # Retrain the model by input the next point into Exp object
     Exp.run_trial(X_new, X_new_real, Y_new_real)
+    
+    # or     Exp.run_trials_auto(2)
+
 
 
 #%%
@@ -101,3 +104,4 @@ for i in range(n_trials):
 y_opt, X_opt, index_opt = Exp.get_optim()
 plotting.parity_exp(Exp, save_fig = save_fig_flag)
 plotting.parity_with_ci_exp(Exp, save_fig = save_fig_flag)
+

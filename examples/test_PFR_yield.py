@@ -93,7 +93,7 @@ Exp_ff.input_data(X_init_ff, Y_init_ff, X_ranges = X_ranges, unit_flag = True)
 # Set the optimization specifications 
 # here we set the objective function, minimization by default
 Exp_ff.set_optim_specs(objective_func = objective_func, 
-                        minimize =  False)
+                        maximize =  True)
 
 
 # Set its name, the files will be saved under the folder with the same name
@@ -103,7 +103,7 @@ Exp_lhc.input_data(X_init_lhc, Y_init_lhc, X_ranges = X_ranges, unit_flag = True
 # Set the optimization specifications 
 # here we set the objective function, minimization by default
 Exp_lhc.set_optim_specs(objective_func = objective_func, 
-                        minimize =  False)
+                        maximize =  True)
 
 
 #%% Optimization loop

@@ -71,7 +71,7 @@ Exp = bo.Experiment('simple_1d')
 Exp.input_data(X_init, Y_init, unit_flag = True)
 # Set the optimization specifications 
 # here we set the objective function, minimization by default
-Exp.set_optim_specs(objective_func = objective_func)
+Exp.set_optim_specs(objective_func = objective_func, maximize = False)
 
 # Create test data points for plotting
 X_test = np.linspace(0, 1, 1000)
@@ -84,7 +84,7 @@ save_fig_flag = False
 n_trials = 10
 for i in range(n_trials):
     # Generate the next experiment point
-    X_new, X_new_real, acq_func = Exp.generate_next_point()
+    X_new, X_new_real, acq_func = Exp.generate_next_point(acq_func_name = 'EI')
     # Get the reponse at this point
     Y_new_real = objective_func(X_new_real)
     

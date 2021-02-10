@@ -7,7 +7,7 @@ import os, sys
 from botorch.acquisition import objective
 import numpy as np
 import torch
-from torch import Tensor
+from torch import Tensor, fake_quantize_per_tensor_affine
 import copy
 
 from typing import Optional, TypeVar, Union, Tuple, List
@@ -122,6 +122,7 @@ def eval_objective_func(
         a objective function to optimize
     return_type: Optional[str], optional
         either 'tensor' or 'np'
+        by default 'tensor'
 
     Returns
     -------
@@ -154,7 +155,8 @@ def eval_objective_func(
 def model_predict(
     model: Model, 
     X_test: MatrixLike2d,
-    return_type: Optional[str] = 'tensor'
+    return_type: Optional[str] = 'tensor',
+    negate_Y: Optional[bool] = False 
 ) -> Tuple[MatrixLike2d, MatrixLike2d, MatrixLike2d]:
     """Makes standardized prediction at X_test using the GP model
 
@@ -167,6 +169,11 @@ def model_predict(
         as X for training
     return_type: Optional[str], optional
         either 'tensor' or 'np'
+        by default 'tensor'
+    negate_Y: Optional[bool], optional
+        if true, negate the model predicted values 
+        in the case of minimization
+        by default False
 
     Returns
     -------
@@ -195,11 +202,16 @@ def model_predict(
     Y_test = posterior.mean
     Y_test_lower, Y_test_upper = posterior.mvn.confidence_region()
 
+    if negate_Y:
+        Y_test = -1*Y_test
+        Y_test_lower = -1*Y_test_lower
+        Y_test_upper = -1*Y_test_upper
+        
     if return_type == 'np':
         Y_test = tensor_to_np(Y_test), 
         Y_test_lower = tensor_to_np(Y_test_lower)
         Y_test_upper = tensor_to_np(Y_test_upper)
-    
+
     return Y_test, Y_test_lower, Y_test_upper
 
 
@@ -208,7 +220,8 @@ def model_predict_real(
     X_test: MatrixLike2d, 
     Y_mean: MatrixLike2d, 
     Y_std: MatrixLike2d,
-    return_type: Optional[str] = 'tensor'
+    return_type: Optional[str] = 'tensor',
+    negate_Y: Optional[bool] = False 
 ) -> Tuple[MatrixLike2d, MatrixLike2d, MatrixLike2d]:
     """Make predictions in real scale and returns numpy array
 
@@ -223,6 +236,13 @@ def model_predict_real(
         The mean of initial Y set
     Y_std : MatrixLike2d
         The std of initial Y set
+    return_type: Optional[str], optional
+        either 'tensor' or 'np'
+        by default 'tensor'
+    negate_Y: Optional[bool], optional
+        if true, negate the model predicted values 
+        in the case of minimization
+        by default False
 
     Returns
     -------
@@ -239,7 +259,7 @@ def model_predict_real(
         raise ValueError('return_type must be either tensor or np')
 
     # Make standardized predictions using the model
-    Y_test, Y_test_lower, Y_test_upper = model_predict(model, X_test)
+    Y_test, Y_test_lower, Y_test_upper = model_predict(model, X_test, negate_Y=negate_Y)
     # Inverse standardize and convert it to numpy matrix
     Y_test_real = ut.inverse_standardize_X(Y_test, Y_mean, Y_std)
     Y_test_lower_real = ut.inverse_standardize_X(Y_test_lower, Y_mean, Y_std)
@@ -270,7 +290,6 @@ def model_predict_real(
 def get_acq_func(
         model: Model,
         acq_func_name: str, 
-        minimize: Optional[bool] = True, 
         beta: Optional[float] = 0.2,
         best_f: Optional[float] = 1.0,
         objective: Optional[AcquisitionObjective] = None, 
@@ -285,9 +304,6 @@ def get_acq_func(
     acq_func_name : str
         Name of the acquisition function
         Must be one of "EI", "PI", "UCB", "qEI", "qPI", "qUCB"
-    minimize : Optional[bool], optional
-        whether the goal is to minimize objective function, 
-        by default True
     beta : Optional[float], optional
         hyperparameter used in UCB, by default 0.2
     best_f : Optional[float], optional
@@ -327,17 +343,17 @@ def get_acq_func(
     acq_object = acq_dict[acq_func_name]
     # input key parameters
     if acq_func_name == 'EI':
-        acq_func = acq_object(model, best_f = best_f, maximize = (not minimize), objective=objective, **kwargs)
+        acq_func = acq_object(model, best_f=best_f, objective=objective, **kwargs)
     elif acq_func_name == 'PI':
-        acq_func = acq_object(model, best_f = best_f, maximize = (not minimize), objective=objective, **kwargs)
+        acq_func = acq_object(model, best_f=best_f, objective=objective, **kwargs)
     elif acq_func_name == 'UCB':
-        acq_func = acq_object(model, beta = beta, maximize = (not minimize), objective=objective, **kwargs)
+        acq_func = acq_object(model, beta=beta, objective=objective, **kwargs)
     elif acq_func_name == 'qEI':
-        acq_func = acq_object(model, best_f = best_f, objective=objective,**kwargs)
+        acq_func = acq_object(model, best_f=best_f, objective=objective,**kwargs)
     elif acq_func_name == 'qPI':
-        acq_func = acq_object(model, best_f = best_f, objective=objective,**kwargs)
+        acq_func = acq_object(model, best_f=best_f, objective=objective,**kwargs)
     else: # acq_func_name == 'qUCB':
-        acq_func = acq_object(model, beta = beta,objective=objective, **kwargs)
+        acq_func = acq_object(model, beta=beta, objective=objective, **kwargs)
 
     return acq_func
 
@@ -357,6 +373,7 @@ def eval_acq_func(
         as X for training
     return_type: Optional[str], optional
         either 'tensor' or 'np'
+        by default 'tensor'
 
     Returns
     -------
@@ -382,6 +399,66 @@ def eval_acq_func(
         acq_val_test = tensor_to_np(acq_val_test)
 
     return acq_val_test
+
+
+def get_top_k_candidates(
+    acq_func: AcquisitionFunction, 
+    acq_func_name: str, 
+    bounds: Tensor,
+    k: Optional[int] = 1
+) -> Tensor:
+    """Return the top k candidates which 
+    maximize the acqusicition function value
+
+    Parameters
+    ----------
+    acq_func : 'botorch.acquisition.AcquisitionFunction'_
+        acquisition function object
+    acq_func_name : str
+        Name of the acquisition function
+        Must be one of "EI", "PI", "UCB", "qEI", "qPI", "qUCB"
+    bounds : Tensor
+        Bounds of each X
+    k : Optional[int], optional
+        number of candidates, by default 1
+
+    Returns
+    -------
+    X_new: Tensor
+        Top k candidate points, shape of n_dim * k
+
+    .._'botorch.acquisition.AcquisitionFunction': https://botorch.org/api/acquisition.html
+    """
+
+    return_best_only = True
+    # Case 1 - if a Monte Carlo acquisition function is used
+    # set the batch size equal to k, return the best of each batch
+    if acq_func_name in ['qEI', 'qPI', 'qUCB']:
+        X_new, acq_value = optimize_acqf(acq_func, 
+                                        bounds= bounds, 
+                                        q=k, 
+                                        num_restarts=10, 
+                                        raw_samples=100, 
+                                        return_best_only=return_best_only)
+    # Case 2 - if an analytical acquisition function is used
+    # return the best k points based on the acquisition values
+    else:
+        if k > 1:  return_best_only = False
+        X_new, acq_value = optimize_acqf(acq_func, 
+                            bounds= bounds, 
+                            q=1,  # q must be 1 for analytical 
+                            num_restarts=10, 
+                            raw_samples=100, 
+                            return_best_only=return_best_only)
+
+        if k > 1:
+            indices_top_k = torch.topk(acq_value.view(-1), k=k, dim=0).indices
+            X_new = X_new[indices_top_k].squeeze(-1)
+
+    return X_new
+    
+
+
 
 
 
@@ -607,7 +684,7 @@ class BasicExperiment(Database):
     def set_optim_specs(self,
         objective_func: Optional[object] = None,  
         model: Optional[Model] = None, 
-        minimize: Optional[bool] = True,
+        maximize: Optional[bool] = True,
         Y_weights: Optional[ArrayLike1d] = None
     ):  
         """Set the specs for Bayseian Optimization
@@ -618,9 +695,9 @@ class BasicExperiment(Database):
             objective function that is being optimized
         model : Optional['botorch.models.model.Model'_], optional
             pre-trained GP model, by default None
-        minimize : Optional[bool], optional
-            by default True, minimize the objective function
-            Otherwise False, maximize the objective function
+        maximize : Optional[bool], optional
+            by default True, maximize the objective function
+            Otherwise False, minimize the objective function
         Y_weights : Optional[ArrayLike1d], optional
             Weights assigned to each objective Y, sums to 1
             by default None, each objective is treated equally
@@ -629,11 +706,20 @@ class BasicExperiment(Database):
         """
         # assign objective function
         self.objective_func = objective_func
-        # create a GP model based on input data
-        if model is None:
-            self.model = create_and_fit_gp(self.X, self.Y)
         # set optimization goal
-        self.minimize = minimize
+        self.maximize = maximize
+
+        if maximize: 
+            self.objective_sign = 1 # sign for the reponses
+            self.negate_Y = False # if true (minimization), negate the model predicted values        
+        else:
+            self.objective_sign = -1 
+            self.negate_Y = True
+
+        # create a GP model based on input data
+        # In the case of minimize, the negative reponses values are used to fit the GP
+        if model is None:
+            self.model = create_and_fit_gp(self.X, self.objective_sign * self.Y)
         # assign weights to each objective, useful only to multi-objective systems
         if Y_weights is not None:
             self.assign_weights(Y_weights)
@@ -706,11 +792,11 @@ class BasicExperiment(Database):
         self.X_real = np.concatenate((self.X_real, X_new_real))
         self.Y_real = np.concatenate((self.Y_real, Y_new_real))
 
-        # Increment the number of points by n_candidate
+        # Increment the number of points by n_candidates
         self.n_points += X_new.shape[0]
         
         # Add the new point into the model
-        self.model = fit_with_new_observations(self.model, X_new, Y_new)
+        self.model = fit_with_new_observations(self.model, X_new, self.objective_sign * Y_new)
         
         return Y_new
 
@@ -739,8 +825,7 @@ class BasicExperiment(Database):
         Y_test_upper: Tensor, optional
             The upper confidence interval   
         """
-        
-        Y_test, Y_test_lower, Y_test_upper = model_predict(self.model, X_test)
+        Y_test, Y_test_lower, Y_test_upper = model_predict(self.model, X_test, negate_Y=self.negate_Y)
 
         if show_confidence:
             return Y_test, Y_test_lower, Y_test_upper
@@ -775,7 +860,8 @@ class BasicExperiment(Database):
                                                                 X_test, 
                                                                 self.Y_mean, 
                                                                 self.Y_std, 
-                                                                return_type='np')
+                                                                return_type='np',
+                                                                negate_Y=self.negate_Y)
         if show_confidence:
             return Y_real, Y_lower_real, Y_upper_real
         
@@ -806,13 +892,16 @@ class BasicExperiment(Database):
                                                                 self.X, 
                                                                 self.Y_mean, 
                                                                 self.Y_std, 
-                                                                return_type='np')
+                                                                return_type='np', 
+                                                                negate_Y=self.negate_Y)
         if show_confidence:
             return Y_real, Y_lower_real, Y_upper_real
         
         return Y_real
 
-    def run_trials_auto(self, n_trials: int):
+    def run_trials_auto(self, 
+                        n_trials: int,
+                        acq_func_name: Optional[str] = 'EI'):
         """Automated optimization loop with one 
         infill point added per loop
         When objective function is defined,
@@ -824,10 +913,15 @@ class BasicExperiment(Database):
         n_trials : int
             Number of optimization loops
             one infill point is added per loop
+        acq_func_name : Optional[str], optional
+            Name of the acquisition function
+            Must be one of "EI", "PI", "UCB", "qEI", "qPI", "qUCB"
+            by default 'EI'
         """        
         for i in range(n_trials):
             # Generate the next experiment point
-            X_new, X_new_real, _ = self.generate_next_point()
+            # by default 1 point per trial
+            X_new, X_new_real, _ = self.generate_next_point(acq_func_name)
 
             # Case 1, no objective function is specified
             # Use GP models as ground truth  
@@ -858,10 +952,8 @@ class Experiment(BasicExperiment):
         best_value_scalar: Tensor
             a scalar saved in Tensor object
         """
-        if self.minimize:
-            best_values = self.Y.min(dim=0)[0]
-        else: 
-            best_values = self.Y.max(dim=0)[0]
+        # In the case of minimize, the negative reponses values are used in the GP
+        best_values = torch.max(self.Y * self.objective_sign, dim=0)[0] 
         best_value_scalar = best_values
 
         return best_value_scalar
@@ -905,13 +997,12 @@ class Experiment(BasicExperiment):
         self.beta = beta
         # Update the best_f if necessary
         best_f = None
-        if self.acq_func_name in ['EI', 'PI', 'UCB']:
+        if self.acq_func_name in ['EI', 'PI', 'qEI', 'qPI']:
             best_f = self.update_bestseen()
 
         # Set parameters for acquisition function
         acq_func = get_acq_func(self.model, 
                                 self.acq_func_name, 
-                                minimize= self.minimize, 
                                 beta = self.beta,
                                 best_f = best_f,
                                 **kwargs)
@@ -919,11 +1010,10 @@ class Experiment(BasicExperiment):
         unit_bounds = torch.stack([torch.zeros(self.n_dim), torch.ones(self.n_dim)])
         
         # Optimize the acquisition using the default setup
-        X_new, _ = optimize_acqf(acq_func, 
-                                bounds= unit_bounds, 
-                                q=n_candidates, 
-                                num_restarts=10, 
-                                raw_samples=100)
+        X_new = get_top_k_candidates(acq_func=acq_func,
+                                     acq_func_name=acq_func_name,
+                                     bounds=unit_bounds,
+                                     k=n_candidates)
 
         # Assign acq_func object to self
         self.acq_func_current = acq_func
@@ -953,12 +1043,13 @@ class Experiment(BasicExperiment):
         """
         tol = 1e-6 #tolerance for finding match
         # Use np.ufunc.accumulate to find the bestseen min/max
-        if self.minimize:
-            y_opt_accum = np.minimum.accumulate(self.Y_real) 
-            y_opt = np.min(y_opt_accum)
-        else:
+        if self.maximize:
             y_opt_accum = np.maximum.accumulate(self.Y_real) 
             y_opt = np.max(y_opt_accum)
+        else:
+            y_opt_accum = np.minimum.accumulate(self.Y_real) 
+            y_opt = np.min(y_opt_accum)
+            
         # find a matching optimum, get the first seen (min) index
         index_opt = np.min(np.where(np.abs(self.Y_real - y_opt) < tol)[0])
         # Extract X
@@ -982,10 +1073,8 @@ class WeightedExperiment(BasicExperiment):
         best_value_scalar: Tensor
             a scalar saved in Tensor object
         """
-        if self.minimize:
-            best_values = self.Y.min(dim=0)[0]
-        else: 
-            best_values = self.Y.max(dim=0)[0]
+        # In the case of minimize, the negative reponses values are used in the GP
+        best_values = torch.max(self.Y * self.objective_sign, dim=0)[0]
         # leverage the weights  
         best_value_scalar = torch.dot(self.Y_weights, best_values)
 
@@ -1034,7 +1123,7 @@ class WeightedExperiment(BasicExperiment):
         # ScalarizedObjective for analytic
         # LinearMCObjective for MC
         best_f = None
-        if self.acq_func_name in ['EI', 'PI', 'UCB']:
+        if self.acq_func_name in ['EI', 'PI', 'qEI', 'qPI']:
             best_f = self.update_bestseen()
             acq_objective = ScalarizedObjective(weights=self.Y_weights) 
         else:
@@ -1044,7 +1133,6 @@ class WeightedExperiment(BasicExperiment):
         # Set parameters for acquisition function
         acq_func = get_acq_func(self.model, 
                                 self.acq_func_name, 
-                                minimize= self.minimize, 
                                 beta = self.beta,
                                 best_f = best_f,
                                 objective=acq_objective,
@@ -1053,11 +1141,10 @@ class WeightedExperiment(BasicExperiment):
         unit_bounds = torch.stack([torch.zeros(self.n_dim), torch.ones(self.n_dim)])
         
         # Optimize the acquisition using the default setup
-        X_new, _ = optimize_acqf(acq_func, 
-                                bounds= unit_bounds, 
-                                q=n_candidates, 
-                                num_restarts=10, 
-                                raw_samples=100)
+        X_new = get_top_k_candidates(acq_func=acq_func,
+                                     acq_func_name=acq_func_name,
+                                     bounds=unit_bounds,
+                                     k=n_candidates)
 
         # Assign acq_func object to self
         self.acq_func_current = acq_func
@@ -1090,12 +1177,13 @@ class WeightedExperiment(BasicExperiment):
 
         tol = 1e-6 #tolerance for finding match
         # Use np.ufunc.accumulate to find the bestseen min/max
-        if self.minimize:
-            y_opt_accum = np.minimum.accumulate(y_real_linear) 
-            y_opt = np.min(y_opt_accum)
-        else:
+        if self.maximize:
             y_opt_accum = np.maximum.accumulate(y_real_linear) 
             y_opt = np.max(y_opt_accum)
+        else:
+            y_opt_accum = np.minimum.accumulate(y_real_linear) 
+            y_opt = np.min(y_opt_accum)
+            
         # find a matching optimum, get the first seen (min) index
         index_opt = np.min(np.where(np.abs(y_real_linear - y_opt) < tol)[0])
         # Extract X
@@ -1129,7 +1217,7 @@ class MOOExperiment(Database):
     def set_optim_specs(self,
         weights: Union[ArrayLike1d, float],
         objective_func: Optional[object] = None,  
-        minimize: Optional[bool] = True,
+        maximize: Optional[bool] = True,
     ):  
         """Set the specs for Pareto front Optimization
 
@@ -1139,14 +1227,18 @@ class MOOExperiment(Database):
             List of weights for objective 1 between 0 and 1
         objective_func : Optional[object], by default None
             objective function that is being optimized
-        minimize : Optional[bool], optional
-            by default True, minimize the objective function
-            Otherwise False, maximize the objective function
+        maximize : Optional[bool], optional
+            by default True, maximize the objective function
+            Otherwise False, minimize the objective function
         
         :_'botorch.models.model.Model': https://botorch.org/api/models.html#botorch.models.model.Model
         """
         self.objective_func = objective_func
-        self.minimize = minimize
+        self.maximize = maximize
+        if maximize: 
+            self.objective_sign = 1
+        else:
+            self.objective_sign = -1
 
         # Total number of experiments
         if isinstance(weights, float):
@@ -1172,7 +1264,7 @@ class MOOExperiment(Database):
                                     unit_flag=True)
             experiment_i.set_optim_specs(objective_func=objective_func,
                                          model=None, #start fresh
-                                         minimize=minimize, 
+                                         maximize=maximize, 
                                          Y_weights = weight_pair_i)
             experiments.append(experiment_i)
             print('Initializing experiments {:.2f} % '.format((i+1)/self.n_exp *100))
@@ -1180,7 +1272,10 @@ class MOOExperiment(Database):
         self.experiments = experiments
         
 
-    def run_exp_auto(self, n_trials: int) -> MatrixLike2d: 
+    def run_exp_auto(self, 
+                     n_trials: int,
+                     acq_func_name: Optional[str] = 'EI'
+    )-> MatrixLike2d: 
         """run each experiments with Bayesian Optimization
         Extract the optimum points of each experiment
 
@@ -1189,6 +1284,10 @@ class MOOExperiment(Database):
         n_trials : int
             Number of optimization loops
             one infill point is added per loop
+        acq_func_name : Optional[str], optional
+            Name of the acquisition function
+            Must be one of "EI", "PI", "UCB", "qEI", "qPI", "qUCB"
+            by default 'EI'
 
         Returns
         -------
@@ -1202,9 +1301,12 @@ class MOOExperiment(Database):
         print('Running {} experiments'.format(self.n_exp))
         # train the weighted experiments one by one 
         for i, experiment_i in enumerate(self.experiments):
-            experiment_i.run_trials_auto(n_trials)
-            Y_real_opt, X_opt, index_opt = experiment_i.get_weighted_optim()
+            # Generate the next experiment point for experiment i 
+            # by default 1 point per trial
+            experiment_i.run_trials_auto(n_trials, acq_func_name)
+
             # Save the optimum locations and values
+            Y_real_opt, X_opt, index_opt = experiment_i.get_weighted_optim()
             X_opts.append(X_opt)
             Y_real_opts.append(Y_real_opt)
             print('Running experiments {:.2f} % '.format((i+1)/self.n_exp *100))

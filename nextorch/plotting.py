@@ -394,7 +394,7 @@ def acq_func_1d(
         X_new = np.squeeze(tensor_to_np(X_new))
         ax.scatter(X_new, acq_val_new,  s = 120, c ='r', marker = '*', label = 'Infill Data')
     
-    ax.ticklabel_format(style = 'sci', axis = 'y', scilimits = (-2,2) )
+    ax.ticklabel_format(style = 'sci', axis = 'y' )#, scilimits = (-2,2) )
     ax.set_xlabel(X_name)
     ax.set_ylabel(r'$ \alpha$')    
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
@@ -413,6 +413,7 @@ def acq_func_1d(
 def acq_func_1d_exp(Exp: Experiment,
     X_test: MatrixLike2d, 
     X_new: Optional[MatrixLike2d] = None,
+    x_index: Optional[int] = 0,
     save_fig: Optional[bool] = False):
     """Plot 1-dimensional acquision function 
     Using Experiment object
@@ -426,8 +427,8 @@ def acq_func_1d_exp(Exp: Experiment,
     X_new : Optional[MatrixLike2d], optional
         The next data point, i.e the infill points,
         by default None
-    X_name: Optional[str], optional
-        Name of X varibale shown as x-label
+    x_index : Optional[index], optional
+        index of the x variable, by default 0
     save_fig: Optional[bool], optional
         if true save the plot 
         by default False
@@ -436,10 +437,11 @@ def acq_func_1d_exp(Exp: Experiment,
                 X_test=X_test, 
                 X_train=Exp.X,
                 X_new=X_new,
-                X_name = Exp.X_names, 
+                X_name = Exp.X_names[x_index], 
                 save_fig= save_fig,
                 save_path=Exp.exp_path,
                 i_iter = Exp.n_points - Exp.n_points_init)
+
 
 def objective_func_1d(
     model: Model, 
@@ -449,6 +451,7 @@ def objective_func_1d(
     Y_train: Optional[MatrixLike2d] = None, 
     X_new: Optional[MatrixLike2d] = None,
     Y_new: Optional[MatrixLike2d] = None,
+    negate_Y: Optional[bool] = False,
     plot_real: Optional[bool] = False,
     Y_mean: Optional[MatrixLike2d] = None,
     Y_std: Optional[MatrixLike2d] = None, 
@@ -526,7 +529,8 @@ def objective_func_1d(
                                                                         X_test, 
                                                                         Y_mean, 
                                                                         Y_std, 
-                                                                        return_type= 'np')
+                                                                        return_type= 'np', 
+                                                                        negate_Y=negate_Y)
     else: # Y in a standardized scale
         Y_test = standardize_X(Y_test, Y_mean, Y_std, return_type= 'np') #standardize Y_test
         Y_train = standardize_X(Y_train, Y_mean, Y_std, return_type= 'np') 
@@ -534,7 +538,8 @@ def objective_func_1d(
 
         Y_test_pred, Y_test_lower_pred, Y_test_upper_pred = model_predict(model, 
                                                                           X_test, 
-                                                                          return_type= 'np')
+                                                                          return_type= 'np',
+                                                                          negate_Y=negate_Y)
     # reduce the dimension to 1d arrays
     X_test = np.squeeze(tensor_to_np(X_test))
     Y_test_pred = np.squeeze(Y_test_pred)
@@ -585,6 +590,7 @@ def objective_func_1d_exp(
     Y_test: Optional[MatrixLike2d] = None, 
     X_new: Optional[MatrixLike2d] = None,
     Y_new: Optional[MatrixLike2d] = None,
+    x_index: Optional[int] = 0,
     plot_real: Optional[bool] = False, 
     save_fig: Optional[bool] = False):
     """Plot objective function along 1 dimension
@@ -605,13 +611,14 @@ def objective_func_1d_exp(
     Y_new : Optional[MatrixLike2d], optional
         The next Y data point, i.e the infill points,
         by default None
+    x_index : Optional[int], optional
+        index of the x variable, by default 0
     plot_real : Optional[bool], optional
         if true plot in the real scale for Y, 
         by default False
-    X_name: Optional[str], optional
-        Name of X varibale shown as x-label
-    Y_name: Optional[str], optional
-        Name of Y varibale shown as y-label
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
     """
     # if no Y_test input, generate Y_test from objective function
     if (Y_test is None) and (Exp.objective_func is not None):
@@ -628,11 +635,12 @@ def objective_func_1d_exp(
                      Y_train = Exp.Y_real, #be sure to use Y_real
                      X_new = X_new,
                      Y_new = Y_new,
+                     negate_Y = Exp.negate_Y,
                      plot_real = plot_real,
                      Y_mean = Exp.Y_mean,
                      Y_std= Exp.Y_std, 
-                     X_name= Exp.X_names, 
-                     Y_name=Exp.Y_names, 
+                     X_name= Exp.X_names[x_index], 
+                     Y_name=Exp.Y_names[0], 
                      save_fig= save_fig,
                      save_path=Exp.exp_path,
                      i_iter = Exp.n_points - Exp.n_points_init)
@@ -755,7 +763,6 @@ def sampling_2d(
 
 def sampling_2d_exp(
     Exp: Experiment,
-    X_ranges: Optional[MatrixLike2d] = None,
     design_names: Optional[Union[str, List[str]]] = None,
     save_fig: Optional[bool] = False):
     """Plot sampling plan(s) in 2 dimensional space

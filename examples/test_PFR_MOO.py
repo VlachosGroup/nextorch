@@ -88,7 +88,7 @@ Exp_lhc.input_data(X_init_lhc,
 # Set a weight vector for objective 1
 weights_vector = np.linspace(0, 1, 10)
 Exp_lhc.set_optim_specs(objective_func = objective_func, 
-                        minimize =  False, 
+                        maximize = True, 
                         weights = weights_vector)
 #%%
 # Set the number of iterations for each experiments

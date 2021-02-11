@@ -748,7 +748,7 @@ class BasicExperiment(Database):
 
 
     def run_trial(self, 
-        X_new: Tensor,
+        X_new: MatrixLike2d,
         X_new_real: Matrix,
         Y_new_real: Optional[Matrix] = None
     ) -> Tensor:
@@ -757,7 +757,7 @@ class BasicExperiment(Database):
 
         Parameters
         ----------
-        X_new: Tensor 
+        X_new: MatrixLike2d 
             The new candidate point matrix 
         X_new_real: Matrix 
             The new candidate point matrix in a real scale
@@ -769,7 +769,7 @@ class BasicExperiment(Database):
         Y_new: Tensor
             values of reponses at the new point values 
         """
-
+        X_new = np_to_tensor(X_new)
         # Case 1, no objective function is specified 
         # Must input Y_new_real
         # Otherwise, raise error
@@ -809,7 +809,7 @@ class BasicExperiment(Database):
 
         Parameters
         ----------
-        X_test : Tensor
+        X_test : MatrixLike2d
             X matrix used for testing, must have the same dimension 
             as X for training
         show_confidence : Optional[bool], optional

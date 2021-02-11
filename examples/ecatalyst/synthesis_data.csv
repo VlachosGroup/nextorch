@@ -1,4 +1,4 @@
-,Iteration,T (C),Heating rate (C/min),Time (hr),N_Content
+,Trial,T (C),Heating rate (C/min),Time (hr),N_Content
 0,0,370,7.75,4.36,1.834
 1,0,490,4.75,2.36,1.161
 2,0,330,5.25,3.24,0.718

@@ -21,7 +21,7 @@ def read_excel(
     skiprows: Optional[list] = None,
     index_col: Optional[int] = 0, 
     verbose: Optional[bool] = True
-) -> DataFrame:
+) -> Tuple[DataFrame, DataFrame]:
     """Reads an excel file and returns the data in pandas Dataframe
 
     Parameters
@@ -45,15 +45,22 @@ def read_excel(
     -------
     data: 'pandas.DataFrame'_
         Input data
+    data_full: 'pandas.DataFrame'_
+        Full data from the file
     
     _:'pandas.DataFrame': https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
     """  
 
-    data = pd.read_excel(file_path, 
-                        sheet_name= sheet_name, 
-                        names = var_names,
-                        skiprows = skiprows,
-                        index_col = index_col)
+    data_full = pd.read_excel(file_path, 
+                              sheet_name= sheet_name, 
+                              skiprows = skiprows,
+                              index_col = index_col)
+    # Select the variables
+    if var_names is not None:
+        data = data_full[var_names]
+    else:
+        data = data_full
+
     # Print statments regards the input
     if verbose: 
         var_names_in = list(data.columns)
@@ -65,7 +72,7 @@ def read_excel(
             var_names_s += vi + ', '
         print('\t{}'.format(var_names_s.strip(', ')))
 
-    return data
+    return data, data_full
 
 
 def read_csv(
@@ -74,7 +81,7 @@ def read_csv(
     skiprows: Optional[list] = None,
     index_col: Optional[int] = 0, 
     verbose: Optional[bool] = True
-) -> DataFrame:
+) -> Tuple[DataFrame, DataFrame]:
     """Reads a csv file and returns the data in pandas Dataframe
 
     Parameters
@@ -96,13 +103,20 @@ def read_csv(
     -------
     data: 'pandas.DataFrame'_
         Input data 
-    
+    data_full: 'pandas.DataFrame'_
+        Full data from the file
+
     _:'pandas.DataFrame': https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
     """   
-    data = pd.read_csv(file_path, 
-                        names = var_names,
-                        skiprows = skiprows,
-                        index_col = index_col)
+    data_full = pd.read_csv(file_path, 
+                            skiprows = skiprows,
+                            index_col = index_col)
+    # Select the variables
+    if var_names is not None:
+        data = data_full[var_names]
+    else:
+        data = data_full
+
     # Print statments regards the input
     if verbose: 
         var_names_in = list(data.columns)
@@ -114,7 +128,7 @@ def read_csv(
             var_names_s += vi + ', '
         print('\t{}'.format(var_names_s.strip(', ')))
 
-    return data
+    return data, data_full
 
 def split_X_y(
     data: DataFrame,
@@ -157,7 +171,7 @@ def split_X_y(
     X = np.array(data[X_names])
     Y = np.array(data[Y_names])
 
-    return X, Y, X_names, Y_names
+    return X, Y
 
 
 

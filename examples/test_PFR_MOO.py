@@ -1,7 +1,7 @@
 """
 Example 4
 
-Goal: Multi-objective optimization
+Goal: Multi-objective maximization
 Objective function: PFR reaction model, yield and selectivity
     Input (X) dimension: 3
     Output (Y) dimension: 2
@@ -16,7 +16,7 @@ project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_path)
 
 import numpy as np
-from nextorch import plotting, bo, doe, utils
+from nextorch import plotting, bo, doe
 
 #%% Define the objective function
 from fructose_pfr_model_function import Reactor

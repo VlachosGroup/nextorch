@@ -1,5 +1,5 @@
 """
-Example 5
+Example 4
 
 Goal: maximization
 Objective function: simple nonlinear

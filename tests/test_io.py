@@ -6,5 +6,5 @@ sys.path.insert(0, project_path)
 from nextorch import io
 
 
-data = io.read_excel('test_input.xlsx')
-X, X_names, y, y_names = io.split_X_y(data, y_names = 'Yield')
+data, data_full = io.read_excel('test_input.xlsx')
+X,  Y, X_names, Y_names = io.split_X_y(data_full, Y_names = 'Yield')

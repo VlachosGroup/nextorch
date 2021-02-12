@@ -151,10 +151,10 @@ def split_X_y(
     -------
     X: Matrix
         Independent variable matrix
-    X_names: List[str]
-        Independent variables names
     Y: Matrix 
         Dependent variable matrix
+    X_names: List[str]
+        Independent variables names
     Y_names: List[str]
         Dependent variable matrix
     
@@ -171,7 +171,7 @@ def split_X_y(
     X = np.array(data[X_names])
     Y = np.array(data[Y_names])
 
-    return X, Y
+    return X,  Y, X_names, Y_names
 
 
 

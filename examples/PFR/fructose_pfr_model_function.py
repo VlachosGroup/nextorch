@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-# -*- coding: utf-8 -*-
-
 '''
 # MATLAB Code written by: Pierre Desir
 # Adapted in Python by: Yifan Wang

@@ -1,5 +1,5 @@
 """
-Example 4
+Example 5
 
 Goal: maximization
 Objective function: PFR reaction model, yield
@@ -14,7 +14,9 @@ Initial Sampling: full factorial and Latin Hypercube
 import os
 import sys
 project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+objective_path = os.path.join(project_path, 'examples', 'PFR')
 sys.path.insert(0, project_path)
+sys.path.insert(0, objective_path)
 
 import numpy as np
 from nextorch import plotting, bo, doe, utils

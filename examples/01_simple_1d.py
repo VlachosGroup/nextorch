@@ -22,7 +22,7 @@ from nextorch import plotting, bo
 
 #%% Define the objective function
 def simple_1d(X):
-    """1D function f(x) = (6x-2)^2 * sin(12x-4)
+    """1D function y = (6x-2)^2 * sin(12x-4)
 
     Parameters
     ----------
@@ -53,7 +53,7 @@ def simple_1d(X):
 
 objective_func = simple_1d
 
-#%% Define the initial sampling scheme
+#%% Define the initial sampling plan
 # Assume X is already in a unit scale in [0, 1]
 # Create a grid with a 0.25 interval
 X_init = np.array([[0, 0.25, 0.5, 0.75]]).T

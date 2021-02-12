@@ -78,7 +78,7 @@ plotting.sampling_2d([X_init_ff, X_init_lhc],
 #%% Initialize an Experiment object
 
 # Set its name, the files will be saved under the folder with the same name
-Exp_ff = bo.Experiment('LH_mechanism_ff') 
+Exp_ff = bo.Experiment('LH_mechanism_LHC') 
 # Import the initial data
 Exp_ff.input_data(X_init_ff, Y_init_ff, X_ranges = X_ranges, unit_flag = True)
 # Set the optimization specifications 
@@ -88,7 +88,7 @@ Exp_ff.set_optim_specs(objective_func = objective_func,
 
 
 # Set its name, the files will be saved under the folder with the same name
-Exp_lhc = bo.Experiment('LH_mechanism_lhc') 
+Exp_lhc = bo.Experiment('LH_mechanism_FF') 
 # Import the initial data
 Exp_lhc.input_data(X_init_lhc, Y_init_lhc, X_ranges = X_ranges, unit_flag = True)
 # Set the optimization specifications 

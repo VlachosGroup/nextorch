@@ -9,7 +9,10 @@ import pandas as pd
 from pandas import DataFrame
 
 import numpy as np
+import copy
 from typing import Optional, TypeVar, Union, Tuple, List
+
+from torch import var
 from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d
 
 
@@ -173,6 +176,62 @@ def split_X_y(
 
     return X,  Y, X_names, Y_names
 
+
+def np_to_dataframe(
+    X: Union[Matrix, list],
+    var_names: Optional[Union[str, List[str]]] = None
+) -> DataFrame:
+    """Convert a list numpy matrices to a single dataframe
+
+    Parameters
+    ----------
+    X : Union[Matrix, list]
+        List numpy matrices or a single matrix
+    var_names : Optional[Union[str, List[str]]], optional
+        Names of variables, by default None
+
+    Returns
+    -------
+    data: 'pandas.DataFrame'_
+        Output data 
+
+    _:'pandas.DataFrame': https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
+    """
+    # Input is a list of matrices 
+    if isinstance(X, list):
+        X_all = [] # copy of all X 
+
+        for Xi in X: 
+            Xi = np.array(Xi)
+            if len(Xi.shape) == 0: # if scalar, add one more dimension
+                Xi = np.array(Xi)[np.newaxis]
+            if len(Xi.shape) < 2: #If 1D, make it 2D array
+                Xi = copy.deepcopy(Xi)
+                Xi = np.expand_dims(Xi, axis=0) 
+            
+            X_all.append(Xi)
+        # Concatenate along column wise
+        X_all = np.concatenate(X_all, axis=1)
+
+    # Input is a single matrix 
+    else:
+        if len(X.shape)<2:
+            X_all = copy.deepcopy(X)
+            X_all = np.expand_dims(X, axis=1) #If 1D, make it 2D array
+        else:
+            X_all = X.copy()
+
+    # Get the number of columns
+    n_col = X_all.shape[1]
+    # Set default variable names
+    if var_names is None:
+        var_names = ['x' + str(i+1) for i in range(n_col)]
+    if isinstance(var_names, str):
+        var_names = [var_names]
+    
+    data = pd.DataFrame(X_all, columns=var_names)
+
+    return data
 
 
 """

@@ -1209,6 +1209,8 @@ def response_heatmap(
     ax.set_yticks(set_axis_values(ylim_plot, n_tick_sections))
     ax.set_yticklabels(set_axis_values(X_ranges[y_index], n_tick_sections))
      
+    plt.show()
+
     # save the figure as png
     if save_fig:
         if save_path is None: 
@@ -1610,6 +1612,8 @@ def response_surface(
     ax.set_zticklabels(set_axis_values(zlim_plot, n_tick_sections, 1))
 
     ax.view_init(30, 45)
+
+    plt.show()
     # save the figure as png
     if save_fig:
         if save_path is None: 

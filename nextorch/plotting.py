@@ -1915,14 +1915,20 @@ def pareto_front(
 
 def pareto_front_exp(
     Exp: MOOExperiment, 
+    fill: Optional[bool] = True,
     save_fig: Optional[bool] = False, 
     design_name: Optional[Union[str, int]] = 'final'):
     """Plot parity plot comparing the ground true 
     objective function values against predicted model mean
-    Using Experiment object
+    Using MOOExperiment object
 
     Parameters
-    ----------
+    ---------
+    Exp: MOOExperiment
+        MOOExperiment object
+    fill: Optional[bool], optional
+        if true fill the space enclosed by the points 
+        by default True -
     save_fig: Optional[bool], optional
         if true save the plot 
         by default False
@@ -1938,6 +1944,7 @@ def pareto_front_exp(
     pareto_front(y1=Y_real_opts[:, 0], 
                  y2=Y_real_opts[:, 1],
                  Y_names=Exp.Y_names,
+                 fill=fill,
                  save_fig=save_fig,
                  save_path=Exp.exp_path,
                  i_iter = design_name)

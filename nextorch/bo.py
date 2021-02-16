@@ -4,10 +4,9 @@ nextorch.bo
 Contains Gaussian Processes (GP) and Bayesian Optimization (BO) methods 
 """
 import os, sys
-from botorch.acquisition import objective
 import numpy as np
 import torch
-from torch import Tensor, fake_quantize_per_tensor_affine
+from torch import Tensor
 import copy
 
 from typing import Optional, TypeVar, Union, Tuple, List
@@ -1033,10 +1032,10 @@ class Experiment(BasicExperiment):
 
         Returns
         -------
-        y_opt: float
+        y_real_opt: float
             Optimal response
-        X_opt: ArrayLike1d
-            Conditions or independent variable values 
+        X_real_opt: ArrayLike1d
+            parameters or independent variable values 
             at the optimal poinrt
         index_opt: int
             Index of optimal point, zero indexing
@@ -1044,18 +1043,18 @@ class Experiment(BasicExperiment):
         tol = 1e-6 #tolerance for finding match
         # Use np.ufunc.accumulate to find the bestseen min/max
         if self.maximize:
-            y_opt_accum = np.maximum.accumulate(self.Y_real) 
-            y_opt = np.max(y_opt_accum)
+            y_real_opt_accum = np.maximum.accumulate(self.Y_real) 
+            y_real_opt = np.max(y_real_opt_accum)
         else:
-            y_opt_accum = np.minimum.accumulate(self.Y_real) 
-            y_opt = np.min(y_opt_accum)
+            y_real_opt_accum = np.minimum.accumulate(self.Y_real) 
+            y_real_opt = np.min(y_real_opt_accum)
             
         # find a matching optimum, get the first seen (min) index
-        index_opt = np.min(np.where(np.abs(self.Y_real - y_opt) < tol)[0])
+        index_opt = np.min(np.where(np.abs(self.Y_real - y_real_opt) < tol)[0])
         # Extract X
-        X_opt = self.X_real[index_opt]
+        X_real_opt = self.X_real[index_opt]
 
-        return y_opt, X_opt, index_opt
+        return y_real_opt, X_real_opt, index_opt
 
 
         
@@ -1108,7 +1107,7 @@ class WeightedExperiment(BasicExperiment):
         X_new: Tensor
             where the acquisition function is optimized
             A new trial shall be run at this point
-        X_new: Matrix
+        X_new_real: Matrix
             The new point in a real scale
         acq_func: AcquisitionFunction
             Current acquisition function, can be used for plotting
@@ -1164,11 +1163,11 @@ class WeightedExperiment(BasicExperiment):
 
         Returns
         -------
-        y_opt: float
+        y_real_opt: float
             Optimal response
-        X_opt: ArrayLike1d
-            Conditions or independent variable values 
-            at the optimal poinrt
+        X_real_opt: ArrayLike1d
+            parameters or independent variable values 
+            at the optimal point
         index_opt: int
             Index of optimal point, zero indexing
         """
@@ -1178,20 +1177,20 @@ class WeightedExperiment(BasicExperiment):
         tol = 1e-6 #tolerance for finding match
         # Use np.ufunc.accumulate to find the bestseen min/max
         if self.maximize:
-            y_opt_accum = np.maximum.accumulate(y_real_linear) 
-            y_opt = np.max(y_opt_accum)
+            y_real_opt_accum = np.maximum.accumulate(y_real_linear) 
+            y_real_opt = np.max(y_real_opt_accum)
         else:
-            y_opt_accum = np.minimum.accumulate(y_real_linear) 
-            y_opt = np.min(y_opt_accum)
+            y_real_opt_accum = np.minimum.accumulate(y_real_linear) 
+            y_real_opt = np.min(y_real_opt_accum)
             
         # find a matching optimum, get the first seen (min) index
-        index_opt = np.min(np.where(np.abs(y_real_linear - y_opt) < tol)[0])
+        index_opt = np.min(np.where(np.abs(y_real_linear - y_real_opt) < tol)[0])
         # Extract X
-        X_opt = self.X_real[index_opt]
+        X_real_opt = self.X_real[index_opt]
         # Extract Y
         Y_real_opt = self.Y_real[index_opt]
 
-        return Y_real_opt, X_opt, index_opt
+        return Y_real_opt, X_real_opt, index_opt
 
 
 
@@ -1295,7 +1294,7 @@ class MOOExperiment(Database):
             Optimum values given each weight pair
         """
 
-        X_opts = [] # optimum locations, in a unit scale
+        X_real_opts = [] # optimum locations, in a unit scale
         Y_real_opts = []  # optimum values, in a real scale
 
         print('Running {} experiments'.format(self.n_exp))
@@ -1306,15 +1305,28 @@ class MOOExperiment(Database):
             experiment_i.run_trials_auto(n_trials, acq_func_name)
 
             # Save the optimum locations and values
-            Y_real_opt, X_opt, index_opt = experiment_i.get_weighted_optim()
-            X_opts.append(X_opt)
+            Y_real_opt, X_real_opt, index_opt = experiment_i.get_weighted_optim()
+            X_real_opts.append(X_real_opt)
             Y_real_opts.append(Y_real_opt)
             print('Running experiments {:.2f} % '.format((i+1)/self.n_exp *100))
 
-        self.X_opts = X_opts
+        self.X_real_opts = np.array(X_real_opts)
         self.Y_real_opts = np.array(Y_real_opts)
 
-        return self.Y_real_opts
+    def get_optim(self) -> Tuple[Matrix, Matrix]:
+        """Get the optimal Pareto set
+
+        Returns
+        -------
+        y_real_opt: Matrix
+            set of optimal response at each weight combination
+        X_real_opt: Matrix
+            set of parameters or independent variable values 
+            at each weight combination
+        """
+        return self.Y_real_opts, self.X_real_opts
+
+        
 
 
 

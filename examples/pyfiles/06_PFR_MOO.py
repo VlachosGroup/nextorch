@@ -94,7 +94,7 @@ Exp_lhc.set_optim_specs(objective_func = objective_func,
                         weights = weights_vector)
 #%%
 # Set the number of iterations for each experiments
-n_trials_lhc = 20
+n_trials_lhc = 30
 Exp_lhc.run_exp_auto(n_trials_lhc)
 
 # Make the pareto plots 

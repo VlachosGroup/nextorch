@@ -207,9 +207,9 @@ def np_to_dataframe(
                 Xi = np.array(Xi)[np.newaxis]
             if len(Xi.shape) < 2: #If 1D, make it 2D array
                 Xi = copy.deepcopy(Xi)
-                Xi = np.expand_dims(Xi, axis=0) 
-            
+                Xi = np.expand_dims(Xi, axis=1)             
             X_all.append(Xi)
+            
         # Concatenate along column wise
         X_all = np.concatenate(X_all, axis=1)
 

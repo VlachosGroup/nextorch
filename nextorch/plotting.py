@@ -1739,7 +1739,7 @@ def objective_surface_exp(
                                                 mesh_size=mesh_size) 
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
-    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test)
+    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test, mesh_size)
     Y_obj_lower_2D, Y_obj_upper_2D = None, None
     
     response_surface(X1_test=X1_test,
@@ -1818,7 +1818,7 @@ def objective_surface(
                                                 mesh_size=mesh_size) 
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, X_ranges, objective_func)
-    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test)
+    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test, mesh_size)
     Y_obj_lower_2D, Y_obj_upper_2D = None, None
 
 

@@ -10,7 +10,7 @@ Welcome to nextorch's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   includme
+   includeme
    help
    license
    api

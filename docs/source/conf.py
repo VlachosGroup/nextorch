@@ -92,3 +92,10 @@ todo_include_todos = True
 # Logo
 html_logo = './logos/nextorch_logo_1.png'
 html_favicon = './logos/x_icon.ico'
+
+# auto mock imports 
+# This will allow your docs to import the example code 
+# without requiring those modules be installed.
+autodoc_mock_imports = ['torch', 'pandas',  'numpy', 'pyDOE2',]
+
+

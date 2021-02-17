@@ -1,4 +1,4 @@
 {
-    "python.pythonPath": "C:\\Users\\yifan\\Anaconda3\\envs\\torch\\python.exe",
+    "python.pythonPath": "/opt/anaconda3/bin/python",
     "jupyter.jupyterServerType": "local"
 }

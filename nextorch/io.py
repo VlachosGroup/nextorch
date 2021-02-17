@@ -179,7 +179,8 @@ def split_X_y(
 
 def np_to_dataframe(
     X: Union[Matrix, list],
-    var_names: Optional[Union[str, List[str]]] = None
+    var_names: Optional[Union[str, List[str]]] = None,
+    n: Optional[int] = 1,
 ) -> DataFrame:
     """Convert a list numpy matrices to a single dataframe
 
@@ -189,6 +190,8 @@ def np_to_dataframe(
         List numpy matrices or a single matrix
     var_names : Optional[Union[str, List[str]]], optional
         Names of variables, by default None
+    n : Optional[int], optional
+        number of rows in output dataframe, by default 1
 
     Returns
     -------
@@ -207,7 +210,7 @@ def np_to_dataframe(
                 Xi = np.array(Xi)[np.newaxis]
             if len(Xi.shape) < 2: #If 1D, make it 2D array
                 Xi = copy.deepcopy(Xi)
-                Xi = np.expand_dims(Xi, axis=1)             
+                Xi = np.reshape(Xi, (n, -1))             
             X_all.append(Xi)
             
         # Concatenate along column wise
@@ -217,7 +220,7 @@ def np_to_dataframe(
     else:
         if len(X.shape)<2:
             X_all = copy.deepcopy(X)
-            X_all = np.expand_dims(X, axis=1) #If 1D, make it 2D array
+            X_all = np.reshape(X_all, (n, -1))   # X_all = np.expand_dims(X, axis=1) #If 1D, make it 2D array
         else:
             X_all = X.copy()
 

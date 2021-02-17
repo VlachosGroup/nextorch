@@ -1849,6 +1849,7 @@ def pareto_front(
     y2: MatrixLike2d, 
     Y_names: Optional[List[str]] = None, 
     fill: Optional[bool] = True,
+    diagonal: Optional[bool] = True,
     save_fig: Optional[bool] = False,
     save_path: Optional[str] = None, 
     i_iter: Optional[Union[str, int]] = ''):
@@ -1863,6 +1864,9 @@ def pareto_front(
         Model predicted values
     fill: Optional[bool], optional
         if true fill the space enclosed by the points 
+        by default True 
+    diagonal: Optional[bool], optional
+        if true plot the y = x line
         by default True 
     save_fig: Optional[bool], optional
         if true save the plot 
@@ -1891,7 +1895,8 @@ def pareto_front(
     # number of sections in the axis
     nsections = 5
     # now plot both limits against eachother
-    ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
+    if diagonal:
+        ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
     ax.set_xlim(lims)
     ax.set_ylim(lims)
     ax.set_xticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
@@ -1916,6 +1921,7 @@ def pareto_front(
 def pareto_front_exp(
     Exp: MOOExperiment, 
     fill: Optional[bool] = True,
+    diagonal: Optional[bool] = True,
     save_fig: Optional[bool] = False, 
     design_name: Optional[Union[str, int]] = 'final'):
     """Plot parity plot comparing the ground true 
@@ -1928,7 +1934,10 @@ def pareto_front_exp(
         MOOExperiment object
     fill: Optional[bool], optional
         if true fill the space enclosed by the points 
-        by default True -
+        by default True 
+    diagonal: Optional[bool], optional
+        if true plot the y = x line
+        by default True 
     save_fig: Optional[bool], optional
         if true save the plot 
         by default False
@@ -1945,6 +1954,7 @@ def pareto_front_exp(
                  y2=Y_real_opts[:, 1],
                  Y_names=Exp.Y_names,
                  fill=fill,
+                 diagonal=diagonal,
                  save_fig=save_fig,
                  save_path=Exp.exp_path,
                  i_iter = design_name)

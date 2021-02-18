@@ -99,3 +99,5 @@ html_favicon = './logos/x_icon.ico'
 autodoc_mock_imports = ['torch', 'pandas',  'numpy', 'pyDOE2',]
 
 
+def setup(app):
+    app.add_stylesheet('css/modify.css')

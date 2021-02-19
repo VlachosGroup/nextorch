@@ -8,15 +8,39 @@ Welcome to nextorch's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Getting Started:
 
    includeme
-   help
-   license
-   api
 
+.. toctree::
+   :maxdepth: 2
+   :caption: User Documentation:
 
+   user/introduction
+   user/installation
+   user/io
+   user/doe
+   user/experiment
+   user/visualization
+   user/examples
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Intro to BO:
+
+   bo/bo_intro
+   bo/bo_applications
+   
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference:
+
+   api/io
+   api/doe
+   
+   
+   
 Indices and tables
 ==================
 

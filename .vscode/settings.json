@@ -1,4 +1,4 @@
 {
-    "python.pythonPath": "/opt/anaconda3/bin/python",
+    "python.pythonPath": "/opt/anaconda3/envs/torch/bin/python",
     "jupyter.jupyterServerType": "local"
 }

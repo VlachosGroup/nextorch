@@ -43,6 +43,14 @@ extensions = [
     'sphinx.ext.napoleon',
 ]
 
+#Automatically generate summaries
+autosummary_generate = True
+autodoc_default_flags = ['members',
+                         'undoc-members',
+                         'show-inheritance',
+                         'inherited-members']
+napoleon_google_docstring = False
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -83,6 +91,10 @@ html_theme = 'sphinx_rtd_theme'#'sphinx_boogergreen_theme' #'furo'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# # -- Options for intersphinx extension ---------------------------------------
+
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {'https://docs.python.org/': None}
 
 # -- Options for todo extension ----------------------------------------------
 
@@ -96,7 +108,7 @@ html_favicon = './logos/x_icon.ico'
 # auto mock imports 
 # This will allow your docs to import the example code 
 # without requiring those modules be installed.
-autodoc_mock_imports = ['torch', 'pandas',  'numpy', 'pyDOE2',]
+autodoc_mock_imports = ['torch', 'pyDOE2', 'scipy']
 
 
 def setup(app):

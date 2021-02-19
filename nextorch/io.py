@@ -46,12 +46,11 @@ def read_excel(
 
     Returns
     -------
-    data: 'pandas.DataFrame'_
+    data: `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
         Input data
-    data_full: 'pandas.DataFrame'_
+    data_full: `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
         Full data from the file
     
-    _:'pandas.DataFrame': https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
     """  
 
     data_full = pd.read_excel(file_path, 
@@ -104,12 +103,11 @@ def read_csv(
 
     Returns
     -------
-    data: 'pandas.DataFrame'_
+    data: `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
         Input data 
-    data_full: 'pandas.DataFrame'_
+    data_full: `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
         Full data from the file
 
-    _:'pandas.DataFrame': https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
     """   
     data_full = pd.read_csv(file_path, 
                             skiprows = skiprows,
@@ -143,7 +141,7 @@ def split_X_y(
 
     Parameters
     ----------
-    data : 'pandas.DataFrame'_
+    data : `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
         Input dataframe
     Y_names : Union[str, List[str]]
         Name(s) of dependent variables, can be a single str or list of str
@@ -161,7 +159,6 @@ def split_X_y(
     Y_names: List[str]
         Dependent variable matrix
     
-    _:'pandas.DataFrame': https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
     """    
     if isinstance(Y_names, str): 
         Y_names = [Y_names]
@@ -195,10 +192,9 @@ def np_to_dataframe(
 
     Returns
     -------
-    data: 'pandas.DataFrame'_
+    data: `pandas.DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
         Output data 
 
-    _:'pandas.DataFrame': https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
     """
     # Input is a list of matrices 
     if isinstance(X, list):

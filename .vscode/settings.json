@@ -1,4 +1,5 @@
 {
     "python.pythonPath": "/opt/anaconda3/envs/torch/bin/python",
-    "jupyter.jupyterServerType": "local"
+    "jupyter.jupyterServerType": "local",
+    "restructuredtext.confPath": "${workspaceFolder}/docs/source"
 }

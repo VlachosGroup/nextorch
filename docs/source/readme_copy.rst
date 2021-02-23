@@ -55,6 +55,7 @@ Getting Started
 2. Look at examples using the code.
 
 3. Run the unit tests.
+   
 
 License
 -------
@@ -69,23 +70,8 @@ Contributing
 If you have a suggestion or find a bug, please post to our `Issues` page on GitHub. 
 
 Questions
----------
+-----------
 
 If you are having issues, please post to our `Issues` page on GitHub.
 
-Funding
--------
-
-This material is based upon work supported by the Department of Energy's Office 
-of Energy Efficient and Renewable Energy's Advanced Manufacturing Office under 
-Award Number DE-EE0007888-9.5.
-
-Acknowledgements
-------------------
-
--  Jaynell Keely (Logo design)
-  
-
-Publications
-------------
 

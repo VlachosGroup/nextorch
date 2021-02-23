@@ -6,17 +6,23 @@ Installing Python
 -----------------
 Anaconda is the recommended method to install Python for scientific
 applications. It is supported on Linux, Windows and Mac OS X.
-`Download Anaconda here`_. Note that pMuTT runs on Python 3.X.
+`Download Anaconda here`_. Note that NEXTorch runs on Python 3.X.
+
+Installing PyTorch, BoTorch and GPyTorch
+------------------------------------------
+Using `conda` is the recommended method.
+::
+    conda install botorch -c pytorch -c gpytorch
 
 
-Installing `nextorch` using pip
+Installing NEXTorch using pip
 ---------------------------------
-Using pip is the most straightforward way to install `nextorch`.
+Using `pip` is the most straightforward way to install NEXTorch.
 
 1. Open a command prompt with access to Python (if Python is installed via
    Anaconda on Windows, open the Anaconda Prompt from the start menu).
 
-2. Install `nextorch` by typing the following in the command prompt:
+2. Install NEXTorch by typing the following in the command prompt:
 ::
 
     pip install nextorch
@@ -25,7 +31,7 @@ The output towards the end should state "Successfully built nextorch" if the
 installation was successful. 
 
 
-Installing `nextorch` from source
+Installing NEXTorch from source
 ----------------------------------
 If you would prefer to install from source or you are interested in development,
 follow the instructions below.
@@ -34,7 +40,7 @@ follow the instructions below.
     pip install git+https://github.com/VlachosGroup/nextorch.git
 
 
-Upgrading `nextorch` using pip
+Upgrading NEXTorch using pip
 -------------------------------
 To upgrade to a newer release, use the --upgrade flag:
 ::
@@ -44,7 +50,7 @@ To upgrade to a newer release, use the --upgrade flag:
 
 Running unit tests
 ------------------
-`nextorch` has a suite of unit tests that should be run before committing any code.
+NEXTorch has a suite of unit tests that should be run before committing any code.
 To run the tests, run the following commands in a Python terminal.
 ::
 

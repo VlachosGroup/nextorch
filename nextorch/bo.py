@@ -1326,7 +1326,131 @@ class MOOExperiment(Database):
         """
         return self.Y_real_opts, self.X_real_opts
 
+class COMSOLExperiments(BasicExperiment):
+    """[summary]
+
+    Args:
+        Database ([type]): [description]
+    """
+
+    def input_data(self,
+        X_real: MatrixLike2d,
+        Y_real: MatrixLike2d,
+        X_names: Optional[List[str]],
+        Y_names: Optional[List[str]],
+        X_units: Optional[List[str]],
+        Y_units: Optional[List[str]], 
+        preprocessed: Optional[bool] = False,
+        X_ranges: Optional[MatrixLike2d] = None,
+        unit_flag: Optional[bool] = False,
+        log_flags: Optional[list] = None, 
+        decimals: Optional[int] = None
+    ):
+        """Input data into Experiment object
         
+        Parameters
+        ----------
+        X_real : MatrixLike2d
+            original independent data in a real scale
+        Y_real : MatrixLike2d
+            original dependent data in a real scale
+        X_names : Optional[List[str]]
+            Names of independent varibles
+        Y_names : Optional[List[str]]
+            Names of dependent varibles
+        X_units : Optional[List[str]]
+            Units of independent varibles
+        Y_units : Optional[List[str]]
+            Units of dependent varibles            
+        preprocessed : Optional[bool], optional
+            by default False, the input data will be processed
+            if true, skip processing
+        X_ranges : Optional[MatrixLike2d], optional
+            list of x ranges, by default None
+        unit_flag: Optional[bool], optional,
+            by default, False 
+            If true, the X is in a unit scale so
+            the function is used to scale X to a log scale
+        log_flags : Optional[list], optional
+            list of boolean flags
+            True: use the log scale on this dimensional
+            False: use the normal scale 
+            by default []
+        decimals : Optional[int], optional
+            Number of decimal places to keep
+            by default None, i.e. no rounding up
+        """
+        # expand to 2D
+        if len(X_real.shape)<2:
+            X_real = np.expand_dims(X_real, axis=1) #If 1D, make it 2D array
+        if len(Y_real.shape)<2:
+            Y_real = np.expand_dims(Y_real, axis=1) #If 1D, make it 2D array
 
+        # get specs of the data
+        self.n_dim = X_real.shape[1] # number of independent variables
+        self.n_points = X_real.shape[0] # number of data points
+        self.n_points_init = X_real.shape[0] # number of data points for the initial design
+        self.n_objectives = Y_real.shape[1] # number of dependent variables
 
+        # assign variable names and units
+        self.X_names = X_names
+        self.Y_names = Y_names
+        self.X_units = X_units
+        self.Y_units = Y_units
+
+        # Preprocess the data 
+        self.preprocess_data(X_real, 
+                            Y_real,
+                            preprocessed = preprocessed,
+                            X_ranges = X_ranges,
+                            unit_flag = unit_flag,
+                            log_flags = log_flags, 
+                            decimals = decimals)
+
+    # def update_params
+    # def run_simulation
+    # def read_data 
+
+    def set_optim_specs(self,
+        objective_func: Optional[object] = None,  
+        model: Optional[Model] = None, 
+        maximize: Optional[bool] = True,
+        Y_weights: Optional[ArrayLike1d] = None
+    ):  
+        """Set the specs for Bayseian Optimization
+
+        Parameters
+        ----------
+        objective_func : Optional[object], by default None
+            objective function that is being optimized
+        model : Optional['botorch.models.model.Model'_], optional
+            pre-trained GP model, by default None
+        maximize : Optional[bool], optional
+            by default True, maximize the objective function
+            Otherwise False, minimize the objective function
+        Y_weights : Optional[ArrayLike1d], optional
+            Weights assigned to each objective Y, sums to 1
+            by default None, each objective is treated equally
+        
+        :_'botorch.models.model.Model': https://botorch.org/api/models.html#botorch.models.model.Model
+        """
+        # assign objective function
+        self.objective_func = objective_func
+        # set optimization goal
+        self.maximize = maximize
+
+        if maximize: 
+            self.objective_sign = 1 # sign for the reponses
+            self.negate_Y = False # if true (minimization), negate the model predicted values        
+        else:
+            self.objective_sign = -1 
+            self.negate_Y = True
+
+        # create a GP model based on input data
+        # In the case of minimize, the negative reponses values are used to fit the GP
+        if model is None:
+            self.model = create_and_fit_gp(self.X, self.objective_sign * self.Y)
+        # assign weights to each objective, useful only to multi-objective systems
+        if Y_weights is not None:
+            self.assign_weights(Y_weights)
 

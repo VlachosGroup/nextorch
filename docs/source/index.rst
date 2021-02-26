@@ -13,7 +13,7 @@ Welcome to nextorch's documentation!
    readme_copy
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: User Documentation
 
    user/introduction
@@ -25,7 +25,7 @@ Welcome to nextorch's documentation!
    user/examples
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Intro to BO
 
    bo/bo_intro
@@ -33,7 +33,7 @@ Welcome to nextorch's documentation!
    
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: API Reference
 
    api/io
@@ -43,7 +43,7 @@ Welcome to nextorch's documentation!
    api/plotting
    
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Appendix
 
    appendix/glossary
@@ -52,7 +52,7 @@ Welcome to nextorch's documentation!
    appendix/references
    
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: ETC
 
    etc/acknowledgements

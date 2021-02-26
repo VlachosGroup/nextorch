@@ -41,6 +41,8 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
+    'nbsphinx',
+    'sphinx_gallery.load_style',
 ]
 
 #Automatically generate summaries
@@ -73,7 +75,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['_build', '**.ipynb_checkpoints', '**.ipynb', '404.rst']
+exclude_patterns = ['_build', '**.ipynb_checkpoints',   '404.rst' ]#'**.ipynb',]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -113,3 +115,19 @@ autodoc_mock_imports = ['torch', 'pyDOE2', 'scipy']
 
 def setup(app):
     app.add_stylesheet('css/modify.css')
+
+
+# List of arguments to be passed to the kernel that executes the notebooks:
+nbsphinx_execute_arguments = [
+    "--InlineBackend.figure_formats={'svg', 'pdf'}",
+    "--InlineBackend.rc={'figure.dpi': 96}",
+]
+nbsphinx_thumbnails = {
+    'examples/01_simple_1d': 'examples/_images/01.png',
+    'examples/02_sin_1d': 'examples/_images/02.png',
+    'examples/03_LH_mechanism': 'examples/_images/03.png',
+    'examples/04_NDC_catalyst': 'examples/_images/04.png',
+    'examples/05_PFR_yield': 'examples/_images/05.png',
+    'examples/06_ellipse_MOO': 'examples/_images/06.png',
+    'examples/07_PFR_MOO': 'examples/_images/07.png'
+}

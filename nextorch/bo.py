@@ -4,6 +4,7 @@ nextorch.bo
 Contains Gaussian Processes (GP) and Bayesian Optimization (BO) methods 
 """
 import os, sys
+import subprocess
 import numpy as np
 import torch
 from torch import Tensor
@@ -1326,7 +1327,7 @@ class MOOExperiment(Database):
         """
         return self.Y_real_opts, self.X_real_opts
 
-class COMSOLExperiments(BasicExperiment):
+class COMSOLExperiments(Experiment):
     """[summary]
 
     Args:
@@ -1407,12 +1408,45 @@ class COMSOLExperiments(BasicExperiment):
                             log_flags = log_flags, 
                             decimals = decimals)
 
-    # def update_params
-    # def run_simulation
-    # def read_data 
+    def update_params(self):
+        """[summary]
+
+        Args:
+            file_name ([type]): [description]
+        """        
+
+        X_new, X_new_real, acq_func = self.generate_next_point()        
+
+        for i in range(len(self.X_names)):
+            subprocess.run(["sed", "-i", 's/"'+self.X_names[i]+'", "'+str(self.X_real[-1,i])+'\\['+self.X_units[i]+']"/"' +
+                            self.X_names[i]+'", "'+str(X_new[i])+'\\['+self.X_units[i]+']"/', self.object_func_file+".java"])
+    
+    def comsol_simulation(self):
+        # update parameters
+        update_params()
+
+        # run simulations
+        subprocess.run([self.comsol_location,  "compile", self.object_func_file+".java"])
+        print("Code compiled successfully. Simulation starts.")
+
+        process = subprocess.Popen([self.comsol_location,  "batch", "-inputfile", self.objective_func_file+".class"], stdout=subprocess.PIPE)
+        while True:
+            line = process.stdout.readline()
+            if not line:
+                break
+            print(line.rstrip())
+
+        print("Simulation is done.")
+
+        # read results
+        data = np.loadtxt('./results/test_run_result.csv', skiprows=5, delimiter=',')
+        output = data[-1,1]
+        
+        return output
 
     def set_optim_specs(self,
-        objective_func: Optional[object] = None,  
+        objective_func_file: str,
+        comsol_location: str,  
         model: Optional[Model] = None, 
         maximize: Optional[bool] = True,
         Y_weights: Optional[ArrayLike1d] = None
@@ -1434,8 +1468,10 @@ class COMSOLExperiments(BasicExperiment):
         
         :_'botorch.models.model.Model': https://botorch.org/api/models.html#botorch.models.model.Model
         """
-        # assign objective function
-        self.objective_func = objective_func
+        # assign objective function name and comsol location
+        self.objective_func_file = objective_func_file
+        self.comsol_location = comsol_location
+        self.objective_func = self.comsol_simulation()
         # set optimization goal
         self.maximize = maximize
 

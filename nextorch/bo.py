@@ -1327,7 +1327,7 @@ class MOOExperiment(Database):
         """
         return self.Y_real_opts, self.X_real_opts
 
-class COMSOLExperiments(Experiment):
+class COMSOLExperiment(Experiment):
     """[summary]
 
     Args:
@@ -1337,10 +1337,10 @@ class COMSOLExperiments(Experiment):
     def input_data(self,
         X_real: MatrixLike2d,
         Y_real: MatrixLike2d,
-        X_names: Optional[List[str]],
-        Y_names: Optional[List[str]],
-        X_units: Optional[List[str]],
-        Y_units: Optional[List[str]], 
+        X_names: List[str],
+        X_units: List[str],
+        Y_names: Optional[List[str]] = None,
+        Y_units: Optional[List[str]] = None, 
         preprocessed: Optional[bool] = False,
         X_ranges: Optional[MatrixLike2d] = None,
         unit_flag: Optional[bool] = False,
@@ -1408,25 +1408,15 @@ class COMSOLExperiments(Experiment):
                             log_flags = log_flags, 
                             decimals = decimals)
 
-    def update_params(self):
-        """[summary]
 
-        Args:
-            file_name ([type]): [description]
-        """        
-
-        X_new, X_new_real, acq_func = self.generate_next_point()        
-
+    def comsol_simulation(self, X_new_real):
+        # update parameters
         for i in range(len(self.X_names)):
             subprocess.run(["sed", "-i", 's/"'+self.X_names[i]+'", "'+str(self.X_real[-1,i])+'\\['+self.X_units[i]+']"/"' +
-                            self.X_names[i]+'", "'+str(X_new[i])+'\\['+self.X_units[i]+']"/', self.object_func_file+".java"])
+                            self.X_names[i]+'", "'+str(X_new_real[0,i])+'\\['+self.X_units[i]+']"/', self.objective_func_file+".java"])
     
-    def comsol_simulation(self):
-        # update parameters
-        update_params()
-
         # run simulations
-        subprocess.run([self.comsol_location,  "compile", self.object_func_file+".java"])
+        subprocess.run([self.comsol_location,  "compile", self.objective_func_file+".java"])
         print("Code compiled successfully. Simulation starts.")
 
         process = subprocess.Popen([self.comsol_location,  "batch", "-inputfile", self.objective_func_file+".class"], stdout=subprocess.PIPE)
@@ -1439,7 +1429,7 @@ class COMSOLExperiments(Experiment):
         print("Simulation is done.")
 
         # read results
-        data = np.loadtxt('./results/test_run_result.csv', skiprows=5, delimiter=',')
+        data = np.loadtxt('./test_run_result.csv', skiprows=5, delimiter=',')
         output = data[-1,1]
         
         return output
@@ -1471,7 +1461,7 @@ class COMSOLExperiments(Experiment):
         # assign objective function name and comsol location
         self.objective_func_file = objective_func_file
         self.comsol_location = comsol_location
-        self.objective_func = self.comsol_simulation()
+        self.objective_func = self.comsol_simulation
         # set optimization goal
         self.maximize = maximize
 

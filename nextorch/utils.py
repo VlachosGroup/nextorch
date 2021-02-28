@@ -429,7 +429,7 @@ def inverse_standardize_X(
 
 
 #%% 2-dimensional system specific functions
-def create_2D_mesh_X(mesh_size: Optional[int] = 41
+def create_X_mesh_2d(mesh_size: Optional[int] = 41
 ) -> Tuple[Matrix, Matrix, Matrix]:   
     """Create 2D mesh for testing
 
@@ -463,7 +463,7 @@ def create_2D_mesh_X(mesh_size: Optional[int] = 41
     return X_test, X1, X2
 
   
-def transform_2D_mesh_Y(X: ArrayLike1d, mesh_size: Optional[int] = 41
+def transform_Y_mesh_2d(X: ArrayLike1d, mesh_size: Optional[int] = 41
 ) -> Matrix:
     """takes in 1 column of X tensor 
     predict the Y values
@@ -518,49 +518,45 @@ def transform_2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
     return X1, X2
 
 
-def prep_full_X_unit(
-    X_test_2D: MatrixLike2d, 
+def prepare_full_X_unit(
+    X_test: MatrixLike2d, 
     n_dim: int, 
-    x_indices: Optional[List[int]] = [0, 1],
-    fixed_values: Optional[Union[ArrayLike1d, float]] = [],
+    x_indices: Union[List[int]],
+    fixed_values: Union[List[float]],
 ) -> MatrixLike2d:
-    """Given 2D mesh and keep the rest as fixed values 
-    returns full size X
+    """Create a full X_test matrix given with varying x at dimensions 
+    defined by x_indices and fixed values at the rest dimensions
 
     Parameters
     ----------
-    X_test_2D : MatrixLike2d
-        X in 2D mesh, 2 columns, in a unit scale 
+    X_test: MatrixLike2d
+        X_test as mesh points, in a unit scale 
     n_dim : int
         Dimensional of X, i.e., number of columns 
-    x_indices : Optional[List[int]], optional
-        indices of two x variables, by default [0, 1]
-    fixed_values : Optional[Union[ArrayLike1d, float]], optional
+    x_indices : Union[List[int]]
+        indices of varying x variables
+    fixed_values : Union[List[float]]
         fixed values in other dimensions, 
-        in a unit scale, by default []
+        in a unit scale
 
     Returns
     -------
     X_full: MatrixLike2d
         Test X in a unit scale
     """
-    # Convert to a list given a single fixed value input
-    if not isinstance(fixed_values, list):
-        fixed_values = [fixed_values]
-    n_points = X_test_2D.shape[0]
+    n_points = X_test.shape[0]
     xi_list = [] # a list of the columns
     di_fixed = 0 # index for fixed value dimensions
-    di_2d = 0
+    di_test = 0 # index for varying x dimensions
 
     for di in range(n_dim):
+        # Get a column from X_test
         if di in x_indices:
-            xi = X_test_2D[:, di_2d]
-            di_2d += 1
+            xi = X_test[:, di_test]
+            di_test += 1
+        # Create a column of fix values
         else:
-            # Initialize the fixed value with 0s
-            fix_value_i = 0 
-            if di_fixed < len(fixed_values):
-                fix_value_i = fixed_values[di_fixed]
+            fix_value_i = fixed_values[di_fixed]
             xi = np.ones((n_points, 1)) * fix_value_i
             di_fixed += 1
 
@@ -571,73 +567,192 @@ def prep_full_X_unit(
     return X_full
 
 
-def prep_full_X_real(
-    X_test_2D: MatrixLike2d, 
+def prepare_full_X_real(
+    X_test: MatrixLike2d, 
     X_ranges: MatrixLike2d, 
-    x_indices: Optional[List[int]] = [0, 1],
-    fixed_values_real: Optional[Union[ArrayLike1d, float]] = [],
+    x_indices: Union[List[int]],
+    fixed_values_real: Union[List[float]],
 ) -> MatrixLike2d:
-    """Given 2D mesh and keep the rest as fixed values 
-    returns full size X
+    """Create a full X_test matrix given with varying x at dimensions 
+    defined by x_indices and fixed values at the rest dimensions
 
     Parameters
     ----------
-    X_test_2D : MatrixLike2d
-        X in 2D mesh, 2 columns, in a unit scale
+    X_test : MatrixLike2d
+        X as mesh points, in a unit scale
+    X_ranges : MatrixLike2d
+        list of x ranges
+    x_indices : Union[List[int], int]
+        indices of varying x variables
+    fixed_values_real : Union[List[float], float]]
+        fixed values in other dimensions, 
+        in a real scale
+
+    Returns
+    -------
+    X_full: MatrixLike2d
+        Test X in a real scale
+    """
+    # get the dimensions of the system
+    n_dim = len(X_ranges)
+    n_points = X_test.shape[0]
+    xi_list = [] # a list of the columns
+    di_fixed = 0 # index for fixed value dimensions
+    di_test = 0 # index for varying x dimensions
+
+    for di in range(n_dim):
+        if di in x_indices:
+            # Get a column from X_test
+            xi = X_test[:, di]
+            # Convert xi to a real scale
+            xi = inverse_unitscale_xv(xi, X_ranges[di])
+            di_test += 1
+        else:
+            # No need to scale for given fixed values 
+            fix_value_i = fixed_values_real[di_fixed]
+            xi = np.ones((n_points, 1)) * fix_value_i
+            di_fixed += 1
+
+        xi_list.append(xi)
+    # Stack the columns into a matrix
+    X_full = np.column_stack(xi_list)
+
+    return X_full
+
+
+def get_baseline_unit(
+    n_dim: int,
+    baseline: str
+) -> List[float]:
+    """Get the baseline values from X_ranges 
+    in a unit scale
+
+    Parameters
+    ----------
+    X_ranges : MatrixLike2d
+        list of x ranges
+    baseline : str
+        the choice of baseline
+
+    Returns
+    -------
+    List[float]
+        a list of baseline values
+
+    Raises
+    ------
+    ValueError
+        if the input baseline is not in the default values
+    """
+
+    default_baselines = ['left', 'right', 'center']
+    if baseline not in default_baselines:
+        raise ValueError('The baseline must be left, right or center.')
+
+    baseline_values = []
+    if baseline == 'left':
+        baseline_values = [0] * n_dim
+    if baseline == 'right':
+        baseline_values = [1] * n_dim
+    if baseline == 'center':
+        baseline_values = [0.5] * n_dim
+
+    return baseline_values
+
+
+def fill_full_X_test(
+    X_test_varying: MatrixLike2d,
+    X_ranges: MatrixLike2d, 
+    x_indices: Optional[List[int]] = [0, 1],
+    fixed_values: Optional[Union[ArrayLike1d, float]] = None,
+    fixed_values_real: Optional[Union[ArrayLike1d, float]] = None,
+    baseline: Optional[str] = 'left',
+) -> Matrix:
+    """Choose certain dimensions defined by x_indices, 
+    fill them with mesh test points and keep the rest
+    as fixed values. If no fixed value input, the baseline values
+    are used at those dimensions 
+
+    Parameters
+    ----------
+    X_test_varying : MatrixLike2d
+        mesh test points at dimensions defined by x_indices
     X_ranges : MatrixLike2d
         list of x ranges
     x_indices : Optional[List[int]], optional
         indices of two x variables, by default [0, 1]
+    fixed_values : Optional[Union[ArrayLike1d, float]], optional
+        fixed values in other dimensions, 
+        in a unit scale, by default None
     fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
-        in a real scale, by default []
+        in a real scale, by default None
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
 
     Returns
     -------
-    X_full: MatrixLike2d
+    X_test: MatrixLike2d
         Test X in a unit scale
+
+    Raises
+    ------
+    ValueError
+        if the total dimensions do not add up to the system dimensionality
     """
-    # Convert to a list given a single fixed value input
-    if not isinstance(fixed_values_real, list):
-        fixed_values_real = [fixed_values_real]
-
     n_dim = len(X_ranges)
-    n_points = X_test_2D.shape[0]
-    xi_list = [] # a list of the columns
-    di_fixed = 0 # index for fixed value dimensions
-    di_2d = 0
 
-    for di in range(n_dim):
-        if di in x_indices:
-            xi = X_test_2D[:, di]
-            # Convert xi to a real scale
-            xi = inverse_unitscale_xv(xi, X_ranges[di])
-            di_2d += 1
-        else:
-            # Initialize the fixed value with left bound
-            # No need to scale 
-            fix_value_i = X_ranges[di][0] 
-            if di_fixed < len(fixed_values_real):
-                fix_value_i = fixed_values_real[di_fixed]
-            xi = np.ones((n_points, 1)) * fix_value_i
-            di_fixed += 1
+    # conversion in a unit scale
+    unit_scale_flag = True
+    
+     # Convert to a list given a single value input
+    if not isinstance(x_indices, list):
+        x_indices = [x_indices]
 
-        xi_list.append(xi)
-    # Stack the columns into a matrix
-    X_full = np.column_stack(xi_list)
+    # if no input fix_values, use baseline values
+    if (fixed_values is None) and (fixed_values_real is None):
+        fixed_values = get_baseline_unit(n_dim - len(x_indices), baseline)
+    
+    # update fixed_values if the real values are the input
+    if fixed_values_real is not None:
+        fixed_values = fixed_values_real
+        unit_scale_flag = False
 
-    return X_full
+    
+    if not isinstance(fixed_values, list):
+        fixed_values = [fixed_values]
+
+    # check if all dimensions are provided
+    if not n_dim == (len(x_indices)+ len(fixed_values)):
+        raise ValueError('The sum of varying dimensions and fixed dimensions \
+            should be equal to the dimensionality of the system. Check input.')
+
+    if unit_scale_flag:
+        X_test = prepare_full_X_unit(X_test=X_test_varying,
+                                    n_dim = n_dim,
+                                    x_indices = x_indices,
+                                    fixed_values=fixed_values)
+    else:
+        X_test = prepare_full_X_real(X_test=X_test_varying,
+                                    X_ranges=X_ranges,
+                                    x_indices = x_indices,
+                                    fixed_values=fixed_values)
+        X_test = unitscale_X(X_test, X_ranges=X_ranges)        
+
+    return X_test
 
 
-def create_2D_X_full(
+def create_full_X_test_2d(
     X_ranges: MatrixLike2d, 
     x_indices: Optional[List[int]] = [0, 1],
-    fixed_values: Optional[Union[ArrayLike1d, float]] = [],
-    fixed_values_real: Optional[Union[ArrayLike1d, float]] = [],
+    fixed_values: Optional[Union[ArrayLike1d, float]] = None,
+    fixed_values_real: Optional[Union[ArrayLike1d, float]] = None,
+    baseline: Optional[str] = 'left',
     mesh_size: Optional[int] = 41
 ) -> Tuple[Matrix, Matrix, Matrix]:
     """Choose two dimensions, create 2D mesh and keep the rest
-    as fixed values 
+    as fixed values. If no fixed value input, the baseline values
+    are used at those dimensions 
 
     Parameters
     ----------
@@ -647,10 +762,12 @@ def create_2D_X_full(
         indices of two x variables, by default [0, 1]
     fixed_values : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
-        in a unit scale, by default []
+        in a unit scale, by default None
     fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
-        in a real scale, by default []
+        in a real scale, by default None
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
     mesh_size : int, optional
         mesh size, by default 41
 
@@ -662,30 +779,70 @@ def create_2D_X_full(
         X1 for surface plots
     X2: Matrix
         X2 for surface plots
-
-    Raises
-    ------
-    ValueError
-        When the fix values at other dimensions are missing
     """
-    n_dim = len(X_ranges)
     # Create 2D mesh test points  
-    X_test_2D, X1, X2 = create_2D_mesh_X(mesh_size)
-    # Get full X with fixed values at other dimensions 
-    X_test = X_test_2D
-    if n_dim > 2:
-        if fixed_values is not None:
-            X_test = prep_full_X_unit(X_test_2D=X_test_2D,
-                                    n_dim = n_dim,
-                                    x_indices = x_indices,
-                                    fixed_values=fixed_values)
-        elif fixed_values_real is None:
-            X_test = prep_full_X_real(X_test_2D=X_test_2D,
-                                     X_ranges=X_ranges,
-                                     x_indices = x_indices,
-                                     fixed_values=fixed_values)
-            X_test = unitscale_X(X_test, X_ranges=X_ranges)
-        else:
-            raise ValueError("Must input values at other dimensions")
+    X_test_2D, X1, X2 = create_X_mesh_2d(mesh_size)
+    # Get full X with fixed values at the given dimensions 
+    X_test = fill_full_X_test(X_test_varying=X_test_2D,
+                              X_ranges=X_ranges, 
+                              x_indices=x_indices,
+                              fixed_values=fixed_values,
+                              fixed_values_real=fixed_values_real,
+                              baseline=baseline)
 
     return X_test, X1, X2
+
+
+
+def create_full_X_test_1d(
+    X_ranges: MatrixLike2d, 
+    x_indices: Optional[int] = 0,
+    fixed_values: Optional[Union[ArrayLike1d, float]] = None,
+    fixed_values_real: Optional[Union[ArrayLike1d, float]] = None,
+    baseline: Optional[str] = 'left',
+    mesh_size: Optional[int] = 41
+) -> Matrix:
+    """Choose two dimensions, create 2D mesh and keep the rest
+    as fixed values. If no fixed value input, the baseline values
+    are used at those dimensions 
+
+    Parameters
+    ----------
+    X_ranges : MatrixLike2d
+        list of x ranges
+    x_indices : Optional[int], optional
+        indices of two x variables, by default [0]
+    fixed_values : Optional[Union[ArrayLike1d, float]], optional
+        fixed values in other dimensions, 
+        in a unit scale, by default None
+    fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
+        fixed values in other dimensions, 
+        in a real scale, by default None
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
+    mesh_size : int, optional
+        mesh size, by default 41
+
+    Returns
+    -------
+    X_test: MatrixLike2d
+        Test X in a unit scale
+    """
+    # Create 1D mesh test points  
+    X_test_1D = np.linspace(0, 1, mesh_size)
+    # Expand to 2D
+    X_test_1D = np.expand_dims(X_test_1D, axis=1)
+    
+    # Get full X with fixed values at the given dimensions 
+    X_test = fill_full_X_test(X_test_varying=X_test_1D,
+                              X_ranges=X_ranges, 
+                              x_indices=x_indices,
+                              fixed_values=fixed_values,
+                              fixed_values_real=fixed_values_real,
+                              baseline=baseline)
+
+    return X_test
+
+
+
+        

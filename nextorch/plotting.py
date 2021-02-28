@@ -19,8 +19,8 @@ from botorch.acquisition.acquisition import AcquisitionFunction
 from botorch.models.model import Model
 
 from typing import Optional, TypeVar, Union, Tuple, List
-from nextorch.utils import  ArrayLike1d, MatrixLike2d, create_2D_X_full, unitscale_xv
-from nextorch.utils import tensor_to_np, standardize_X, transform_2D_mesh_Y
+from nextorch.utils import  ArrayLike1d, MatrixLike2d, create_full_X_test_2d, unitscale_xv
+from nextorch.utils import tensor_to_np, standardize_X, transform_Y_mesh_2d
 from nextorch.bo import eval_acq_func, eval_objective_func, \
     model_predict, model_predict_real, Experiment, MOOExperiment
 
@@ -1136,7 +1136,7 @@ def response_heatmap(
         Names of X varibale shown as x,y,z-labels
         by default None
     X_train : Optional[MatrixLike2d], optional
-        [description], by default None
+        Data points used in training, by default None
     save_fig: Optional[bool], optional
         if true save the plot 
         by default False
@@ -1260,15 +1260,15 @@ def response_heatmap_exp(
 
     """    
     # Create 2D mesh test points  
-    X_test, _, _ = create_2D_X_full(X_ranges=Exp.X_ranges, 
-                                    x_indices=x_indices,
-                                    fixed_values=fixed_values,
-                                    fixed_values_real=fixed_values_real,
-                                    mesh_size=mesh_size) 
+    X_test, _, _ = create_full_X_test_2d(X_ranges=Exp.X_ranges, 
+                                         x_indices=x_indices,
+                                         fixed_values=fixed_values,
+                                         fixed_values_real=fixed_values_real,
+                                         mesh_size=mesh_size) 
                                      
     # Make prediction using the GP model
     Y_test = Exp.predict_real(X_test)
-    Y_test_2D = transform_2D_mesh_Y(Y_test, mesh_size=mesh_size)
+    Y_test_2D = transform_Y_mesh_2d(Y_test, mesh_size=mesh_size)
     # select the sample points
     X_train = None
     if show_samples: X_train = Exp.X
@@ -1322,14 +1322,14 @@ def objective_heatmap_exp(
         by default False
     """
     # Create 2D mesh test points  
-    X_test, _, _ = create_2D_X_full(X_ranges=Exp.X_ranges, 
-                                    x_indices=x_indices,
-                                    fixed_values=fixed_values,
-                                    fixed_values_real=fixed_values_real,
-                                    mesh_size=mesh_size) 
+    X_test, _, _ = create_full_X_test_2d(X_ranges=Exp.X_ranges, 
+                                         x_indices=x_indices,
+                                         fixed_values=fixed_values,
+                                         fixed_values_real=fixed_values_real,
+                                         mesh_size=mesh_size) 
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
-    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test, mesh_size=mesh_size)
+    Y_obj_test_2D = transform_Y_mesh_2d(Y_obj_test, mesh_size=mesh_size)
     
     response_heatmap(Y_real=Y_obj_test_2D,
                     Y_real_range = Y_real_range,
@@ -1398,14 +1398,14 @@ def objective_heatmap(
     """
     n_dim = len(X_ranges)
     # Create 2D mesh test points  
-    X_test, _, _ = create_2D_X_full(X_ranges=X_ranges, 
-                                    x_indices=x_indices,
-                                    fixed_values=fixed_values,
-                                    fixed_values_real=fixed_values_real,
-                                    mesh_size=mesh_size) 
+    X_test, _, _ = create_full_X_test_2d(X_ranges=X_ranges, 
+                                         x_indices=x_indices,
+                                         fixed_values=fixed_values,
+                                         fixed_values_real=fixed_values_real,
+                                         mesh_size=mesh_size) 
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, X_ranges, objective_func)
-    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test, mesh_size=mesh_size)
+    Y_obj_test_2D = transform_Y_mesh_2d(Y_obj_test, mesh_size=mesh_size)
 
     # Set up the path to save graphical results
     parent_dir = os.getcwd()
@@ -1461,17 +1461,17 @@ def response_heatmap_err_exp(
         by default False
     """
     # Create 2D mesh test points  
-    X_test, _, _ = create_2D_X_full(X_ranges=Exp.X_ranges, 
-                                    x_indices=x_indices,
-                                    fixed_values=fixed_values,
-                                    fixed_values_real=fixed_values_real,
-                                    mesh_size=mesh_size) 
+    X_test, _, _ = create_full_X_test_2d(X_ranges=Exp.X_ranges, 
+                                         x_indices=x_indices,
+                                         fixed_values=fixed_values,
+                                         fixed_values_real=fixed_values_real,
+                                         mesh_size=mesh_size) 
     # Make prediction using the GP model
     Y_test = Exp.predict_real(X_test)
-    Y_test_2D = transform_2D_mesh_Y(Y_test, mesh_size=mesh_size)
+    Y_test_2D = transform_Y_mesh_2d(Y_test, mesh_size=mesh_size)
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
-    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test)
+    Y_obj_test_2D = transform_Y_mesh_2d(Y_obj_test)
     # Calculate the percentage errors
     Y_err_2D = np.abs((Y_obj_test_2D - Y_test_2D)/Y_obj_test_2D)
     response_heatmap(Y_real=Y_err_2D,
@@ -1662,20 +1662,20 @@ def response_surface_exp(
         by default False
     """
     # Create 2D mesh test points  
-    X_test, X1_test, X2_test = create_2D_X_full(X_ranges=Exp.X_ranges, 
-                                                x_indices=x_indices,
-                                                fixed_values=fixed_values,
-                                                fixed_values_real=fixed_values_real,
-                                                mesh_size=mesh_size) 
+    X_test, X1_test, X2_test = create_full_X_test_2d(X_ranges=Exp.X_ranges, 
+                                                     x_indices=x_indices,
+                                                     fixed_values=fixed_values,
+                                                     fixed_values_real=fixed_values_real,
+                                                     mesh_size=mesh_size) 
     # Make predictions using the GP model
     if show_confidence:
         Y_test, Y_test_lower, Y_test_upper = Exp.predict_real(X_test, show_confidence = True)
-        Y_test_2D = transform_2D_mesh_Y(Y_test, mesh_size)
-        Y_test_lower_2D = transform_2D_mesh_Y(Y_test_lower, mesh_size)
-        Y_test_upper_2D = transform_2D_mesh_Y(Y_test_upper, mesh_size)
+        Y_test_2D = transform_Y_mesh_2d(Y_test, mesh_size)
+        Y_test_lower_2D = transform_Y_mesh_2d(Y_test_lower, mesh_size)
+        Y_test_upper_2D = transform_Y_mesh_2d(Y_test_upper, mesh_size)
     else:
         Y_test = Exp.predict_real(X_test)
-        Y_test_2D = transform_2D_mesh_Y(Y_test, mesh_size)
+        Y_test_2D = transform_Y_mesh_2d(Y_test, mesh_size)
         Y_test_lower_2D, Y_test_upper_2D = None, None
         
     response_surface(X1_test=X1_test,
@@ -1732,14 +1732,14 @@ def objective_surface_exp(
         by default False
     """
     # Create 2D mesh test points  
-    X_test, X1_test, X2_test = create_2D_X_full(X_ranges=Exp.X_ranges, 
-                                                x_indices=x_indices,
-                                                fixed_values=fixed_values,
-                                                fixed_values_real=fixed_values_real,
-                                                mesh_size=mesh_size) 
+    X_test, X1_test, X2_test = create_full_X_test_2d(X_ranges=Exp.X_ranges, 
+                                                     x_indices=x_indices,
+                                                     fixed_values=fixed_values,
+                                                     fixed_values_real=fixed_values_real,
+                                                     mesh_size=mesh_size) 
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
-    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test, mesh_size)
+    Y_obj_test_2D = transform_Y_mesh_2d(Y_obj_test, mesh_size)
     Y_obj_lower_2D, Y_obj_upper_2D = None, None
     
     response_surface(X1_test=X1_test,
@@ -1811,14 +1811,14 @@ def objective_surface(
     """
     n_dim = len(X_ranges)
     # Create 2D mesh test points  
-    X_test, X1_test, X2_test = create_2D_X_full(X_ranges=X_ranges, 
-                                                x_indices=x_indices,
-                                                fixed_values=fixed_values,
-                                                fixed_values_real=fixed_values_real,
-                                                mesh_size=mesh_size) 
+    X_test, X1_test, X2_test = create_full_X_test_2d(X_ranges=X_ranges, 
+                                                     x_indices=x_indices,
+                                                     fixed_values=fixed_values,
+                                                     fixed_values_real=fixed_values_real,
+                                                     mesh_size=mesh_size) 
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, X_ranges, objective_func)
-    Y_obj_test_2D = transform_2D_mesh_Y(Y_obj_test, mesh_size)
+    Y_obj_test_2D = transform_Y_mesh_2d(Y_obj_test, mesh_size)
     Y_obj_lower_2D, Y_obj_upper_2D = None, None
 
 

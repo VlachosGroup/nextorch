@@ -19,8 +19,8 @@ from botorch.acquisition.acquisition import AcquisitionFunction
 from botorch.models.model import Model
 
 from typing import Optional, TypeVar, Union, Tuple, List
-from nextorch.utils import  ArrayLike1d, MatrixLike2d, create_full_X_test_2d, unitscale_xv
-from nextorch.utils import tensor_to_np, standardize_X, transform_Y_mesh_2d
+from nextorch.utils import  ArrayLike1d, MatrixLike2d, create_full_X_test_1d, create_full_X_test_2d
+from nextorch.utils import tensor_to_np, standardize_X, transform_Y_mesh_2d, unitscale_xv
 from nextorch.bo import eval_acq_func, eval_objective_func, \
     model_predict, model_predict_real, Experiment, MOOExperiment
 
@@ -344,13 +344,16 @@ def opt_per_trial_exp(
 def acq_func_1d(
     acq_func: AcquisitionFunction, 
     X_test: MatrixLike2d, 
+    n_dim: Optional[int] = 1,
+    x_index: Optional[int] = 0,
     X_train: Optional[MatrixLike2d] = None, 
     X_new: Optional[MatrixLike2d] = None, 
-    X_name: Optional[str] = 'x',
+    X_names: Optional[str] = None,
     save_fig: Optional[bool] = False,
     save_path: Optional[str] = None, 
     i_iter: Optional[Union[str, int]] = ''):
     """Plot 1-dimensional acquision function 
+    at the given dimension defined by x_index
 
     Parameters
     ----------
@@ -358,12 +361,17 @@ def acq_func_1d(
         the acquision function object
     X_test : MatrixLike2d
         Test data points for plotting
+    n_dim : Optional[int], optional
+        Dimensional of X, i.e., number of columns 
+        by default 1
+    x_index : Optional[int], optional
+        index of the x variable, by default 0
     X_train : Optional[MatrixLike2d], optional
         Training data points, by default None
     X_new : Optional[MatrixLike2d], optional
         The next data point, i.e the infill points,
         by default None
-    X_name: Optional[str], optional
+    X_names : Optional[str], optional
         Name of X varibale shown as x-label
     save_fig: Optional[bool], optional
         if true save the plot 
@@ -377,22 +385,34 @@ def acq_func_1d(
 
     .._'botorch.acquisition.AcquisitionFunction': https://botorch.org/api/acquisition.html
     """
+    # Set default axis names 
+    if X_names is None:
+        if (n_dim == 1): X_name = 'x'
+        else: X_name = 'x' + str(x_index + 1) 
+    else: 
+        X_name = X_names[x_index]
+
     # compute acquicision function values at X_test and X_train
     acq_val_test = eval_acq_func(acq_func, X_test, return_type='np')
-    X_test = np.squeeze(tensor_to_np(X_test))
+    # Select the given dimension
+    x_test_1d = np.squeeze(tensor_to_np(X_test)[:, x_index])
+
     # Initialize plot
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(X_test, acq_val_test, 'b-', label = 'Acquisition')
+    ax.plot(x_test_1d, acq_val_test, 'b-', label = 'Acquisition')
+
     # Plot training points as black 
-    if X_train is not None:
+    # Only for 1-dimensional system
+    if (n_dim == 1) and (X_train is not None):
         acq_val_train = eval_acq_func(acq_func, X_train, return_type='np')
-        X_train = np.squeeze(tensor_to_np(X_train))
-        ax.scatter(X_train, acq_val_train, s = 120, c= 'k', marker = '*', label = 'Initial Data')
+        x_train = np.squeeze(tensor_to_np(X_train)[:, x_index])
+        ax.scatter(x_train, acq_val_train, s = 120, c= 'k', marker = '*', label = 'Initial Data')
     # Plot the new infill points as red stars
-    if X_new is not None:
+    # Only for 1-dimensional system
+    if (n_dim == 1) and (X_new is not None):
         acq_val_new = eval_acq_func(acq_func, X_new, return_type='np')
-        X_new = np.squeeze(tensor_to_np(X_new))
-        ax.scatter(X_new, acq_val_new,  s = 120, c ='r', marker = '*', label = 'Infill Data')
+        x_new = np.squeeze(tensor_to_np(X_new)[:, x_index])
+        ax.scatter(x_new, acq_val_new,  s = 120, c ='r', marker = '*', label = 'Infill Data')
     
     ax.ticklabel_format(style = 'sci', axis = 'y' )#, scilimits = (-2,2) )
     ax.set_xlabel(X_name)
@@ -411,33 +431,52 @@ def acq_func_1d(
 
 
 def acq_func_1d_exp(Exp: Experiment,
-    X_test: MatrixLike2d, 
     X_new: Optional[MatrixLike2d] = None,
     x_index: Optional[int] = 0,
+    fixed_values: Optional[Union[ArrayLike1d, float]] = None,
+    fixed_values_real: Optional[Union[ArrayLike1d, float]] = None,
+    baseline: Optional[str] = 'left',
+    mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False):
     """Plot 1-dimensional acquision function 
+    at the given dimension defined by x_index
     Using Experiment object
 
     Parameters
     ----------
     Exp : Experiment
         Experiment object
-    X_test : MatrixLike2d
-        Test data points for plotting
     X_new : Optional[MatrixLike2d], optional
         The next data point, i.e the infill points,
         by default None
-    x_index : Optional[index], optional
-        index of the x variable, by default 0
-    save_fig: Optional[bool], optional
-        if true save the plot 
-        by default False
+    x_index : Optional[int], optional
+        index of two x variables, by default 0
+    fixed_values : Optional[Union[ArrayLike1d, float]], optional
+        fixed values in other dimensions, 
+        in a unit scale, by default None
+    fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
+        fixed values in other dimensions, 
+        in a real scale, by default None
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
+    mesh_size : int, optional
+        mesh size, by default 41
     """
+    # Create 1d mesh test points 
+    X_test_1d = create_full_X_test_1d(X_ranges=Exp.X_ranges, 
+                                      x_index=x_index,
+                                      fixed_values=fixed_values,
+                                      fixed_values_real=fixed_values_real,
+                                      baseline=baseline,
+                                      mesh_size=mesh_size) 
+
     acq_func_1d(acq_func = Exp.acq_func_current, 
-                X_test=X_test, 
+                X_test=X_test_1d, 
+                n_dim=Exp.n_dim,
+                x_index=x_index,
                 X_train=Exp.X,
                 X_new=X_new,
-                X_name = Exp.X_names[x_index], 
+                X_names=Exp.X_names, 
                 save_fig= save_fig,
                 save_path=Exp.exp_path,
                 i_iter = Exp.n_points - Exp.n_points_init)
@@ -446,6 +485,8 @@ def acq_func_1d_exp(Exp: Experiment,
 def objective_func_1d(
     model: Model, 
     X_test: MatrixLike2d, 
+    n_dim: Optional[int] = 1,
+    x_index: Optional[int] = 0,
     Y_test: Optional[MatrixLike2d] = None, 
     X_train: Optional[MatrixLike2d] = None,
     Y_train: Optional[MatrixLike2d] = None, 
@@ -455,12 +496,13 @@ def objective_func_1d(
     plot_real: Optional[bool] = False,
     Y_mean: Optional[MatrixLike2d] = None,
     Y_std: Optional[MatrixLike2d] = None, 
-    X_name: Optional[str] = 'x', 
-    Y_name: Optional[str] = 'y',
+    X_names: Optional[str] = None, 
+    Y_name: Optional[str] = None,
     save_fig: Optional[bool] = False,
     save_path: Optional[str] = None, 
     i_iter: Optional[Union[str, int]] = ''):
-    """Plot objective function along 1 dimension
+    """Plot objective function values
+    at the given dimension defined by x_index
     Input X variables are in a unit scale and
     Input Y variables are in a real scale
 
@@ -469,7 +511,12 @@ def objective_func_1d(
     model : 'botorch.models.model.Model'_
         A GP model
     X_test : MatrixLike2d
-        Test X data points for plotting
+        Test data points for plotting
+    n_dim : Optional[int], optional
+        Dimensional of X, i.e., number of columns 
+        by default 1
+    x_index : Optional[int], optional
+        index of the x variable, by default 0
     Y_test : Optional[MatrixLike2d], optional
         Test Y data if the objective function is known, 
         by default None
@@ -490,8 +537,8 @@ def objective_func_1d(
         The mean of initial Y set
     Y_std : MatrixLike2d
         The std of initial Y set
-    X_name: Optional[str], optional
-        Name of X varibale shown as x-label
+    X_names: Optional[str], optional
+        Name of X varibales shown as x-label
     Y_name: Optional[str], optional
         Name of Y varibale shown as y-label
     save_fig: Optional[bool], optional
@@ -523,51 +570,67 @@ def objective_func_1d(
         raise ValueError("Plot X_new, must also input Y_new")
     if not plot_real and (Y_mean is None or Y_std is None):
         raise ValueError("Plot in the standard scale, must supply the mean and std of Y set")
+    
+    # Set default axis names 
+    if X_names is None:
+        if (n_dim == 1): X_name = 'x'
+        else: X_name = 'x' + str(x_index + 1) 
+    else: 
+        X_name = X_names[x_index]
+
+    # Set default axis names 
+    if Y_name is None:
+         Y_name = 'y'
 
     if plot_real: # Y in a real scale
-        Y_test_pred, Y_test_lower_pred, Y_test_upper_pred = model_predict_real(model, 
-                                                                        X_test, 
-                                                                        Y_mean, 
-                                                                        Y_std, 
-                                                                        return_type= 'np', 
-                                                                        negate_Y=negate_Y)
+        Y_test_pred, Y_test_lower_pred, Y_test_upper_pred = model_predict_real(model=model, 
+                                                                                X_test=X_test, 
+                                                                                Y_mean=Y_mean, 
+                                                                                Y_std=Y_std, 
+                                                                                return_type= 'np', 
+                                                                                negate_Y=negate_Y)
     else: # Y in a standardized scale
         Y_test = standardize_X(Y_test, Y_mean, Y_std, return_type= 'np') #standardize Y_test
         Y_train = standardize_X(Y_train, Y_mean, Y_std, return_type= 'np') 
         Y_new = standardize_X(Y_new, Y_mean, Y_std, return_type= 'np') 
 
-        Y_test_pred, Y_test_lower_pred, Y_test_upper_pred = model_predict(model, 
-                                                                          X_test, 
+        Y_test_pred, Y_test_lower_pred, Y_test_upper_pred = model_predict(model=model, 
+                                                                          X_test=X_test, 
                                                                           return_type= 'np',
                                                                           negate_Y=negate_Y)
+    # Select the given dimension
+    x_test_1d = tensor_to_np(X_test)[:, x_index]
     # reduce the dimension to 1d arrays
-    X_test = np.squeeze(tensor_to_np(X_test))
-    Y_test_pred = np.squeeze(Y_test_pred)
-    Y_test_lower_pred = np.squeeze(Y_test_lower_pred)
-    Y_test_upper_pred = np.squeeze(Y_test_upper_pred)
+    y_test_pred = Y_test_pred
+    y_test_lower_pred = Y_test_lower_pred
+    y_test_upper_pred = Y_test_upper_pred
 
     # Initialize plot
     fig, ax = plt.subplots(figsize=(12, 6))
-    # Plot the groud truth Y_test if provided
-    if Y_test is not None:
-        Y_test = np.squeeze(tensor_to_np(Y_test))
-        ax.plot(X_test, Y_test, 'k--', label = 'Objective f(x)')
-
-    # Plot posterior means as blue line
-    ax.plot(X_test, Y_test_pred, 'b', label = 'Posterior Mean')
+    # Plot model predicted posterior means as blue line
+    ax.plot(x_test_1d, y_test_pred, 'b', label = 'Posterior Mean')
     # Shade between the lower and upper confidence bounds
-    ax.fill_between(X_test, Y_test_lower_pred, Y_test_upper_pred, alpha=0.5, label = 'Confidence')
+    ax.fill_between(x_test_1d, y_test_lower_pred, y_test_upper_pred, alpha=0.5, label = 'Confidence')
+
+    # Plot the groud truth Y_test if provided
+    # Only for 1-dimensional system
+    if (n_dim == 1) and (Y_test is not None):
+        y_test = np.squeeze(tensor_to_np(Y_test))
+        ax.plot(x_test_1d, y_test, 'k--', label = 'Objective f(x)')
 
     # Plot training points as black stars
-    if X_train is not None:
-        X_train = np.squeeze(tensor_to_np(X_train))
-        Y_train = np.squeeze(tensor_to_np(Y_train))
-        ax.scatter(X_train, Y_train, s =120, c= 'k', marker = '*', label = 'Initial Data')
+    # Only for 1-dimensional system
+    if (n_dim == 1) and (X_train is not None):
+        x_train = np.squeeze(tensor_to_np(X_train)[:, x_index])
+        y_train = np.squeeze(tensor_to_np(Y_train))
+        ax.scatter(x_train, y_train, s =120, c= 'k', marker = '*', label = 'Initial Data')
+
     # Plot the new infill points as red stars
-    if X_new is not None:    
-        X_new = np.squeeze(tensor_to_np(X_new))
-        Y_new = np.squeeze(tensor_to_np(Y_new))
-        ax.scatter(X_new, Y_new, s = 120, c = 'r', marker = '*', label = 'Infill Data')
+    # Only for 1-dimensional system
+    if (n_dim == 1) and (X_new is not None):    
+        x_new = np.squeeze(tensor_to_np(X_new)[:, x_index])
+        y_new = np.squeeze(tensor_to_np(Y_new))
+        ax.scatter(x_new, y_new, s = 120, c = 'r', marker = '*', label = 'Infill Data')
         
     ax.set_xlabel(X_name)
     ax.set_ylabel(Y_name)
@@ -586,15 +649,19 @@ def objective_func_1d(
 
 def objective_func_1d_exp(
     Exp: Experiment,
-    X_test: MatrixLike2d, 
-    Y_test: Optional[MatrixLike2d] = None, 
     X_new: Optional[MatrixLike2d] = None,
     Y_new: Optional[MatrixLike2d] = None,
     x_index: Optional[int] = 0,
+    y_index: Optional[int] = 0,
+    fixed_values: Optional[Union[ArrayLike1d, float]] = None,
+    fixed_values_real: Optional[Union[ArrayLike1d, float]] = None,
+    baseline: Optional[str] = 'left',
+    mesh_size: Optional[int] = 41,
     plot_real: Optional[bool] = False, 
     save_fig: Optional[bool] = False):
-    """Plot objective function along 1 dimension
-       using Experiment object
+    """Plot objective function valus
+    at the given dimension defined by x_index
+    using Experiment object
 
     Parameters
     ----------
@@ -612,7 +679,19 @@ def objective_func_1d_exp(
         The next Y data point, i.e the infill points,
         by default None
     x_index : Optional[int], optional
-        index of the x variable, by default 0
+        index of two x variables, by default 0
+    y_index : Optional[int], optional
+        index of the y variables, by default 0
+    fixed_values : Optional[Union[ArrayLike1d, float]], optional
+        fixed values in other dimensions, 
+        in a unit scale, by default None
+    fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
+        fixed values in other dimensions, 
+        in a real scale, by default None
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
+    mesh_size : int, optional
+        mesh size, by default 41
     plot_real : Optional[bool], optional
         if true plot in the real scale for Y, 
         by default False
@@ -620,30 +699,40 @@ def objective_func_1d_exp(
         if true save the plot 
         by default False
     """
+    # Create 1d mesh test points 
+    X_test = create_full_X_test_1d(X_ranges=Exp.X_ranges, 
+                                    x_index=x_index,
+                                    fixed_values=fixed_values,
+                                    fixed_values_real=fixed_values_real,
+                                    baseline=baseline,
+                                    mesh_size=mesh_size) 
+
     # if no Y_test input, generate Y_test from objective function
-    if (Y_test is None) and (Exp.objective_func is not None):
+    if Exp.objective_func is not None:
         Y_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
 
     # if no Y_new input, generate Y_test from objective function
-    if (X_new is not None) and (Exp.objective_func is not None) and (Y_new is None):
+    if (Exp.objective_func is not None) and (Y_new is None):
         Y_new = eval_objective_func(X_new, Exp.X_ranges, Exp.objective_func)
 
     objective_func_1d(model = Exp.model, 
-                     X_test = X_test,
-                     Y_test = Y_test,
-                     X_train = Exp.X,
-                     Y_train = Exp.Y_real, #be sure to use Y_real
-                     X_new = X_new,
-                     Y_new = Y_new,
-                     negate_Y = Exp.negate_Y,
-                     plot_real = plot_real,
-                     Y_mean = Exp.Y_mean,
-                     Y_std= Exp.Y_std, 
-                     X_name= Exp.X_names[x_index], 
-                     Y_name=Exp.Y_names[0], 
-                     save_fig= save_fig,
-                     save_path=Exp.exp_path,
-                     i_iter = Exp.n_points - Exp.n_points_init)
+                    X_test = X_test,
+                    n_dim=Exp.n_dim,
+                    x_index=x_index,
+                    Y_test = Y_test,
+                    X_train = Exp.X,
+                    Y_train = Exp.Y_real, #be sure to use Y_real
+                    X_new = X_new,
+                    Y_new = Y_new,
+                    negate_Y = Exp.negate_Y,
+                    plot_real = plot_real,
+                    Y_mean = Exp.Y_mean,
+                    Y_std= Exp.Y_std, 
+                    X_names=Exp.X_names, 
+                    Y_name=Exp.Y_names[y_index], 
+                    save_fig= save_fig,
+                    save_path=Exp.exp_path,
+                    i_iter = Exp.n_points - Exp.n_points_init)
 
 
 #%% Functions for 2 dimensional systems on sampling
@@ -682,6 +771,7 @@ def set_axis_values(
 def sampling_2d(
     Xs: Union[MatrixLike2d, List[MatrixLike2d]], 
     X_ranges: Optional[MatrixLike2d] = None,
+    x_indices: Optional[List[int]] = [0, 1],
     X_names: Optional[List[str]] = None,
     design_names: Optional[Union[str, List[str]]] = None,
     save_fig: Optional[bool] = False,
@@ -697,6 +787,8 @@ def sampling_2d(
         Can be a list of matrices or one matrix
     X_ranges : Optional[MatrixLike2d], optional
             list of x ranges, by default None
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
     X_name: Optional[str], optional
         Names of X varibale shown as x,y-labels
     design_names : Optional[List[str]], optional
@@ -722,10 +814,17 @@ def sampling_2d(
         file_name += design_names
     else:
         file_name += 'comparison'  
+    
+    # Extract two variable indices for plotting
+    x_indices = sorted(x_indices) 
+    index_0 = x_indices[0]
+    index_1 = x_indices[1]
+
     # Set default axis names 
     n_dim = Xs[0].shape[1]
     if X_names is None:
-            X_names = ['x' + str(i+1) for i in range(n_dim)]
+        X_names = ['x' + str(xi+1) for xi in x_indices]
+
     # Set default [0,1] range for a unit scale
     if X_ranges is None:
         X_ranges = [[0,1]] * n_dim
@@ -737,7 +836,7 @@ def sampling_2d(
     # make the plot
     fig,ax = plt.subplots(figsize=(6, 6))
     for Xi, ci, name_i in zip(Xs, colors, design_names):
-        ax.scatter(Xi[:,0], Xi[:,1], color = ci , s = 60, label = name_i,  alpha = 0.6)
+        ax.scatter(Xi[:, index_0], Xi[:, index_1], color = ci , s = 60, label = name_i,  alpha = 0.6)
     
     # Get axes limits
     xlim_plot = list(ax.set_xlim(0, 1))
@@ -745,12 +844,12 @@ def sampling_2d(
     ax.legend(bbox_to_anchor=(1.04,1), loc="upper left")
     ax.axis('square')
     #ax.axis([0, 1, 0, 1])
-    ax.set_xlabel(X_names[0])
-    ax.set_ylabel(X_names[1])
+    ax.set_xlabel(X_names[index_0])
+    ax.set_ylabel(X_names[index_1])
     ax.set_xticks(set_axis_values(xlim_plot, n_tick_sections))
-    ax.set_xticklabels(set_axis_values(X_ranges[0], n_tick_sections))
+    ax.set_xticklabels(set_axis_values(X_ranges[index_0], n_tick_sections))
     ax.set_yticks(set_axis_values(ylim_plot, n_tick_sections))
-    ax.set_yticklabels(set_axis_values(X_ranges[1], n_tick_sections))
+    ax.set_yticklabels(set_axis_values(X_ranges[index_1], n_tick_sections))
     plt.show()
 
     # save the figure as png
@@ -763,6 +862,7 @@ def sampling_2d(
 
 def sampling_2d_exp(
     Exp: Experiment,
+    x_indices: Optional[List[int]] = [0, 1],
     design_names: Optional[Union[str, List[str]]] = None,
     save_fig: Optional[bool] = False):
     """Plot sampling plan(s) in 2 dimensional space
@@ -773,6 +873,8 @@ def sampling_2d_exp(
     ----------
     Exp : Experiment
         Experiment object
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
     design_names : Optional[List[str]], optional
         Names of the designs, by default None
     save_fig: Optional[bool], optional
@@ -794,6 +896,7 @@ def sampling_2d_exp(
     
     sampling_2d(Xs = Xs, 
                 X_ranges=Exp.X_ranges,
+                x_indices=x_indices,
                 X_names=Exp.X_names,
                 design_names=design_names,
                 save_fig=save_fig,
@@ -917,6 +1020,7 @@ def add_z_slice_2d(
 def sampling_3d(
     Xs: Union[MatrixLike2d, List[MatrixLike2d]], 
     X_ranges: Optional[MatrixLike2d] = None,
+    x_indices: Optional[List[int]] = [0, 1, 2],
     X_names: Optional[List[str]] = None, 
     slice_axis: Optional[Union[str, int]] = None, 
     slice_value: Optional[float] = None, 
@@ -934,6 +1038,8 @@ def sampling_3d(
         Can be a list of matrices or one matrix
     X_ranges : Optional[MatrixLike2d], optional
             list of x ranges, by default None
+    x_indices : Optional[List[int]], optional
+        indices of three x variables, by default [0, 1, 2]
     X_name: Optional[List(str)], optional
         Names of X varibale shown as x,y,z-labels
     slice_axis : Optional[Union[str, int]], optional
@@ -977,10 +1083,17 @@ def sampling_3d(
         file_name += design_names # for a single design, include its name
     else:
         file_name += 'comparison' # for multiple designs, use "comparison"
+
+    # Extract two variable indices for plotting
+    x_indices = sorted(x_indices) 
+    index_0 = x_indices[0]
+    index_1 = x_indices[1]
+    index_2 = x_indices[2]
+
     # Set default axis names 
     n_dim = Xs[0].shape[1]
     if X_names is None:
-            X_names = ['x' + str(i+1) for i in range(n_dim)]
+        X_names = ['x' + str(i+1) for i in range(n_dim)]
     # Set default [0,1] range for a unit scale
     if X_ranges is None:
         X_ranges = [[0,1]] * n_dim
@@ -993,7 +1106,7 @@ def sampling_3d(
     fig  = plt.figure(figsize = (8,8))
     ax = fig.add_subplot(111, projection='3d')
     for Xi, ci, name_i in zip(Xs, colors, design_names):
-        ax.scatter(Xi[:,0], Xi[:,1], Xi[:,2], \
+        ax.scatter(Xi[:, index_0], Xi[:, index_1], Xi[:, index_2], \
             color=ci, marker='o', s = 60, alpha = 0.6, label = name_i)
     # Get axes limits
     xlim_plot = list(ax.set_xlim(0, 1))
@@ -1024,15 +1137,15 @@ def sampling_3d(
     
     # set axis labels and ticks
     ax.legend(bbox_to_anchor=(1.04,1), loc="upper left")
-    ax.set_xlabel(X_names[0], labelpad= 15)
-    ax.set_ylabel(X_names[1],labelpad= 15)
-    ax.set_zlabel(X_names[2],labelpad=3)
+    ax.set_xlabel(X_names[index_0], labelpad= 15)
+    ax.set_ylabel(X_names[index_1],labelpad= 15)
+    ax.set_zlabel(X_names[index_2],labelpad=3)
     ax.set_xticks(set_axis_values(xlim_plot, n_tick_sections))
-    ax.set_xticklabels(set_axis_values(X_ranges[0], n_tick_sections))
+    ax.set_xticklabels(set_axis_values(X_ranges[index_0], n_tick_sections))
     ax.set_yticks(set_axis_values(ylim_plot, n_tick_sections))
-    ax.set_yticklabels(set_axis_values(X_ranges[1], n_tick_sections))
+    ax.set_yticklabels(set_axis_values(X_ranges[index_1], n_tick_sections))
     ax.set_zticks(set_axis_values(zlim_plot, n_tick_sections))
-    ax.set_zticklabels(set_axis_values(X_ranges[2], n_tick_sections))
+    ax.set_zticklabels(set_axis_values(X_ranges[index_2], n_tick_sections))
     ax.view_init(30, 45)
     plt.show()
     
@@ -1047,6 +1160,7 @@ def sampling_3d(
 
 def sampling_3d_exp(
     Exp: Experiment,
+    x_indices: Optional[List[int]] = [0, 1, 2],
     slice_axis: Optional[str] = None, 
     slice_value: Optional[float] = None,
     slice_value_real: Optional[float] = None, 
@@ -1060,6 +1174,8 @@ def sampling_3d_exp(
     ----------
     Exp : Experiment
         Experiment object
+    x_indices : Optional[List[int]], optional
+        indices of three x variables, by default [0, 1, 2]
     slice_axis : Optional[str], optional
         axis where a 2d slice is made, by default None
     slice_value : Optional[float], optional
@@ -1088,14 +1204,15 @@ def sampling_3d_exp(
         design_names.append('Infill')
     
     ax= sampling_3d(Xs=Xs, 
-                X_ranges=Exp.X_ranges,
-                X_names=Exp.X_names,
-                slice_axis=slice_axis,
-                slice_value=slice_value,
-                slice_value_real=slice_value_real,
-                design_names=design_names,
-                save_fig=save_fig,
-                save_path=Exp.exp_path)
+                    X_ranges=Exp.X_ranges,
+                    x_indices=x_indices,
+                    X_names=Exp.X_names,
+                    slice_axis=slice_axis,
+                    slice_value=slice_value,
+                    slice_value_real=slice_value_real,
+                    design_names=design_names,
+                    save_fig=save_fig,
+                    save_path=Exp.exp_path)
 
 
 #%% Functions for 2 dimensional systems on response heatmaps
@@ -1109,6 +1226,7 @@ def response_heatmap(
     X_ranges: Optional[MatrixLike2d] = None,
     X_names: Optional[List[str]] = None, 
     X_train: Optional[MatrixLike2d] = None, 
+    X_new: Optional[MatrixLike2d] = None,
     save_fig: Optional[bool] = False,
     save_path: Optional[str] = None,
     i_iter: Optional[Union[str, int]] = ''):  
@@ -1122,7 +1240,7 @@ def response_heatmap(
         Ranges of the response, [lb, rb]
         to show on the plot, by default None
     Y_name : Optional[str], optional
-        Name of Y variable, by default None
+        Names of Y variable, by default None
     log_flag : Optional[bool], optional
         flag to plot in a log scale, by default False
     n_dim : Optional[int], optional
@@ -1137,6 +1255,9 @@ def response_heatmap(
         by default None
     X_train : Optional[MatrixLike2d], optional
         Data points used in training, by default None
+    X_new : Optional[MatrixLike2d], optional
+        The next data point, i.e the infill points,
+        by default None
     save_fig: Optional[bool], optional
         if true save the plot 
         by default False
@@ -1154,6 +1275,7 @@ def response_heatmap(
     '''  
     # Preprocess Y_real
     Y_real = tensor_to_np(Y_real)
+
     # Set default Y_real_range
     if Y_real_range is None:
         Y_real_range = [np.min(Y_real), np.max(Y_real)]
@@ -1162,18 +1284,20 @@ def response_heatmap(
 
     # Extract two variable indices for plotting
     x_indices = sorted(x_indices) 
-    x_index = x_indices[0]
-    y_index = x_indices[1]
+    index_0 = x_indices[0]
+    index_1 = x_indices[1]
     
     # Set default axis names 
     if X_names is None:
-            X_names = ['x' + str(di + 1) for di in range(n_dim)]
+        X_names = ['x' + str(xi + 1) for xi in x_indices]
+
     # Set Y_name in file name
-    if Y_name is None:
-        Y_name = ''
+    if Y_name is None: 
+        Y_name = 'y'
+
     # set the file name
-    filename = 'heatmap_'+ Y_name + '_' + str(x_index) +\
-         str(y_index) + '_i_' + str(i_iter) 
+    filename = 'heatmap_'+ Y_name + '_' + str(index_0) +\
+         str(index_1) + '_i_' + str(i_iter) 
     
 
     # Set default [0,1] range for a unit scale
@@ -1188,26 +1312,32 @@ def response_heatmap(
     im = ax.imshow(Y_real, cmap = 'jet', interpolation = 'gaussian', \
             vmin = Y_real_range[0], vmax = Y_real_range[1], origin = 'lower', \
             extent = (0,1,0,1))
-    
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.1)
     plt.colorbar(im, cax = cax)
-    # Viusalize the sampling points as scatter points 
+
+    # Viusalize the sampling points as hollow black scatter points 
     # Only for 2-dimensional system
     if (n_dim == 2) and (X_train is not None) :
-        ax.scatter(X_train[:,x_index], X_train[:,y_index], s = 60, \
+        ax.scatter(X_train[:,index_0], X_train[:,index_1], s = 60, \
             c = 'white', edgecolors= 'k', alpha = 0.6)
+
+    # Viusalize the infill points as hollow red scatter points 
+    # Only for 2-dimensional system
+    if (n_dim == 2) and (X_new is not None) :
+        ax.scatter(X_new[:,index_0], X_new[:,index_1], s = 60, \
+            c = 'white', edgecolors= 'r', alpha = 0.6)
 
     #  Obtain axes limits
     xlim_plot = list(ax.set_xlim((0,1)))
     ylim_plot = list(ax.set_ylim((0,1)))
     # set axis labels and ticks   
-    ax.set_xlabel(X_names[x_index])
-    ax.set_ylabel(X_names[y_index])
+    ax.set_xlabel(X_names[index_0])
+    ax.set_ylabel(X_names[index_1])
     ax.set_xticks(set_axis_values(xlim_plot, n_tick_sections))
-    ax.set_xticklabels(set_axis_values(X_ranges[x_index], n_tick_sections))
+    ax.set_xticklabels(set_axis_values(X_ranges[index_0], n_tick_sections))
     ax.set_yticks(set_axis_values(ylim_plot, n_tick_sections))
-    ax.set_yticklabels(set_axis_values(X_ranges[y_index], n_tick_sections))
+    ax.set_yticklabels(set_axis_values(X_ranges[index_1], n_tick_sections))
      
     plt.show()
 
@@ -1222,13 +1352,15 @@ def response_heatmap(
 
 def response_heatmap_exp(
     Exp: Experiment,
+    X_new: Optional[MatrixLike2d] = None,
     Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
     fixed_values: Optional[Union[ArrayLike1d, float]] = [],
     fixed_values_real: Optional[Union[ArrayLike1d, float]] = [],
-    show_samples: Optional[bool] = True,
+    baseline: Optional[str] = 'left',
     mesh_size: Optional[int] = 41,
+    show_samples: Optional[bool] = True,
     save_fig: Optional[bool] = False):
     """Show a heat map for the response in a real scale
     Using the experiment object
@@ -1236,6 +1368,9 @@ def response_heatmap_exp(
     ----------
     Exp : Experiment
         Experiment object
+    X_new : Optional[MatrixLike2d], optional
+        The next data point, i.e the infill points,
+        by default None
     Y_real_range : Optional[ArrayLike1d], optional
         Ranges of the response, [lb, rb]
         to show on the plot, by default None
@@ -1249,11 +1384,13 @@ def response_heatmap_exp(
     fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a real scale, by default []
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
+    mesh_size : Optional[int], optional
+        mesh size, by default 41
     show_samples: Optional[bool], optional
         if true show the sample points   
         by default True
-    mesh_size : Optional[int], optional
-        mesh size, by default 41
     save_fig: Optional[bool], optional
         if true save the plot 
         by default False
@@ -1264,24 +1401,26 @@ def response_heatmap_exp(
                                          x_indices=x_indices,
                                          fixed_values=fixed_values,
                                          fixed_values_real=fixed_values_real,
+                                         baseline=baseline,
                                          mesh_size=mesh_size) 
                                      
     # Make prediction using the GP model
     Y_test = Exp.predict_real(X_test)
-    Y_test_2D = transform_Y_mesh_2d(Y_test, mesh_size=mesh_size)
+    Y_test_2d = transform_Y_mesh_2d(Y_test, mesh_size=mesh_size)
     # select the sample points
     X_train = None
     if show_samples: X_train = Exp.X
 
-    response_heatmap(Y_real=Y_test_2D,
+    response_heatmap(Y_real=Y_test_2d,
                      Y_real_range = Y_real_range,
-                     Y_name = Exp.Y_names[0],
+                     Y_name=Exp.Y_names[0],
                      log_flag=log_flag,
                      n_dim=Exp.n_dim,
                      x_indices=x_indices,
                      X_ranges=Exp.X_ranges,
+                     X_names=Exp.X_names,
                      X_train=X_train,
-                     X_names = Exp.X_names,
+                     X_new=X_new,
                      save_fig=save_fig,
                      save_path=Exp.exp_path,
                      i_iter=Exp.n_points - Exp.n_points_init)
@@ -1289,12 +1428,15 @@ def response_heatmap_exp(
 
 def objective_heatmap_exp(
     Exp: Experiment,
+    X_new: Optional[MatrixLike2d] = None,
     Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
     fixed_values: Optional[Union[ArrayLike1d, float]] = [],
     fixed_values_real: Optional[Union[ArrayLike1d, float]] = [],
+    baseline: Optional[str] = 'left',
     mesh_size: Optional[int] = 41,
+    show_samples: Optional[bool] = True,
     save_fig: Optional[bool] = False):
     """Show a heat map for objective function in a real scale
     Using the experiment object
@@ -1302,6 +1444,9 @@ def objective_heatmap_exp(
     ----------
     Exp : Experiment
         Experiment object
+    X_new : Optional[MatrixLike2d], optional
+        The next data point, i.e the infill points,
+        by default None
     Y_real_range : Optional[ArrayLike1d], optional
         Ranges of the response, [lb, rb]
         to show on the plot, by default None
@@ -1315,8 +1460,13 @@ def objective_heatmap_exp(
     fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a real scale, by default []
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
     mesh_size : Optional[int], optional
         mesh size, by default 41
+    show_samples: Optional[bool], optional
+        if true show the sample points   
+        by default True
     save_fig: Optional[bool], optional
         if true save the plot 
         by default False
@@ -1326,20 +1476,26 @@ def objective_heatmap_exp(
                                          x_indices=x_indices,
                                          fixed_values=fixed_values,
                                          fixed_values_real=fixed_values_real,
+                                         baseline=baseline,
                                          mesh_size=mesh_size) 
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
-    Y_obj_test_2D = transform_Y_mesh_2d(Y_obj_test, mesh_size=mesh_size)
+    Y_obj_test_2d = transform_Y_mesh_2d(Y_obj_test, mesh_size=mesh_size)
+
+    # select the sample points
+    X_train = None
+    if show_samples: X_train = Exp.X
     
-    response_heatmap(Y_real=Y_obj_test_2D,
+    response_heatmap(Y_real=Y_obj_test_2d,
                     Y_real_range = Y_real_range,
-                    Y_name = Exp.Y_names[0],
+                    Y_name=Exp.Y_names[0],
                     log_flag= log_flag,
                     n_dim=Exp.n_dim,
                     x_indices=x_indices,
                     X_ranges=Exp.X_ranges,
-                    X_names = Exp.X_names,
-                    X_train= None,
+                    X_names=Exp.X_names,
+                    X_train=X_train,
+                    X_new=X_new,
                     save_fig=save_fig,
                     save_path=Exp.exp_path,
                     i_iter='objective')
@@ -1355,6 +1511,9 @@ def objective_heatmap(
     fixed_values: Optional[Union[ArrayLike1d, float]] = [],
     fixed_values_real: Optional[Union[ArrayLike1d, float]] = [],
     X_names: Optional[List[str]] = None, 
+    X_train: Optional[MatrixLike2d] = None, 
+    X_new: Optional[MatrixLike2d] = None,
+    baseline: Optional[str] = 'left',
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False, 
     name: Optional[str] = 'simple_experiment'
@@ -1384,8 +1543,15 @@ def objective_heatmap(
     fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a real scale, by default []
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
     X_name: Optional[List(str)], optional
         Names of X varibale shown as x,y,z-labels
+        by default None
+    X_train : Optional[MatrixLike2d], optional
+        Data points used in training, by default None
+    X_new : Optional[MatrixLike2d], optional
+        The next data point, i.e the infill points,
         by default None
     mesh_size : Optional[int], optional
         mesh size, by default 41
@@ -1402,24 +1568,26 @@ def objective_heatmap(
                                          x_indices=x_indices,
                                          fixed_values=fixed_values,
                                          fixed_values_real=fixed_values_real,
+                                         baseline=baseline,
                                          mesh_size=mesh_size) 
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, X_ranges, objective_func)
-    Y_obj_test_2D = transform_Y_mesh_2d(Y_obj_test, mesh_size=mesh_size)
+    Y_obj_test_2d = transform_Y_mesh_2d(Y_obj_test, mesh_size=mesh_size)
 
     # Set up the path to save graphical results
     parent_dir = os.getcwd()
     exp_path = os.path.join(parent_dir, name)
 
-    response_heatmap(Y_real=Y_obj_test_2D,  
-                    Y_real_range = Y_real_range,
-                    Y_name = Y_name,
+    response_heatmap(Y_real=Y_obj_test_2d,  
+                    Y_real_range=Y_real_range,
+                    Y_name=Y_name,
                     log_flag= log_flag,
                     n_dim=n_dim,
                     x_indices=x_indices,
                     X_ranges=X_ranges,
-                    X_train= None,
-                    X_names = X_names,
+                    X_names=X_names,
+                    X_train=X_train,
+                    X_new=X_new,
                     save_fig=save_fig,
                     save_path=exp_path,
                     i_iter='objective')
@@ -1427,11 +1595,13 @@ def objective_heatmap(
 
 def response_heatmap_err_exp(
     Exp: Experiment,
+    X_new: Optional[MatrixLike2d] = None,
     Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
     x_indices: Optional[List[int]] = [0, 1],
     fixed_values: Optional[Union[ArrayLike1d, float]] = [],
     fixed_values_real: Optional[Union[ArrayLike1d, float]] = [],
+    baseline: Optional[str] = 'left',
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False):
     """Show a heat map for percentage error 
@@ -1441,6 +1611,9 @@ def response_heatmap_err_exp(
     ----------
     Exp : Experiment
         Experiment object
+    X_new : Optional[MatrixLike2d], optional
+        The next data point, i.e the infill points,
+        by default None
     Y_real_range : Optional[ArrayLike1d], optional
         Ranges of the response, [lb, rb]
         to show on the plot, by default None
@@ -1454,6 +1627,8 @@ def response_heatmap_err_exp(
     fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a real scale, by default []
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
     mesh_size : Optional[int], optional
         mesh size, by default 41
     save_fig: Optional[bool], optional
@@ -1465,23 +1640,28 @@ def response_heatmap_err_exp(
                                          x_indices=x_indices,
                                          fixed_values=fixed_values,
                                          fixed_values_real=fixed_values_real,
+                                         baseline=baseline,
                                          mesh_size=mesh_size) 
     # Make prediction using the GP model
     Y_test = Exp.predict_real(X_test)
-    Y_test_2D = transform_Y_mesh_2d(Y_test, mesh_size=mesh_size)
+    Y_test_2d = transform_Y_mesh_2d(Y_test, mesh_size=mesh_size)
+
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
-    Y_obj_test_2D = transform_Y_mesh_2d(Y_obj_test)
+    Y_obj_test_2d = transform_Y_mesh_2d(Y_obj_test, mesh_size=mesh_size)
+
     # Calculate the percentage errors
-    Y_err_2D = np.abs((Y_obj_test_2D - Y_test_2D)/Y_obj_test_2D)
-    response_heatmap(Y_real=Y_err_2D,
+    Y_err_2d = np.abs((Y_obj_test_2d - Y_test_2d)/Y_obj_test_2d)
+    response_heatmap(Y_real=Y_err_2d,
                     Y_real_range = Y_real_range,
                     Y_name = Exp.Y_names[0]+'_error',
                     log_flag= log_flag,
                     n_dim=Exp.n_dim,
                     x_indices=x_indices,
                     X_ranges=Exp.X_ranges,
+                    X_names=Exp.X_names,
                     X_train=Exp.X,
+                    X_new=X_new,
                     save_fig=save_fig,
                     save_path=Exp.exp_path,
                     i_iter=Exp.n_points - Exp.n_points_init)
@@ -1546,6 +1726,7 @@ def response_surface(
     X1_test = tensor_to_np(X1_test)
     X2_test = tensor_to_np(X2_test)
     Y_real = tensor_to_np(Y_real)
+
     if Y_real_lower is not None:
         Y_real_lower = tensor_to_np(Y_real_lower)
     if Y_real_upper is not None:
@@ -1562,21 +1743,21 @@ def response_surface(
     
     # Extract two variable indices for plotting
     x_indices = sorted(x_indices) 
-    x_index = x_indices[0]
-    y_index = x_indices[1]
+    index_0 = x_indices[0]
+    index_1 = x_indices[1]
     
     # Set default axis names 
     if X_names is None:
-            X_names = ['x' + str(di+1) for di in range(n_dim)]
+            X_names = ['x' + str(xi + 1) for xi in x_indices]
     # Set Y_name in file name
     if Y_name is None:
-        Y_name = ''
+        Y_name = 'y'
         Y_name_plot = 'y'
     else: 
         Y_name_plot = Y_name
     # set the file name
-    filename = 'surface_'+ Y_name + '_' + str(x_index) +\
-         str(y_index) + '_i_' + str(i_iter) 
+    filename = 'surface_'+ Y_name + '_' + str(index_0) +\
+         str(index_1) + '_i_' + str(i_iter) 
     
     # Set default [0,1] range for a unit scale
     if X_ranges is None:
@@ -1601,13 +1782,13 @@ def response_surface(
             vmin = Y_real_range[0], vmax = Y_real_range[1]) 
     
     # set axis labels and ticks   
-    ax.set_xlabel(X_names[x_index], labelpad=15)
-    ax.set_ylabel(X_names[y_index], labelpad=15)
+    ax.set_xlabel(X_names[index_0], labelpad=15)
+    ax.set_ylabel(X_names[index_1], labelpad=15)
     ax.set_zlabel(Y_name_plot, labelpad=10)
     ax.set_xticks(set_axis_values(xlim_plot, n_tick_sections))
-    ax.set_xticklabels(set_axis_values(X_ranges[x_index], n_tick_sections))
+    ax.set_xticklabels(set_axis_values(X_ranges[index_0], n_tick_sections))
     ax.set_yticks(set_axis_values(ylim_plot, n_tick_sections))
-    ax.set_yticklabels(set_axis_values(X_ranges[y_index], n_tick_sections))
+    ax.set_yticklabels(set_axis_values(X_ranges[index_1], n_tick_sections))
     ax.set_zticks(set_axis_values(zlim_plot, n_tick_sections, 1))
     ax.set_zticklabels(set_axis_values(zlim_plot, n_tick_sections, 1))
 
@@ -1628,9 +1809,10 @@ def response_surface_exp(
     Exp: Experiment,
     Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
+    x_indices: Optional[List[int]] = [0, 1],
     fixed_values: Optional[Union[ArrayLike1d, float]] = [],
     fixed_values_real: Optional[Union[ArrayLike1d, float]] = [],
-    x_indices: Optional[List[int]] = [0, 1],
+    baseline: Optional[str] = 'left',
     show_confidence: Optional[bool] = False,
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False):
@@ -1647,14 +1829,16 @@ def response_surface_exp(
         to show on the plot, by default None
     log_flag : Optional[bool], optional
         flag to plot in a log scale
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
     fixed_values : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a unit scale, by default []
     fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a real scale, by default []
-    x_indices : Optional[List[int]], optional
-        indices of two x variables, by default [0, 1]
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
     mesh_size : Optional[int], optional
         mesh size, by default 41
     save_fig: Optional[bool], optional
@@ -1666,6 +1850,7 @@ def response_surface_exp(
                                                      x_indices=x_indices,
                                                      fixed_values=fixed_values,
                                                      fixed_values_real=fixed_values_real,
+                                                     baseline=baseline,
                                                      mesh_size=mesh_size) 
     # Make predictions using the GP model
     if show_confidence:
@@ -1689,7 +1874,7 @@ def response_surface_exp(
                      log_flag=log_flag,
                      x_indices=x_indices,
                      X_ranges=Exp.X_ranges,
-                     X_names= Exp.X_names, 
+                     X_names=Exp.X_names,
                      save_fig=save_fig,
                      save_path=Exp.exp_path,
                      i_iter=Exp.n_points - Exp.n_points_init)
@@ -1699,9 +1884,10 @@ def objective_surface_exp(
     Exp: Experiment,
     Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
+    x_indices: Optional[List[int]] = [0, 1],
     fixed_values: Optional[Union[ArrayLike1d, float]] = [],
     fixed_values_real: Optional[Union[ArrayLike1d, float]] = [],
-    x_indices: Optional[List[int]] = [0, 1],
+    baseline: Optional[str] = 'left',
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False):
     """Show a 3-dimensional response surface 
@@ -1717,14 +1903,16 @@ def objective_surface_exp(
         to show on the plot, by default None
     log_flag : Optional[bool], optional
         flag to plot in a log scale
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
     fixed_values : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a unit scale, by default []
     fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a real scale, by default []
-    x_indices : Optional[List[int]], optional
-        indices of two x variables, by default [0, 1]
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
     mesh_size : Optional[int], optional
         mesh size, by default 41
     save_fig: Optional[bool], optional
@@ -1736,6 +1924,7 @@ def objective_surface_exp(
                                                      x_indices=x_indices,
                                                      fixed_values=fixed_values,
                                                      fixed_values_real=fixed_values_real,
+                                                     baseline=baseline,
                                                      mesh_size=mesh_size) 
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
@@ -1753,10 +1942,11 @@ def objective_surface_exp(
                      log_flag=log_flag,
                      x_indices=x_indices,
                      X_ranges=Exp.X_ranges,
-                     X_names= Exp.X_names, 
+                     X_names=Exp.X_names[x_indices], 
                      save_fig=save_fig,
                      save_path=Exp.exp_path,
                      i_iter='objective')
+
 
 def objective_surface(
     objective_func: object,
@@ -1764,9 +1954,10 @@ def objective_surface(
     Y_name: Optional[str] = None,
     Y_real_range: Optional[ArrayLike1d] = None, 
     log_flag: Optional[bool] = False,
+    x_indices: Optional[List[int]] = [0, 1],
     fixed_values: Optional[Union[ArrayLike1d, float]] = [],
     fixed_values_real: Optional[Union[ArrayLike1d, float]] = [],
-    x_indices: Optional[List[int]] = [0, 1],
+    baseline: Optional[str] = 'left',
     X_names: Optional[List[str]] = None, 
     mesh_size: Optional[int] = 41,
     save_fig: Optional[bool] = False, 
@@ -1789,14 +1980,16 @@ def objective_surface(
         to show on the plot, by default None
     log_flag : Optional[bool], optional
         flag to plot in a log scale
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
     fixed_values : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a unit scale, by default []
     fixed_values_real : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a real scale, by default []
-    x_indices : Optional[List[int]], optional
-        indices of two x variables, by default [0, 1]
+    baseline : Optional[str], optional
+        the choice of baseline, must be left, right or center
     X_name: Optional[List(str)], optional
         Names of X varibale shown as x,y,z-labels
         by default None
@@ -1815,6 +2008,7 @@ def objective_surface(
                                                      x_indices=x_indices,
                                                      fixed_values=fixed_values,
                                                      fixed_values_real=fixed_values_real,
+                                                     baseline=baseline,
                                                      mesh_size=mesh_size) 
     # Calculate objective function value 
     Y_obj_test = eval_objective_func(X_test, X_ranges, objective_func)
@@ -1832,7 +2026,7 @@ def objective_surface(
                      Y_real_lower=Y_obj_lower_2D, 
                      Y_real_upper=Y_obj_upper_2D, 
                      Y_real_range=Y_real_range,
-                     Y_name= Y_name,
+                     Y_name=Y_name,
                      n_dim=n_dim,
                      log_flag=log_flag,
                      x_indices=x_indices,

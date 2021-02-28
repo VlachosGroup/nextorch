@@ -16,4 +16,4 @@ plotting.add_x_slice_2d(ax, 10, [1,100], [2,4])
 X_ranges = [[0,1], [0,2], [0,3], [2,3]]
 X_test, _, _ = utils.create_full_X_test_2d(X_ranges=X_ranges, x_indices=[0,1]) 
 
-X_test = utils.create_full_X_test_1d(X_ranges=X_ranges, x_indices=0, baseline = 'center') 
+X_test = utils.create_full_X_test_1d(X_ranges=X_ranges, x_index=0, baseline = 'center') 

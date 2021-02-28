@@ -718,7 +718,7 @@ def fill_full_X_test(
         fixed_values = fixed_values_real
         unit_scale_flag = False
 
-    
+    # Convert to a list given a single value input
     if not isinstance(fixed_values, list):
         fixed_values = [fixed_values]
 
@@ -736,7 +736,7 @@ def fill_full_X_test(
         X_test = prepare_full_X_real(X_test=X_test_varying,
                                     X_ranges=X_ranges,
                                     x_indices = x_indices,
-                                    fixed_values=fixed_values)
+                                    fixed_values_real=fixed_values)
         X_test = unitscale_X(X_test, X_ranges=X_ranges)        
 
     return X_test
@@ -780,10 +780,10 @@ def create_full_X_test_2d(
     X2: Matrix
         X2 for surface plots
     """
-    # Create 2D mesh test points  
-    X_test_2D, X1, X2 = create_X_mesh_2d(mesh_size)
+    # Create 2d mesh test points  
+    X_test_2d, X1, X2 = create_X_mesh_2d(mesh_size)
     # Get full X with fixed values at the given dimensions 
-    X_test = fill_full_X_test(X_test_varying=X_test_2D,
+    X_test = fill_full_X_test(X_test_varying=X_test_2d,
                               X_ranges=X_ranges, 
                               x_indices=x_indices,
                               fixed_values=fixed_values,
@@ -796,7 +796,7 @@ def create_full_X_test_2d(
 
 def create_full_X_test_1d(
     X_ranges: MatrixLike2d, 
-    x_indices: Optional[int] = 0,
+    x_index: Optional[int] = 0,
     fixed_values: Optional[Union[ArrayLike1d, float]] = None,
     fixed_values_real: Optional[Union[ArrayLike1d, float]] = None,
     baseline: Optional[str] = 'left',
@@ -810,8 +810,8 @@ def create_full_X_test_1d(
     ----------
     X_ranges : MatrixLike2d
         list of x ranges
-    x_indices : Optional[int], optional
-        indices of two x variables, by default [0]
+    x_index : Optional[int], optional
+        index of two x variables, by default [0]
     fixed_values : Optional[Union[ArrayLike1d, float]], optional
         fixed values in other dimensions, 
         in a unit scale, by default None
@@ -828,15 +828,15 @@ def create_full_X_test_1d(
     X_test: MatrixLike2d
         Test X in a unit scale
     """
-    # Create 1D mesh test points  
-    X_test_1D = np.linspace(0, 1, mesh_size)
-    # Expand to 2D
-    X_test_1D = np.expand_dims(X_test_1D, axis=1)
+    # Create 1d mesh test points  
+    X_test_1d = np.linspace(0, 1, mesh_size)
+    # Expand to 2d
+    X_test_1d = np.expand_dims(X_test_1d, axis=1)
     
     # Get full X with fixed values at the given dimensions 
-    X_test = fill_full_X_test(X_test_varying=X_test_1D,
+    X_test = fill_full_X_test(X_test_varying=X_test_1d,
                               X_ranges=X_ranges, 
-                              x_indices=x_indices,
+                              x_indices=x_index,
                               fixed_values=fixed_values,
                               fixed_values_real=fixed_values_real,
                               baseline=baseline)

@@ -1430,7 +1430,7 @@ class COMSOLExperiment(Experiment):
 
         # read results
         data = np.loadtxt('./test_run_result.csv', skiprows=5, delimiter=',')
-        output = data[-1,1]
+        output = np.array([[data[-1,1]]])
         
         return output
 

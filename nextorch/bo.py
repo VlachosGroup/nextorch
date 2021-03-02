@@ -1383,7 +1383,7 @@ class COMSOLExperiment(Experiment):
             by default None, i.e. no rounding up
         """
 
-        super().input_data(self, X_real, Y_real, X_names, Y_names, preprocessed, X_ranges, unit_flag, log_flags, decimals)
+        super().input_data(X_real, Y_real, X_names, Y_names, preprocessed, X_ranges, unit_flag, log_flags, decimals)
 
         # assign variable names and units
         self.X_names = X_names
@@ -1426,7 +1426,7 @@ class COMSOLExperiment(Experiment):
         objective_file_name: str,
         comsol_location: str,
         comsol_output_location: str,
-        comsol_output_col: int, 
+        comsol_output_col: Optional[int] = 2, 
         model: Optional[Model] = None, 
         maximize: Optional[bool] = True,
         Y_weights: Optional[ArrayLike1d] = None

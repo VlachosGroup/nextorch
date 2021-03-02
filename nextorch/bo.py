@@ -1328,10 +1328,11 @@ class MOOExperiment(Database):
         return self.Y_real_opts, self.X_real_opts
 
 class COMSOLExperiment(Experiment):
-    """[summary]
-
-    Args:
-        Database ([type]): [description]
+    """
+    COMSOLExperiment class
+    Base: Experiment
+    Experiment consists of a set of trial points using COMSOL
+    For single objective optimization
     """
 
     def input_data(self,
@@ -1357,10 +1358,10 @@ class COMSOLExperiment(Experiment):
             original dependent data in a real scale
         X_names : Optional[List[str]]
             Names of independent varibles
-        Y_names : Optional[List[str]]
-            Names of dependent varibles
         X_units : Optional[List[str]]
             Units of independent varibles
+        Y_names : Optional[List[str]]
+            Names of dependent varibles
         Y_units : Optional[List[str]]
             Units of dependent varibles            
         preprocessed : Optional[bool], optional
@@ -1381,45 +1382,32 @@ class COMSOLExperiment(Experiment):
             Number of decimal places to keep
             by default None, i.e. no rounding up
         """
-        # expand to 2D
-        if len(X_real.shape)<2:
-            X_real = np.expand_dims(X_real, axis=1) #If 1D, make it 2D array
-        if len(Y_real.shape)<2:
-            Y_real = np.expand_dims(Y_real, axis=1) #If 1D, make it 2D array
 
-        # get specs of the data
-        self.n_dim = X_real.shape[1] # number of independent variables
-        self.n_points = X_real.shape[0] # number of data points
-        self.n_points_init = X_real.shape[0] # number of data points for the initial design
-        self.n_objectives = Y_real.shape[1] # number of dependent variables
+        super().input_data(self, X_real, Y_real, X_names, Y_names, preprocessed, X_ranges, unit_flag, log_flags, decimals)
 
         # assign variable names and units
         self.X_names = X_names
-        self.Y_names = Y_names
         self.X_units = X_units
-        self.Y_units = Y_units
-
-        # Preprocess the data 
-        self.preprocess_data(X_real, 
-                            Y_real,
-                            preprocessed = preprocessed,
-                            X_ranges = X_ranges,
-                            unit_flag = unit_flag,
-                            log_flags = log_flags, 
-                            decimals = decimals)
-
 
     def comsol_simulation(self, X_new_real):
+        """Run COMSOL simulation
+        
+        Parameters
+        ----------
+        X_new_real : MatrixLike2d
+            The new point in a real scale
+        """
+
         # update parameters
         for i in range(len(self.X_names)):
             subprocess.run(["sed", "-i", 's/"'+self.X_names[i]+'", "'+str(self.X_real[-1,i])+'\\['+self.X_units[i]+']"/"' +
-                            self.X_names[i]+'", "'+str(X_new_real[0,i])+'\\['+self.X_units[i]+']"/', self.objective_func_file+".java"])
+                            self.X_names[i]+'", "'+str(X_new_real[0,i])+'\\['+self.X_units[i]+']"/', self.objective_file_name+".java"])
     
         # run simulations
-        subprocess.run([self.comsol_location,  "compile", self.objective_func_file+".java"])
-        print("Code compiled successfully. Simulation starts.")
+        subprocess.run([self.comsol_location,  "compile", self.objective_file_name+".java"])
+        print("COMSOL file is sucessfully compiled. Simulation starts.")
 
-        process = subprocess.Popen([self.comsol_location,  "batch", "-inputfile", self.objective_func_file+".class"], stdout=subprocess.PIPE)
+        process = subprocess.Popen([self.comsol_location,  "batch", "-inputfile", self.objective_file_name+".class"], stdout=subprocess.PIPE)
         while True:
             line = process.stdout.readline()
             if not line:
@@ -1428,15 +1416,17 @@ class COMSOLExperiment(Experiment):
 
         print("Simulation is done.")
 
-        # read results
-        data = np.loadtxt('./test_run_result.csv', skiprows=5, delimiter=',')
-        output = np.array([[data[-1,1]]])
+        # read output objective
+        data = np.loadtxt(self.comsol_output_location, skiprows=5, delimiter=',')
+        Y_new_real = np.array([[data[-1, self.comsol_output_col - 1]]])
         
-        return output
+        return Y_new_real
 
-    def set_optim_specs(self,
-        objective_func_file: str,
-        comsol_location: str,  
+    def set_optim_specs(self, 
+        objective_file_name: str,
+        comsol_location: str,
+        comsol_output_location: str,
+        comsol_output_col: int, 
         model: Optional[Model] = None, 
         maximize: Optional[bool] = True,
         Y_weights: Optional[ArrayLike1d] = None
@@ -1445,8 +1435,15 @@ class COMSOLExperiment(Experiment):
 
         Parameters
         ----------
-        objective_func : Optional[object], by default None
-            objective function that is being optimized
+        objective_file_name : str
+            the objective COMSOL file
+        comsol_location : str
+            the location COMSOL installed
+        comsol_output_location : str
+            the location of saved COMSOL output
+            should be a text file
+        comsol_output_col : int
+            the column number of the objective
         model : Optional['botorch.models.model.Model'_], optional
             pre-trained GP model, by default None
         maximize : Optional[bool], optional
@@ -1458,10 +1455,16 @@ class COMSOLExperiment(Experiment):
         
         :_'botorch.models.model.Model': https://botorch.org/api/models.html#botorch.models.model.Model
         """
-        # assign objective function name and comsol location
-        self.objective_func_file = objective_func_file
+
+        # assign objective COMSOL file and location
+        self.objective_file_name = objective_file_name
         self.comsol_location = comsol_location
         self.objective_func = self.comsol_simulation
+
+        # assign output file and objective column
+        self.comsol_output_location = comsol_output_location
+        self.comsol_output_col = comsol_output_col
+        
         # set optimization goal
         self.maximize = maximize
 
@@ -1479,4 +1482,3 @@ class COMSOLExperiment(Experiment):
         # assign weights to each objective, useful only to multi-objective systems
         if Y_weights is not None:
             self.assign_weights(Y_weights)
-

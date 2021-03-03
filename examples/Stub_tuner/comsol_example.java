@@ -23,9 +23,9 @@ public class comsol_example {
     model.param().set("R_major", "20[mm]");
     model.param().set("f_sup", "2.45[GHz]");
     model.param().set("L_slide", "200[mm]");
-    model.param().set("L_stub1", "10.3[mm]");
-    model.param().set("L_stub2", "1.94[mm]");
-    model.param().set("L_stub3", "13.23[mm]");
+    model.param().set("L_stub1", "25.0[mm]");
+    model.param().set("L_stub2", "25.0[mm]");
+    model.param().set("L_stub3", "25.0[mm]");
     model.param().set("P_supply", "100[W]");
     model.param().set("T0", "293.15[K]");
 

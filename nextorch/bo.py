@@ -1418,8 +1418,12 @@ class COMSOLExperiment(Experiment):
 
         # read output objective
         data = np.loadtxt(self.comsol_output_location, skiprows=5, delimiter=',')
-        Y_new_real = np.array([[data[-1, self.comsol_output_col - 1]]])
-        
+
+        if (data.ndim == 1):
+            Y_new_real = np.array([[data[self.comsol_output_col - 1]]])
+        else:
+            Y_new_real = np.array([[data[-1, self.comsol_output_col - 1]]])
+
         return Y_new_real
 
     def set_optim_specs(self, 

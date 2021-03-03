@@ -81,7 +81,7 @@ def randomized_design(
     n_points: int, 
     seed: Optional[int] = None
 ) -> Matrix:
-    """Generates randomized design
+    """Generates completely randomized design
 
     Parameters
     ----------

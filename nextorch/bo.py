@@ -1555,9 +1555,15 @@ class COMSOLMOOExperiment(MOOExperiment):
 
         # update parameters
         for i in range(len(self.X_names)):
-            subprocess.run(["sed", "-i", 's/"'+self.X_names[i]+'", "'+str(self.X_real[-1,i])+'\\['+self.X_units[i]+']"/"' +
-                            self.X_names[i]+'", "'+str(X_new_real[0,i])+'\\['+self.X_units[i]+']"/', self.objective_file_name+".java"])
-    
+            match = '"'+self.X_names[i]+'", "'+str(self.X_real[-1,i])+'['+self.X_units[i]+']"'
+            replace = '"'+self.X_names[i]+'", "'+str(X_new_real[-1,i])+'['+self.X_units[i]+']"'
+
+            with open(self.objective_file_name+".java","r") as f:
+                data = f.read().replace(match,replace)
+
+            with open(self.objective_file_name+".java","w") as f:
+                f.write(data)
+
         # run simulations
         subprocess.run([self.comsol_location,  "compile", self.objective_file_name+".java"])
         print("COMSOL file is sucessfully compiled. Simulation starts.")
@@ -1587,7 +1593,7 @@ class COMSOLMOOExperiment(MOOExperiment):
         objective_file_name: str,
         comsol_location: str,
         comsol_output_location: str,
-        comsol_output_col: Optional[ArrayLike1d, int] = [2, 3],  
+        comsol_output_col: Optional[ArrayLike1d] = [2, 3],  
         maximize: Optional[bool] = True
     ):
 
@@ -1599,5 +1605,5 @@ class COMSOLMOOExperiment(MOOExperiment):
         self.comsol_output_location = comsol_output_location
         self.comsol_output_col = comsol_output_col
 
-        super().set_optim_specs(weights, objective_func=comsol_simulation, maximize=maximize)
+        super().set_optim_specs(weights, objective_func=self.comsol_simulation, maximize=maximize)
         

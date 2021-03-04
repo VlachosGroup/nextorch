@@ -1486,3 +1486,118 @@ class COMSOLExperiment(Experiment):
         # assign weights to each objective, useful only to multi-objective systems
         if Y_weights is not None:
             self.assign_weights(Y_weights)
+
+class COMSOLMOOExperiment(MOOExperiment):
+
+    def input_data(self,
+        X_real: MatrixLike2d,
+        Y_real: MatrixLike2d,
+        X_names: List[str],
+        X_units: List[str],
+        Y_names: Optional[List[str]] = None,
+        Y_units: Optional[List[str]] = None, 
+        preprocessed: Optional[bool] = False,
+        X_ranges: Optional[MatrixLike2d] = None,
+        unit_flag: Optional[bool] = False,
+        log_flags: Optional[list] = None, 
+        decimals: Optional[int] = None
+    ):
+        """Input data into Experiment object
+        
+        Parameters
+        ----------
+        X_real : MatrixLike2d
+            original independent data in a real scale
+        Y_real : MatrixLike2d
+            original dependent data in a real scale
+        X_names : Optional[List[str]]
+            Names of independent varibles
+        X_units : Optional[List[str]]
+            Units of independent varibles
+        Y_names : Optional[List[str]]
+            Names of dependent varibles
+        Y_units : Optional[List[str]]
+            Units of dependent varibles            
+        preprocessed : Optional[bool], optional
+            by default False, the input data will be processed
+            if true, skip processing
+        X_ranges : Optional[MatrixLike2d], optional
+            list of x ranges, by default None
+        unit_flag: Optional[bool], optional,
+            by default, False 
+            If true, the X is in a unit scale so
+            the function is used to scale X to a log scale
+        log_flags : Optional[list], optional
+            list of boolean flags
+            True: use the log scale on this dimensional
+            False: use the normal scale 
+            by default []
+        decimals : Optional[int], optional
+            Number of decimal places to keep
+            by default None, i.e. no rounding up
+        """
+
+        super().input_data(X_real, Y_real, X_names, Y_names, preprocessed, X_ranges, unit_flag, log_flags, decimals)
+
+        # assign variable names and units
+        self.X_names = X_names
+        self.X_units = X_units
+ 
+
+    def comsol_simulation(self, X_new_real):
+        """Run COMSOL simulation
+        
+        Parameters
+        ----------
+        X_new_real : MatrixLike2d
+            The new point in a real scale
+        """
+
+        # update parameters
+        for i in range(len(self.X_names)):
+            subprocess.run(["sed", "-i", 's/"'+self.X_names[i]+'", "'+str(self.X_real[-1,i])+'\\['+self.X_units[i]+']"/"' +
+                            self.X_names[i]+'", "'+str(X_new_real[0,i])+'\\['+self.X_units[i]+']"/', self.objective_file_name+".java"])
+    
+        # run simulations
+        subprocess.run([self.comsol_location,  "compile", self.objective_file_name+".java"])
+        print("COMSOL file is sucessfully compiled. Simulation starts.")
+
+        process = subprocess.Popen([self.comsol_location,  "batch", "-inputfile", self.objective_file_name+".class"], stdout=subprocess.PIPE)
+        while True:
+            line = process.stdout.readline()
+            if not line:
+                break
+            print(line.rstrip())
+
+        print("Simulation is done.")
+
+        # read output objective
+        data = np.loadtxt(self.comsol_output_location, skiprows=5, delimiter=',')
+
+        if (data.ndim == 1):
+            Y_new_real = np.array([[data[self.comsol_output_col[0] - 1], data[self.comsol_output_col[1] - 1]]])
+        else:
+            Y_new_real = np.array([[data[-1, self.comsol_output_col[0] - 1], data[-1, self.comsol_output_col[1] - 1]]])
+
+        return Y_new_real
+
+    
+    def set_optim_specs(self,
+        weights: Union[ArrayLike1d, float],
+        objective_file_name: str,
+        comsol_location: str,
+        comsol_output_location: str,
+        comsol_output_col: Optional[ArrayLike1d, int] = [2, 3],  
+        maximize: Optional[bool] = True
+    ):
+
+        # assign objective COMSOL file and location
+        self.objective_file_name = objective_file_name
+        self.comsol_location = comsol_location
+
+        # assign output file and objective column
+        self.comsol_output_location = comsol_output_location
+        self.comsol_output_col = comsol_output_col
+
+        super().set_optim_specs(weights, objective_func=comsol_simulation, maximize=maximize)
+        

@@ -345,6 +345,7 @@ def acq_func_1d(
     acq_func: AcquisitionFunction, 
     X_test: MatrixLike2d, 
     n_dim: Optional[int] = 1,
+    X_ranges: Optional[MatrixLike2d] = None,
     x_index: Optional[int] = 0,
     X_train: Optional[MatrixLike2d] = None, 
     X_new: Optional[MatrixLike2d] = None, 
@@ -364,6 +365,8 @@ def acq_func_1d(
     n_dim : Optional[int], optional
         Dimensional of X, i.e., number of columns 
         by default 1
+    X_ranges : Optional[MatrixLike2d], optional
+            list of x ranges, by default None
     x_index : Optional[int], optional
         index of the x variable, by default 0
     X_train : Optional[MatrixLike2d], optional
@@ -392,6 +395,12 @@ def acq_func_1d(
     else: 
         X_name = X_names[x_index]
 
+    # Set default [0,1] range for a unit scale
+    if X_ranges is None:
+        X_ranges = [[0,1]] * n_dim
+    # Set default number of sections
+    n_tick_sections  = 5
+
     # compute acquicision function values at X_test and X_train
     acq_val_test = eval_acq_func(acq_func, X_test, return_type='np')
     # Select the given dimension
@@ -416,6 +425,10 @@ def acq_func_1d(
     
     ax.ticklabel_format(style = 'sci', axis = 'y' )#, scilimits = (-2,2) )
     ax.set_xlabel(X_name)
+    xlim_plot = list(ax.set_xlim((0,1))) 
+    
+    ax.set_xticks(set_axis_values(xlim_plot, n_tick_sections))
+    ax.set_xticklabels(set_axis_values(X_ranges[x_index], n_tick_sections))
     ax.set_ylabel(r'$ \alpha$')    
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
@@ -473,6 +486,7 @@ def acq_func_1d_exp(Exp: Experiment,
     acq_func_1d(acq_func = Exp.acq_func_current, 
                 X_test=X_test_1d, 
                 n_dim=Exp.n_dim,
+                X_ranges=Exp.X_ranges,
                 x_index=x_index,
                 X_train=Exp.X,
                 X_new=X_new,
@@ -486,6 +500,7 @@ def objective_func_1d(
     model: Model, 
     X_test: MatrixLike2d, 
     n_dim: Optional[int] = 1,
+    X_ranges: Optional[MatrixLike2d] = None,
     x_index: Optional[int] = 0,
     Y_test: Optional[MatrixLike2d] = None, 
     X_train: Optional[MatrixLike2d] = None,
@@ -515,6 +530,8 @@ def objective_func_1d(
     n_dim : Optional[int], optional
         Dimensional of X, i.e., number of columns 
         by default 1
+    X_ranges : Optional[MatrixLike2d], optional
+            list of x ranges, by default None
     x_index : Optional[int], optional
         index of the x variable, by default 0
     Y_test : Optional[MatrixLike2d], optional
@@ -581,6 +598,11 @@ def objective_func_1d(
     # Set default axis names 
     if Y_name is None:
          Y_name = 'y'
+    # Set default [0,1] range for a unit scale
+    if X_ranges is None:
+        X_ranges = [[0,1]] * n_dim
+    # Set default number of sections
+    n_tick_sections  = 5
 
     if plot_real: # Y in a real scale
         Y_test_pred, Y_test_lower_pred, Y_test_upper_pred = model_predict_real(model=model, 
@@ -633,6 +655,9 @@ def objective_func_1d(
         ax.scatter(x_new, y_new, s = 120, c = 'r', marker = '*', label = 'Infill Data')
         
     ax.set_xlabel(X_name)
+    xlim_plot = list(ax.set_xlim(0, 1))
+    ax.set_xticks(set_axis_values(xlim_plot, n_tick_sections))
+    ax.set_xticklabels(set_axis_values(X_ranges[x_index], n_tick_sections))
     ax.set_ylabel(Y_name)
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
@@ -708,6 +733,7 @@ def objective_func_1d_exp(
                                     mesh_size=mesh_size) 
 
     # if no Y_test input, generate Y_test from objective function
+    Y_test = None
     if Exp.objective_func is not None:
         Y_test = eval_objective_func(X_test, Exp.X_ranges, Exp.objective_func)
 
@@ -719,6 +745,7 @@ def objective_func_1d_exp(
                     X_test = X_test,
                     n_dim=Exp.n_dim,
                     x_index=x_index,
+                    X_ranges=Exp.X_ranges,
                     Y_test = Y_test,
                     X_train = Exp.X,
                     Y_train = Exp.Y_real, #be sure to use Y_real

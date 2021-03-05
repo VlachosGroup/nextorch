@@ -1555,10 +1555,6 @@ class COMSOLWeightedExperiment(WeightedExperiment):
             match = '"'+self.X_names[i]+'", "'+str(np.round(self.X_real[-1,i], decimals=8))+'['+self.X_units[i]+']"'
             replace = '"'+self.X_names[i]+'", "'+str(np.round(X_new_real[-1,i], decimals=8))+'['+self.X_units[i]+']"'
 
-            print(self.X_real)
-            print(match)
-            print(replace)
-
             with open(self.objective_file_name+".java","r") as f:
                 data = f.read().replace(match,replace)
 

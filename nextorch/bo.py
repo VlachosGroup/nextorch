@@ -24,7 +24,7 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.optim.fit import fit_gpytorch_torch
 
 import nextorch.utils as ut
-from nextorch.utils import Matrix, ArrayLike1d, MatrixLike2d
+from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d, inverse_unitscale_xv
 from nextorch.utils import tensor_to_np, np_to_tensor
 
 # Dictionary for compatiable acqucision functions
@@ -459,8 +459,65 @@ def get_top_k_candidates(
     
 
 
+#%%
+class Parameter():
+    """
+    Parameter class
+    """
+
+    def __init__(
+        self, 
+        name: Optional[str] = None,
+        x_type: Optional[str] = None, 
+        x_range: Optional[ArrayLike1d] = None, 
+        values: Optional[ArrayLike1d] = None,
+        interval: Optional[ArrayLike1d] = None,
+        ):
+
+        # the allowed default parameters types
+        default_types = ['continuous', 'ordinal', 'categorical']
+        encoding = None
+
+        # if no input, use continuous
+        if x_type is None:
+            type = 'continuous'
+        # check if input type is valid
+        else:
+            if x_type not in default_types:
+                raise ValueError('Input type is not allowed. Please input either \
+                    continuous, ordinal, or categorical.')
+
+        if x_type == 'continuous':
+            if x_range is None: 
+                x_range = [0, 1]
+        elif x_type == 'ordinal':
+            if values is not None:  # use the input values
+                x_range = [np.min(values), np.max(values)]
+                encoding = ut.unitscale_xv(values, x_range)
+
+            if (interval is not None) and (x_range is not None):
+                n_points = int((x_range[1] - x_range[0])/interval) + 1
+                values = np.linspace(x_range[0], x_range[1], n_points)
+                encoding = ut.unitscale_xv(values, x_range)
+            
+            else: 
+                raise ValueError('Ordinal parameter: \
+                    must either input a list of values or the interval and range.')
+        else: # categorical
+
+            if values is None:
+                raise ValueError('Categorical parameter: must input a list of values.')
+            n_points = len(values)
+            x_range = [0, 1]
+            encoding = np.linspace(x_range[0], x_range[1], n_points)
 
 
+        self.name = name
+        self.x_type = x_type
+        self.x_range = x_range
+        self.values = values
+        self.encoding = encoding
+        
 
 #%%
 class Database():

@@ -845,4 +845,132 @@ def create_full_X_test_1d(
 
 
 
+
+#%%
+
+
+def binary_search(nums: ArrayLike1d, target: float) -> int:
+    """Modified binary search
+    return the index in the original array
+    where all values of the elements to its left 
+    and itself are smaller than or equal to the target
+
+
+    Parameters
+    ----------
+    nums : ArrayLike1d
+        sorted 1d array
+    target : float
+        target value
+
+    Returns
+    -------
+    ans: int
+        target index
+    """
+    
+    l = 0
+    r = len(nums)
+    
+    while (l < r): 
+        m = int(l + (r-l)/2)
+        if (nums[m] > target): r = m
+        else: l = m +1 
+
+    ans = l-1
+
+    return ans
+
+
+def find_nearest_value(values: ArrayLike1d, x: float) -> Tuple[float, int]:
+    """find the nearest value in an array
+    given a target value
+
+    Parameters
+    ----------
+    values : ArrayLike1d
+        sorted array, in ascending order
+    x : float
+        original value
+
+    Returns
+    -------
+    ans: float
+        Nearest value to the original
+    index_target: int
+        index of the target in the given array
+    """
+
+    n = len(values)
+    index_left = binary_search(values, x) 
+    index_target = index_left
+
+    # check the right side
+    if index_left < n-1:
+        index_right = index_left + 1
+        diff_left = np.abs(values[index_left] - x)
+        diff_right = np.abs(values[index_right] - x)
         
+        if diff_left > diff_right:
+            index_target = index_right
+
+    ans = values[index_target]
+
+    return ans, index_target
+
+
+def encode_xv(xv: ArrayLike1d, encoding: ArrayLike1d) -> ArrayLike1d:
+    """Convert original data to encoded data
+
+    Parameters
+    ----------
+    xv : ArrayLike1d
+        original x array
+    encoding : ArrayLike1d
+        encoding array
+
+    Returns
+    -------
+    xv_encoded: ArrayLike1d
+        encoded data array
+    """
+
+    xv_encoded =  copy.deepcopy(xv)
+
+    for i in range(len(xv)):
+        xv_encoded[i], _ = find_nearest_value(encoding, xv[i])
+    
+    return xv_encoded
+
+
+def decode_xv(xv_encoded: ArrayLike1d, 
+              encoding: ArrayLike1d,
+              values: ArrayLike1d) -> ArrayLike1d:
+    """Decoded the data to ordinal or categorical values
+
+    Parameters
+    ----------
+    xv_encoded : ArrayLike1d
+        encoded data array
+    encoding : ArrayLike1d
+        encoding array
+    values : ArrayLike1d
+        ordinal or categorical values
+
+    Returns
+    -------
+    xv_decoded: ArrayLike1d
+        data decoded, with the original 
+        ordinal or categorical values
+    """
+
+    xv_decoded =  copy.deepcopy(xv_encoded)
+    # Set array type as object for str values
+    xv_decoded = xv_decoded.astype(object)
+
+    for i in range(len(xv_encoded)):
+        _, index_i = find_nearest_value(encoding, xv_encoded[i])
+        xv_decoded[i] = values[index_i]
+    
+    return xv_decoded
+

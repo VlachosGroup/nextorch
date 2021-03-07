@@ -1713,7 +1713,7 @@ class COMSOLMOOExperiment(MOOExperiment):
                                     X_ranges = self.X_ranges, 
                                     unit_flag=True)
             experiment_i.set_X_units(self.X_units)
-            experiment_i.comsol_information(objective_file_name,
+            experiment_i.comsol_information(objective_file_name+"_"+str(i),
                                             comsol_location,
                                             comsol_output_location,
                                             comsol_output_col)

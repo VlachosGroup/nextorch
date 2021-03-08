@@ -9,10 +9,11 @@ Utility functions for Bayesian Optimization
 # util functions works for both tensor and numpy
 """
 
+from nextorch.bo import ParameterSpace
 import numpy as np
 import copy
 import torch
-from torch import Tensor 
+from torch import Tensor, tensor 
 
 from typing import Optional, TypeVar, Union, Tuple, List
 # NEED TO EXPLAIN THESE IN DOCS
@@ -208,7 +209,7 @@ def unitscale_X(
     Xunit: numpy matrix
         matrix scaled to a unit scale
     """
-     #If 1D, make it 2D a matrix
+    #If 1D, make it 2D a matrix
     if len(X.shape)<2:
         X = copy.deepcopy(X)
         X = np.expand_dims(X, axis=1) #If 1D, make it 2D array
@@ -225,11 +226,11 @@ def unitscale_X(
     Xunit = np.zeros((X.shape[0], X.shape[1]))
     for i in range(n_dim):
         xi = X[:,i]
+        Xunit[:,i] =  unitscale_xv(xi, X_ranges[i])
+        # Operate on a log scale
         if log_flags[i]:
-            Xunit[:,i] =  np.log10(unitscale_xv(xi, X_ranges[i]))
-        else:
-            Xunit[:,i] =  unitscale_xv(xi, X_ranges[i])
-    
+            Xunit[:,i] =  np.log10(Xunit[:,i])
+            
     # Round up if necessary
     if not decimals == None:
         Xunit = np.around(Xunit, decimals = decimals)  
@@ -307,11 +308,11 @@ def inverse_unitscale_X(
     Xreal = np.zeros((X.shape[0], X.shape[1]))
     for i in range(n_dim):
         xi = X[:,i]
+        Xreal[:,i] =  inverse_unitscale_xv(xi, X_ranges[i])
+        # Operate on a log scale
         if log_flags[i]:
-            Xreal[:,i] =  10**(inverse_unitscale_xv(xi, X_ranges[i]))
-        else:
-            Xreal[:,i] =  inverse_unitscale_xv(xi, X_ranges[i])
-
+            Xreal[:,i] =  10**(Xreal[:,i])
+            
     # Round up if necessary
     if not decimals == None:
         Xreal = np.around(Xreal, decimals = decimals)  
@@ -936,13 +937,14 @@ def encode_xv(xv: ArrayLike1d, encoding: ArrayLike1d) -> ArrayLike1d:
     """
 
     xv_encoded =  copy.deepcopy(xv)
+    xv_encoded = tensor_to_np(xv_encoded)
 
     for i in range(len(xv)):
         xv_encoded[i], _ = find_nearest_value(encoding, xv[i])
     
     return xv_encoded
 
-
+# this only works for numpy
 def decode_xv(xv_encoded: ArrayLike1d, 
               encoding: ArrayLike1d,
               values: ArrayLike1d) -> ArrayLike1d:
@@ -965,6 +967,7 @@ def decode_xv(xv_encoded: ArrayLike1d,
     """
 
     xv_decoded =  copy.deepcopy(xv_encoded)
+    xv_decoded = tensor_to_np(xv_decoded)
     # Set array type as object for str values
     xv_decoded = xv_decoded.astype(object)
 
@@ -973,4 +976,255 @@ def decode_xv(xv_encoded: ArrayLike1d,
         xv_decoded[i] = values[index_i]
     
     return xv_decoded
+
+
+def real_to_encode_X(
+    X: MatrixLike2d, 
+    X_types: List[str],   
+    encodings: MatrixLike2d,
+    X_ranges: Optional[MatrixLike2d] = None,  
+    log_flags: Optional[list] = None, 
+    decimals: Optional[int] = None
+) -> Matrix:
+    """Takes in a matrix in a real scale
+    and converts it into a unit scale
+
+    Parameters
+    ----------
+    X : MatrixLike2d
+        original matrix in a real scale
+    X_ranges : Optional[MatrixLike2d], optional
+        list of x ranges, by default None
+    log_flags : Optional[list], optional
+        list of boolean flags
+        True: use the log scale on this dimensional
+        False: use the normal scale 
+        by default None
+    decimals : Optional[int], optional
+        Number of decimal places to keep
+        by default None, i.e. no rounding up 
+
+    Returns
+    -------
+    Xunit: numpy matrix
+        matrix scaled to a unit scale
+    """
+    #If 1D, make it 2D a matrix
+    if len(X.shape)<2:
+        X = copy.deepcopy(X)
+        X = np.expand_dims(X, axis=1) #If 1D, make it 2D array
+        
+    n_dim = X.shape[1] #the number of column in X
+
+    if X_ranges is None: # X_ranges not defined
+        X_ranges = get_ranges_X(X)
+    X_ranges = expand_ranges_X(X_ranges) #expand to 2d
+    
+    if log_flags is None: log_flags = [False] * n_dim
+    
+    # Initialize with a zero matrix
+    Xunit = np.zeros((X.shape[0], X.shape[1]))
+    for i in range(n_dim):
+        xi = X[:,i]
+        # scale based on the type
+        if X_types[i] == 'continuous':  
+            Xunit[:,i] =  unitscale_xv(xi, X_ranges[i])
+        else: #categorical and oridinal
+            encoding_unit = unitscale_xv(encodings[i], X_ranges[i])
+            Xunit[:, i] = encode_xv(xi, encoding_unit)
+
+        # Operate on a log scale
+        if log_flags[i]: 
+            Xunit[:,i] =  np.log10(Xunit[:, i])
+    
+    # Round up if necessary
+    if not decimals == None:
+        Xunit = np.around(Xunit, decimals = decimals)  
+    
+    return Xunit
+
+
+def unit_to_encode_X(
+    X: MatrixLike2d, 
+    X_types: List[str],   
+    encodings: MatrixLike2d,
+    X_ranges: Optional[MatrixLike2d] = None,  
+    log_flags: Optional[list] = None, 
+    decimals: Optional[int] = None
+) -> Matrix:
+    """Takes in a matrix in a real scale
+    and converts it into a unit scale
+
+    Parameters
+    ----------
+    X : MatrixLike2d
+        original matrix in a real scale
+    X_ranges : Optional[MatrixLike2d], optional
+        list of x ranges, by default None
+    log_flags : Optional[list], optional
+        list of boolean flags
+        True: use the log scale on this dimensional
+        False: use the normal scale 
+        by default None
+    decimals : Optional[int], optional
+        Number of decimal places to keep
+        by default None, i.e. no rounding up 
+
+    Returns
+    -------
+    Xunit: numpy matrix
+        matrix scaled to a unit scale
+    """
+    #If 1D, make it 2D a matrix
+    if len(X.shape)<2:
+        X = copy.deepcopy(X)
+        X = np.expand_dims(X, axis=1) #If 1D, make it 2D array
+        
+    n_dim = X.shape[1] #the number of column in X
+
+    if X_ranges is None: # X_ranges not defined
+        X_ranges = [0,1] * n_dim
+    
+    if log_flags is None: log_flags = [False] * n_dim
+    
+    # Initialize with a zero matrix
+    Xunit = np.zeros((X.shape[0], X.shape[1]))
+    for i in range(n_dim):
+        xi = X[:,i]
+        # scale based on the type
+        if X_types[i] == 'continuous':  
+            pass
+        else: #categorical and oridinal
+            encoding_unit = unitscale_xv(encodings[i], X_ranges[i])
+            Xunit[:, i] = encode_xv(xi, encoding_unit)
+
+        # Operate on a log scale
+        if log_flags[i]: 
+            Xunit[:,i] =  np.log10(Xunit[:, i])
+    
+    # Round up if necessary
+    if not decimals == None:
+        Xunit = np.around(Xunit, decimals = decimals)  
+    
+    return Xunit
+
+
+
+def encode_to_real_X(
+    X: MatrixLike2d, 
+    X_types: List[str],   
+    encodings: MatrixLike2d,
+    values_2D: MatrixLike2d,
+    X_ranges: Optional[MatrixLike2d] = None, 
+    log_flags: Optional[list] = None, 
+    decimals: Optional[int] = None
+) -> Matrix:
+    """Takes in a matrix in a real scale
+    and converts it into a unit scale
+
+    Parameters
+    ----------
+    X : MatrixLike2d
+        original matrix in a real scale
+    X_ranges : Optional[MatrixLike2d], optional
+        list of x ranges, by default None
+    log_flags : Optional[list], optional
+        list of boolean flags
+        True: use the log scale on this dimensional
+        False: use the normal scale 
+        by default None
+    decimals : Optional[int], optional
+        Number of decimal places to keep
+        by default None, i.e. no rounding up 
+
+    Returns
+    -------
+    Xunit: numpy matrix
+        matrix scaled to a unit scale
+    """
+    #If 1D, make it 2D a matrix
+    if len(X.shape)<2:
+        X = copy.deepcopy(X)
+        X = np.expand_dims(X, axis=1) #If 1D, make it 2D array
+        
+    n_dim = X.shape[1] #the number of column in X
+
+    if X_ranges is None: # X_ranges not defined
+        X_ranges = get_ranges_X(X)
+    X_ranges = expand_ranges_X(X_ranges) #expand to 2d
+    
+    if log_flags is None: log_flags = [False] * n_dim
+    
+    # Initialize with a zero matrix
+    Xreal = np.zeros((X.shape[0], X.shape[1]), dtype=object)
+    for i in range(n_dim):
+        xi = X[:,i]
+        # scale based on the type
+        if X_types[i] == 'continuous':
+            Xreal[:,i] =  inverse_unitscale_xv(xi, X_ranges[i])
+        else: #categorical and oridinal
+            encoding_unit = unitscale_xv(encodings[i], X_ranges[i])
+            print(decode_xv(xi, encoding_unit, values_2D[i]))
+            Xreal[:, i] = decode_xv(xi, encoding_unit, values_2D[i])
+        # Operate on a log scale
+        if log_flags[i]:
+            Xreal[:,i] =  10**(Xreal[:,i])
+    
+    # Round up if necessary
+    if not decimals == None:
+        Xreal = np.around(Xreal, decimals = decimals)  
+    
+    return Xreal
+
+
+def real_to_encode_ParameterSpace(
+    X: MatrixLike2d, 
+    parameter_space: ParameterSpace,
+    log_flags: Optional[list] = None, 
+    decimals: Optional[int] = None
+) -> Matrix:
+
+
+    Xunit = real_to_encode_X(X=X, 
+                           X_types=parameter_space.X_types,
+                           encodings=parameter_space.encodings,
+                           X_ranges=parameter_space.X_ranges,
+                           log_flags=log_flags, 
+                           decimals=decimals)
+    return Xunit
+
+
+def unit_to_encode_ParameterSpace(
+    X: MatrixLike2d, 
+    parameter_space: ParameterSpace,
+    log_flags: Optional[list] = None, 
+    decimals: Optional[int] = None
+) -> Matrix:
+
+
+    Xunit = unit_to_encode_X(X=X, 
+                           X_types=parameter_space.X_types,
+                           encodings=parameter_space.encodings,
+                           X_ranges=parameter_space.X_ranges,
+                           log_flags=log_flags, 
+                           decimals=decimals)
+    return Xunit
+
+
+def encode_to_real_ParameterSpace(
+    X: MatrixLike2d, 
+    parameter_space: ParameterSpace,
+    log_flags: Optional[list] = None, 
+    decimals: Optional[int] = None
+) -> Matrix:
+
+
+    Xreal = encode_to_real_X(X=X, 
+                           X_types=parameter_space.X_types,
+                           encodings=parameter_space.encodings,
+                           values_2D=parameter_space.values_2D,
+                           X_ranges=parameter_space.X_ranges,
+                           log_flags=log_flags, 
+                           decimals=decimals)
+    return Xreal
 

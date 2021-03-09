@@ -9,7 +9,7 @@ Utility functions for Bayesian Optimization
 # util functions works for both tensor and numpy
 """
 
-from nextorch.bo import ParameterSpace
+#from nextorch.bo import ParameterSpace
 import numpy as np
 import copy
 import torch
@@ -847,15 +847,128 @@ def create_full_X_test_1d(
 
 
 
-#%%
+#%% Parameter space classes 
+class Parameter():
+    """
+    Parameter class
+    Stores properties for a single parameter
+    """
+    def __init__(
+        self, 
+        name: Optional[str] = None,
+        x_type: Optional[str] = None, 
+        x_range: Optional[ArrayLike1d] = None, 
+        values: Optional[ArrayLike1d] = None,
+        interval: Optional[ArrayLike1d] = None,
+    ):
+        """Define the properties of parameters
+
+        Parameters
+        ----------
+        name : Optional[str], optional
+            Parameter name, by default None
+        x_type : Optional[str], optional
+            Parameter type, must be continuous, ordinal, 
+            or categorical, by default None
+        x_range : Optional[ArrayLike1d], optional
+            Parameter range, by default None
+        values : Optional[ArrayLike1d], optional
+            Specific parameter values, by default None
+        interval : Optional[ArrayLike1d], optional
+            Intervals for ordinal parameter, by default None
+
+        Raises
+        ------
+        ValueError
+            Invalid input x_type
+        ValueError
+            Invalid input for ordinal parameter
+        ValueError
+            Invalid input for categorical parameter
+        """
+        # the allowed default parameters types
+        default_types = ['continuous', 'ordinal', 'categorical']
+        encoding = None
+
+        # if no input, use continuous
+        if x_type is None:
+            x_type = 'continuous'
+        # check if input type is valid
+        else:
+            if x_type not in default_types:
+                raise ValueError('Input type is not allowed. Please input either \
+                    continuous, ordinal, or categorical.')
+
+        # Define the properties
+        if x_type == 'continuous':
+            # Set default x_range
+            if x_range is None: 
+                x_range = [0, 1]
+        elif x_type == 'ordinal':
+            # Case 1, values are specified, use the values as encoding
+            if values is not None:  # use the input values
+                x_range = [np.min(values), np.max(values)]
+                encoding = values 
+            # Case 2, interval and x_range are specified
+            if (interval is not None) and (x_range is not None):
+                n_points = int((x_range[1] - x_range[0])/interval) + 1
+                values = np.linspace(x_range[0], x_range[1], n_points)
+                encoding = values 
+            else: 
+                raise ValueError('Ordinal parameter: \
+                    must either input a list of values or the interval and range.')
+        else: # categorical
+            if values is None:
+                raise ValueError('Categorical parameter: must input a list of values.')
+            # Encodings are [0, 1, ... n_categories-1]
+            n_categories = len(values)
+            x_range = [0, n_categories-1]
+            encoding = np.linspace(x_range[0], x_range[1], n_categories)
+
+        # Assign to self
+        self.name = name
+        self.x_type = x_type
+        self.x_range = x_range # real ranges
+        self.values = values
+        self.encoding = encoding 
+        
+
+class ParameterSpace():
+    """
+    ParameterSpace class
+    Define the parameter space for an experiment
+    """
+    def __init__(self, parameters: Union[Parameter, List[Parameter]]):
+        """[summary]
+
+        Parameters
+        ----------
+        parameters : Union[Parameter, List[Parameter]]
+            A single or a list of parameters 
+        """
+        # Convert to a list for a single parameter
+        if not isinstance(parameters, list):
+            parameters = [parameters]
+
+        # Collect properties from each parameter
+        self.names = [pi.name for pi in parameters] 
+        self.X_types = [pi.x_type for pi in parameters] 
+        self.X_ranges = [pi.x_range for pi in parameters] 
+        self.values_2D = [pi.values for pi in parameters]
+        self.encodings = [pi.encoding for pi in parameters]
+
+        # Check if all parameters are continuous
+        self.all_continuous = True
+        if ('ordinal' in self.X_types) or ('categorical' in self.X_types):
+            self.all_continuous = False
 
 
+# Encoding and decoding functions 
 def binary_search(nums: ArrayLike1d, target: float) -> int:
     """Modified binary search
     return the index in the original array
     where all values of the elements to its left 
     and itself are smaller than or equal to the target
-
 
     Parameters
     ----------
@@ -944,7 +1057,7 @@ def encode_xv(xv: ArrayLike1d, encoding: ArrayLike1d) -> ArrayLike1d:
     
     return xv_encoded
 
-# this only works for numpy
+
 def decode_xv(xv_encoded: ArrayLike1d, 
               encoding: ArrayLike1d,
               values: ArrayLike1d) -> ArrayLike1d:
@@ -987,12 +1100,18 @@ def real_to_encode_X(
     decimals: Optional[int] = None
 ) -> Matrix:
     """Takes in a matrix in a real scale
+    from the relaxed continuous space,
+    rounds (encodes) to the available values,
     and converts it into a unit scale
 
     Parameters
     ----------
     X : MatrixLike2d
         original matrix in a real scale
+    X_types : List[str]
+        list of parameter types
+    encodings : MatrixLike2d
+        encoding Matrix
     X_ranges : Optional[MatrixLike2d], optional
         list of x ranges, by default None
     log_flags : Optional[list], optional
@@ -1006,8 +1125,8 @@ def real_to_encode_X(
 
     Returns
     -------
-    Xunit: numpy matrix
-        matrix scaled to a unit scale
+    Xencode: numpy matrix
+        matrix scaled to a unit scale 
     """
     #If 1D, make it 2D a matrix
     if len(X.shape)<2:
@@ -1023,25 +1142,25 @@ def real_to_encode_X(
     if log_flags is None: log_flags = [False] * n_dim
     
     # Initialize with a zero matrix
-    Xunit = np.zeros((X.shape[0], X.shape[1]))
+    Xencode = np.zeros((X.shape[0], X.shape[1]))
     for i in range(n_dim):
         xi = X[:,i]
         # scale based on the type
         if X_types[i] == 'continuous':  
-            Xunit[:,i] =  unitscale_xv(xi, X_ranges[i])
+            Xencode[:,i] =  unitscale_xv(xi, X_ranges[i])
         else: #categorical and oridinal
             encoding_unit = unitscale_xv(encodings[i], X_ranges[i])
-            Xunit[:, i] = encode_xv(xi, encoding_unit)
+            Xencode[:, i] = encode_xv(xi, encoding_unit)
 
         # Operate on a log scale
         if log_flags[i]: 
-            Xunit[:,i] =  np.log10(Xunit[:, i])
+            Xencode[:,i] =  np.log10(Xencode[:, i])
     
     # Round up if necessary
     if not decimals == None:
-        Xunit = np.around(Xunit, decimals = decimals)  
+        Xencode = np.around(Xencode, decimals = decimals)  
     
-    return Xunit
+    return Xencode
 
 
 def unit_to_encode_X(
@@ -1052,13 +1171,18 @@ def unit_to_encode_X(
     log_flags: Optional[list] = None, 
     decimals: Optional[int] = None
 ) -> Matrix:
-    """Takes in a matrix in a real scale
-    and converts it into a unit scale
+    """Takes in a matrix in a unit scale
+    from the relaxed continuous space,
+    rounds (encodes) to the available values
 
     Parameters
     ----------
     X : MatrixLike2d
         original matrix in a real scale
+    X_types : List[str]
+        List of parameter types
+    encodings : MatrixLike2d
+        encoding Matrix
     X_ranges : Optional[MatrixLike2d], optional
         list of x ranges, by default None
     log_flags : Optional[list], optional
@@ -1072,7 +1196,7 @@ def unit_to_encode_X(
 
     Returns
     -------
-    Xunit: numpy matrix
+    Xencode: numpy matrix
         matrix scaled to a unit scale
     """
     #If 1D, make it 2D a matrix
@@ -1088,25 +1212,25 @@ def unit_to_encode_X(
     if log_flags is None: log_flags = [False] * n_dim
     
     # Initialize with a zero matrix
-    Xunit = np.zeros((X.shape[0], X.shape[1]))
+    Xencode = np.zeros((X.shape[0], X.shape[1]))
     for i in range(n_dim):
         xi = X[:,i]
         # scale based on the type
         if X_types[i] == 'continuous':  
-            pass
+            Xencode[:, i] = xi
         else: #categorical and oridinal
             encoding_unit = unitscale_xv(encodings[i], X_ranges[i])
-            Xunit[:, i] = encode_xv(xi, encoding_unit)
+            Xencode[:, i] = encode_xv(xi, encoding_unit)
 
         # Operate on a log scale
         if log_flags[i]: 
-            Xunit[:,i] =  np.log10(Xunit[:, i])
+            Xencode[:,i] =  np.log10(Xencode[:, i])
     
     # Round up if necessary
     if not decimals == None:
-        Xunit = np.around(Xunit, decimals = decimals)  
+        Xencode = np.around(Xencode, decimals = decimals)  
     
-    return Xunit
+    return Xencode
 
 
 
@@ -1115,17 +1239,27 @@ def encode_to_real_X(
     X_types: List[str],   
     encodings: MatrixLike2d,
     values_2D: MatrixLike2d,
+    all_continuous: Optional[bool] = True, 
     X_ranges: Optional[MatrixLike2d] = None, 
     log_flags: Optional[list] = None, 
     decimals: Optional[int] = None
 ) -> Matrix:
-    """Takes in a matrix in a real scale
-    and converts it into a unit scale
+    """Takes in a matrix in a unit scale
+    from the encoding space,
+    converts it into a real scale
 
     Parameters
     ----------
     X : MatrixLike2d
         original matrix in a real scale
+    X_types : List[str]
+        list of parameter types
+    encodings : MatrixLike2d
+        encoding Matrix
+    values_2D: MatrixLike2d
+        list of values for ordinal or categorical parameters
+    all_continuous: Optional[bool], Optional
+        flag for all continuous parameters
     X_ranges : Optional[MatrixLike2d], optional
         list of x ranges, by default None
     log_flags : Optional[list], optional
@@ -1139,7 +1273,7 @@ def encode_to_real_X(
 
     Returns
     -------
-    Xunit: numpy matrix
+    Xreal: numpy matrix
         matrix scaled to a unit scale
     """
     #If 1D, make it 2D a matrix
@@ -1157,6 +1291,10 @@ def encode_to_real_X(
     
     # Initialize with a zero matrix
     Xreal = np.zeros((X.shape[0], X.shape[1]), dtype=object)
+
+    if all_continuous:
+        Xreal = np.zeros((X.shape[0], X.shape[1]))
+    
     for i in range(n_dim):
         xi = X[:,i]
         # scale based on the type
@@ -1164,7 +1302,6 @@ def encode_to_real_X(
             Xreal[:,i] =  inverse_unitscale_xv(xi, X_ranges[i])
         else: #categorical and oridinal
             encoding_unit = unitscale_xv(encodings[i], X_ranges[i])
-            print(decode_xv(xi, encoding_unit, values_2D[i]))
             Xreal[:, i] = decode_xv(xi, encoding_unit, values_2D[i])
         # Operate on a log scale
         if log_flags[i]:
@@ -1183,15 +1320,39 @@ def real_to_encode_ParameterSpace(
     log_flags: Optional[list] = None, 
     decimals: Optional[int] = None
 ) -> Matrix:
+    """Takes in a matrix in a real scale
+    from the relaxed continuous space,
+    rounds (encodes) to the available values,
+    and converts it into a unit scale.
+    Using ParameterSpace object
 
+    Parameters
+    ----------
+    X : MatrixLike2d
+        original matrix in a real scale
+    parameter_space : ParameterSpace
+        ParameterSpace object
+    log_flags : Optional[list], optional
+        list of boolean flags
+        True: use the log scale on this dimensional
+        False: use the normal scale 
+        by default None
+    decimals : Optional[int], optional
+        Number of decimal places to keep
+        by default None, i.e. no rounding up 
 
-    Xunit = real_to_encode_X(X=X, 
+    Returns
+    -------
+    Xencode: numpy matrix
+        matrix scaled to a unit scale 
+    """
+    Xencode = real_to_encode_X(X=X, 
                            X_types=parameter_space.X_types,
                            encodings=parameter_space.encodings,
                            X_ranges=parameter_space.X_ranges,
                            log_flags=log_flags, 
                            decimals=decimals)
-    return Xunit
+    return Xencode
 
 
 def unit_to_encode_ParameterSpace(
@@ -1200,15 +1361,33 @@ def unit_to_encode_ParameterSpace(
     log_flags: Optional[list] = None, 
     decimals: Optional[int] = None
 ) -> Matrix:
+    """Takes in a matrix in a unit scale
+    from the relaxed continuous space,
+    rounds (encodes) to the available values
+    Using ParameterSpace object
 
-
-    Xunit = unit_to_encode_X(X=X, 
+    Parameters
+    ----------
+    X : MatrixLike2d
+        original matrix in a real scale
+    parameter_space : ParameterSpace
+        ParameterSpace object
+    log_flags : Optional[list], optional
+        list of boolean flags
+        True: use the log scale on this dimensional
+        False: use the normal scale 
+        by default None
+    decimals : Optional[int], optional
+        Number of decimal places to keep
+        by default None, i.e. no rounding up 
+    """
+    Xencode = unit_to_encode_X(X=X, 
                            X_types=parameter_space.X_types,
                            encodings=parameter_space.encodings,
                            X_ranges=parameter_space.X_ranges,
                            log_flags=log_flags, 
                            decimals=decimals)
-    return Xunit
+    return Xencode
 
 
 def encode_to_real_ParameterSpace(
@@ -1217,12 +1396,31 @@ def encode_to_real_ParameterSpace(
     log_flags: Optional[list] = None, 
     decimals: Optional[int] = None
 ) -> Matrix:
+    """Takes in a matrix in a unit scale
+    from the encoding space,
+    converts it into a real scale
+    Using ParameterSpace object
 
-
+    Parameters
+    ----------
+    X : MatrixLike2d
+        original matrix in a real scale
+    parameter_space : ParameterSpace
+        ParameterSpace object
+    log_flags : Optional[list], optional
+        list of boolean flags
+        True: use the log scale on this dimensional
+        False: use the normal scale 
+        by default None
+    decimals : Optional[int], optional
+        Number of decimal places to keep
+        by default None, i.e. no rounding up 
+    """
     Xreal = encode_to_real_X(X=X, 
                            X_types=parameter_space.X_types,
                            encodings=parameter_space.encodings,
                            values_2D=parameter_space.values_2D,
+                           all_continuous=parameter_space.all_continuous,
                            X_ranges=parameter_space.X_ranges,
                            log_flags=log_flags, 
                            decimals=decimals)

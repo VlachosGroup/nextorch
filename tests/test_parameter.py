@@ -8,14 +8,16 @@ import os
 import sys
 project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_path)
+import numpy as np
 
 from nextorch import io, bo, doe
 import nextorch.utils as ut
 
 
-X = doe.full_factorial([5,5])
-xi = X[:,0]
+Xunit = doe.full_factorial([5,5])
+xi = Xunit[:,0]
 
+Y = np.array([1,2,3])
 #%%
 # test on ordinal parameters
 p1 = bo.Parameter(x_type = 'ordinal', interval = 1, x_range = [0,2])
@@ -39,6 +41,23 @@ xi_encoded_2 = ut.encode_xv(xi,p2_encoding_unit )
 xi_values_2 = ut.decode_xv(xi_encoded_2, p2_encoding_unit , p2.values)
 
 
-#%% test on the entire X
-X_unit = ut.real_to_unit_X(X, [p1.x_type, p2.x_type], [p1.encoding, p2.encoding], [p1.x_range, p2.x_range])
-X_real =  ut.unit_to_real_X(X, [p1.x_type, p2.x_type], [p1.encoding, p2.encoding],  [p1.values, p2.values], [p1.x_range, p2.x_range])
+#%% Use ParameterSpace
+ps = ut.ParameterSpace([p1, p2])
+X_encode = ut.unit_to_encode_ParameterSpace(Xunit, ps)
+X_real = ut.encode_to_real_ParameterSpace(X_encode, ps)
+
+
+
+#%% Use database copy
+ds = bo.DatabaseCopy()
+ds.define_space([p1, p2])
+
+ds.input_data(Xunit, Y, X_names = ['lol', 'ox'], standardized=True)
+
+
+
+#%% Test on continuous
+p3 = bo.Parameter()
+ps2 = ut.ParameterSpace([p3, p3])
+
+X_encode = ut.unit_to_encode_ParameterSpace(Xunit, ps2)

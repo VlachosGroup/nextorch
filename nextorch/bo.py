@@ -24,7 +24,7 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.optim.fit import fit_gpytorch_torch
 
 import nextorch.utils as ut
-from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d, inverse_unitscale_xv
+from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d, Parameter, ParameterSpace
 from nextorch.utils import tensor_to_np, np_to_tensor
 
 # Dictionary for compatiable acqucision functions
@@ -460,85 +460,7 @@ def get_top_k_candidates(
 
 
 #%%
-class Parameter():
-    """
-    Parameter class
-    """
-
-    def __init__(
-        self, 
-        name: Optional[str] = None,
-        x_type: Optional[str] = None, 
-        x_range: Optional[ArrayLike1d] = None, 
-        values: Optional[ArrayLike1d] = None,
-        interval: Optional[ArrayLike1d] = None,
-        ):
-
-        # the allowed default parameters types
-        default_types = ['continuous', 'ordinal', 'categorical']
-        encoding = None
-
-        # if no input, use continuous
-        if x_type is None:
-            type = 'continuous'
-        # check if input type is valid
-        else:
-            if x_type not in default_types:
-                raise ValueError('Input type is not allowed. Please input either \
-                    continuous, ordinal, or categorical.')
-
-        if x_type == 'continuous':
-            if x_range is None: 
-                x_range = [0, 1]
-        elif x_type == 'ordinal':
-            if values is not None:  # use the input values
-                x_range = [np.min(values), np.max(values)]
-                encoding = values #ut.unitscale_xv(values, x_range)
-
-            if (interval is not None) and (x_range is not None):
-                n_points = int((x_range[1] - x_range[0])/interval) + 1
-                values = np.linspace(x_range[0], x_range[1], n_points)
-                encoding = values #ut.unitscale_xv(values, x_range)
-            
-            else: 
-                raise ValueError('Ordinal parameter: \
-                    must either input a list of values or the interval and range.')
-        else: # categorical
-
-            if values is None:
-                raise ValueError('Categorical parameter: must input a list of values.')
-            n_points = len(values)
-            x_range = [0, n_points-1]#[0, 1]
-            encoding = np.linspace(x_range[0], x_range[1], n_points)
-
-        self.name = name
-        self.x_type = x_type
-        self.x_range = x_range # real ranges
-        self.values = values
-        self.encoding = encoding
-        
-
-class ParameterSpace():
-    """
-    ParameterSpace class
-    """
-    def __init__(self, parameters: Union[Parameter, List[Parameter]]):
-
-        if not isinstance(parameters, list):
-            parameters = [parameters]
-
-        self.names = [pi.name for pi in parameters] 
-        self.X_types = [pi.x_type for pi in parameters] 
-        self.X_ranges = [pi.x_range for pi in parameters] 
-        self.values_2D = [pi.values for pi in parameters]
-        self.encodings = [pi.encoding for pi in parameters]
-
-        self.all_continuous = True
-        if ('ordinal' in self.X_types) or ('categorical' in self.X_types):
-            self.all_continuous = False
-
-
-class DatabaseCopy():
+class Database():
     """
     Database class
     The base class for the experiment classes
@@ -553,6 +475,7 @@ class DatabaseCopy():
             Name of the experiment, by default 'simple_experiment'
         """
         self.name = name
+        self.parameter_space = None
 
         # Set up the path to save graphical results
         parent_dir = os.getcwd()
@@ -561,9 +484,48 @@ class DatabaseCopy():
 
 
     def define_space(self, parameters: Union[Parameter, List[Parameter]]):
+        """Define the parameter space
 
-        self.ParameterSpace = ParameterSpace(parameters)
-        self.X_ranges = self.ParameterSpace.X_ranges # 2d list
+        Parameters
+        ----------
+        parameters : Union[Parameter, List[Parameter]]
+            A single or a list of parameters 
+        """
+        self.parameter_space = ParameterSpace(parameters)
+
+        # Assign properties to self
+        self.X_ranges = self.parameter_space.X_ranges # 2d list
+        self.all_continous = self.parameter_space.all_continuous
+
+    def encode_X(self, X_unit: MatrixLike2d) -> Tuple[MatrixLike2d, MatrixLike2d]:
+        """Encode X from the relax continuous space
+        in a unit scale to the encoding space
+
+        Parameters
+        ----------
+        X_unit : MatrixLike2d
+            original X in a unit scale
+
+        Returns
+        -------
+        X_encode: MatrixLike2d
+            Encoded X in a unit scale
+        X_real: MatrixLike2d
+            Encoded X in a real scale
+        """        
+        # Encoding simply finds the nearest point in the continous space 
+        X_encode = ut.unit_to_encode_ParameterSpace(X_unit, 
+                                            parameter_space=self.parameter_space,
+                                            log_flags=self.log_flags, 
+                                            decimals=self.decimals)
+        # Get X_real from X_encode
+        X_real = ut.encode_to_real_ParameterSpace(X_encode, 
+                                            parameter_space=self.parameter_space,
+                                            log_flags=self.log_flags, 
+                                            decimals=self.decimals)
+
+        return X_encode, X_real
+
 
     def preprocess_data(self, 
                         X_real: MatrixLike2d,
@@ -581,8 +543,8 @@ class DatabaseCopy():
             original independent data in a real scale
         Y_real : MatrixLike2d
             original dependent data in a real scale
-        preprocessed : Optional[bool], optional
-            by default False, the input data will be processed
+        standardized : Optional[bool], optional
+            by default False, the input Y is standardized 
             if true, skip processing
         X_ranges : Optional[MatrixLike2d], optional
             list of x ranges, by default None
@@ -602,51 +564,51 @@ class DatabaseCopy():
         X_real = tensor_to_np(X_real)
         Y_real = tensor_to_np(Y_real)
         
-        # Case 1, Input is Tensor, preprocessed
-        # X is in a unit scale and 
-        # Y is standardized with a zero mean and a unit variance
+
+        # Step 1, standardize Y
+        # if Y is standardized with a zero mean and a unit variance
         if standardized: 
-            Y = np_to_tensor(self.Y_real)  
+            Y = np_to_tensor(Y_real)  
             Y_mean = torch.zeros(self.n_objectives)
             Y_std = torch.ones(self.n_objectives)
-
+        # Standardize Y
         else:
-            # Standardize Y
             Y = ut.standardize_X(Y_real)
+            # Get mean and std
+            Y_mean = np_to_tensor(Y_real.mean(axis = 0))
+            Y_std = np_to_tensor(Y_real.std(axis = 0))
             
 
-    
-        # Case 2, Input is numpy matrix, not processed
-        # Handle X first than Y
-        # Case 2.1, Input X is in a unit scale, an DOE plan for example
-        if unit_flag:
-            # X is the input X_real
-            X_unit = X_real.copy()
-            # X encoding
-            X = ut.unit_to_encode_ParameterSpace(X_unit, 
-                                                 parameter_space=self.ParameterSpace,
-                                                 log_flags=log_flags, 
-                                                 decimals=decimals)
-             
-            # X_real needs to be computed
-            X_real = ut.encode_to_real_ParameterSpace(X, 
-                                                      parameter_space=self.ParameterSpace,
-                                                      log_flags=log_flags, 
-                                                      decimals=decimals)
-        # Case 2.2 Input X is in a real scale
+        # Step 2, encode X if all_continuous is false
+        # X is the input X_real
+        X = X_real.copy()
+        # if input X is in a unit scale, an DOE plan for example
+        if unit_flag:    
+            if not self.all_continous:
+                # Encode X
+                X, X_real = self.encode_X(X)
+        # if input X is in a real scale
         else:
             # Scale X to a unit scale
-            X = ut.real_to_encode_ParameterSpace(X_real, 
-                                                parameter_space=self.ParameterSpace,
-                                                log_flags=log_flags, 
-                                                decimals=decimals)
-
+            if not self.all_continous:
+                X = ut.real_to_encode_ParameterSpace(X, 
+                                                    parameter_space=self.parameter_space,
+                                                    log_flags=log_flags, 
+                                                    decimals=decimals)
+        
+        # Step 3, Compute X_real from X 
+        # Compute X_real from X unit if all_continuous is true 
+        # and input X is in a unit scale
+        if self.all_continous and unit_flag:
+            X_real = ut.inverse_unitscale_X(X, 
+                                            X_ranges = self.X_ranges, 
+                                            log_flags = log_flags, 
+                                            decimals = decimals)
         
         # Convert to Tensor
         X = np_to_tensor(X)
         Y = np_to_tensor(Y)
             
-
         # Assign to self
         self.X = X # in a unit scale, tensor
         self.Y = Y # in a unit scale, tensor
@@ -669,7 +631,8 @@ class DatabaseCopy():
         Y_real: MatrixLike2d,
         X_names: Optional[List[str]] = None,
         Y_names: Optional[List[str]] = None, 
-        preprocessed: Optional[bool] = False,
+        standardized: Optional[bool] = False,
+        X_ranges: Optional[MatrixLike2d] = None,
         unit_flag: Optional[bool] = False,
         log_flags: Optional[list] = None, 
         decimals: Optional[int] = None
@@ -686,8 +649,8 @@ class DatabaseCopy():
             Names of independent varibles, by default None
         Y_names : Optional[List[str]], optional
             Names of dependent varibles, by default None
-        preprocessed : Optional[bool], optional
-            by default False, the input data will be processed
+        standardized : Optional[bool], optional
+            by default False, the input Y is standardized 
             if true, skip processing
         X_ranges : Optional[MatrixLike2d], optional
             list of x ranges, by default None
@@ -716,11 +679,20 @@ class DatabaseCopy():
         self.n_points_init = X_real.shape[0] # number of data points for the initial design
         self.n_objectives = Y_real.shape[1] # number of dependent variables
 
-        # assign variable names
+        # Define the default parameter space for all continuous variable
+        if self.parameter_space is None:
+            parameters = [Parameter() for _ in range(self.n_dim)]
+            # Set the X ranges for the parameters
+            if X_ranges is not None:
+                for i in range(self.n_dim):
+                    parameters[i].x_range = X_ranges[i]    
+            self.define_space(parameters)
+
+        # Assign variable names
         if X_names is None:
             X_names = []
             # Pull names from ParameterSpace first
-            for i, x_name_i in enumerate(self.ParameterSpace.names):
+            for i, x_name_i in enumerate(self.parameter_space.names):
                 if x_name_i is None:
                     if self.n_dim == 1:
                         X_names = ['x']
@@ -741,225 +713,226 @@ class DatabaseCopy():
         # Preprocess the data 
         self.preprocess_data(X_real, 
                             Y_real,
-                            preprocessed = preprocessed,
-                            unit_flag = unit_flag,
-                            log_flags = log_flags, 
-                            decimals = decimals)
-        '''
-        Some print statements
-        '''
-#%%
-class Database():
-    """
-    Database class
-    The base class for the experiment classes
-    Handles data input and directory setup
-    """
-    def __init__(self, name: Optional[str] = 'simple_experiment'):
-        """Define the name of the epxeriment
+                            standardized=standardized,
+                            unit_flag=unit_flag,
+                            log_flags=log_flags, 
+                            decimals=decimals)
 
-        Parameters
-        ----------
-        name : Optional[str], optional
-            Name of the experiment, by default 'simple_experiment'
-        """
-        self.name = name
 
-        # Set up the path to save graphical results
-        parent_dir = os.getcwd()
-        exp_path = os.path.join(parent_dir, self.name)
-        self.exp_path = exp_path
+# #%%
+# class Database():
+#     """
+#     Database class
+#     The base class for the experiment classes
+#     Handles data input and directory setup
+#     """
+#     def __init__(self, name: Optional[str] = 'simple_experiment'):
+#         """Define the name of the epxeriment
 
-    def preprocess_data(self, 
-                        X_real: MatrixLike2d,
-                        Y_real: MatrixLike2d,
-                        preprocessed: Optional[bool] = False,
-                        X_ranges: Optional[MatrixLike2d] = None,
-                        unit_flag: Optional[bool] = False,
-                        log_flags: Optional[list] = None, 
-                        decimals: Optional[int] = None
-    ):
-        """Preprocesses input data and assigns the variables to self
+#         Parameters
+#         ----------
+#         name : Optional[str], optional
+#             Name of the experiment, by default 'simple_experiment'
+#         """
+#         self.name = name
 
-        Parameters
-        ----------
-        X_real : MatrixLike2d
-            original independent data in a real scale
-        Y_real : MatrixLike2d
-            original dependent data in a real scale
-        preprocessed : Optional[bool], optional
-            by default False, the input data will be processed
-            if true, skip processing
-        X_ranges : Optional[MatrixLike2d], optional
-            list of x ranges, by default None
-        unit_flag: Optional[bool], optional,
-            by default, False 
-            If true, the X is in a unit scale (from DOE) 
-        log_flags : Optional[list], optional
-            list of boolean flags
-            True: use the log scale on this dimensional
-            False: use the normal scale 
-            by default []
-        decimals : Optional[int], optional
-            Number of decimal places to keep
-            by default None, i.e. no rounding up
+#         # Set up the path to save graphical results
+#         parent_dir = os.getcwd()
+#         exp_path = os.path.join(parent_dir, self.name)
+#         self.exp_path = exp_path
 
-        """
-        X_real = tensor_to_np(X_real)
-        Y_real = tensor_to_np(Y_real)
+#     def preprocess_data(self, 
+#                         X_real: MatrixLike2d,
+#                         Y_real: MatrixLike2d,
+#                         preprocessed: Optional[bool] = False,
+#                         X_ranges: Optional[MatrixLike2d] = None,
+#                         unit_flag: Optional[bool] = False,
+#                         log_flags: Optional[list] = None, 
+#                         decimals: Optional[int] = None
+#     ):
+#         """Preprocesses input data and assigns the variables to self
+
+#         Parameters
+#         ----------
+#         X_real : MatrixLike2d
+#             original independent data in a real scale
+#         Y_real : MatrixLike2d
+#             original dependent data in a real scale
+#         preprocessed : Optional[bool], optional
+#             by default False, the input data will be processed
+#             if true, skip processing
+#         X_ranges : Optional[MatrixLike2d], optional
+#             list of x ranges, by default None
+#         unit_flag: Optional[bool], optional,
+#             by default, False 
+#             If true, the X is in a unit scale (from DOE) 
+#         log_flags : Optional[list], optional
+#             list of boolean flags
+#             True: use the log scale on this dimensional
+#             False: use the normal scale 
+#             by default []
+#         decimals : Optional[int], optional
+#             Number of decimal places to keep
+#             by default None, i.e. no rounding up
+
+#         """
+#         X_real = tensor_to_np(X_real)
+#         Y_real = tensor_to_np(Y_real)
         
-        # Case 1, Input is Tensor, preprocessed
-        # X is in a unit scale and 
-        # Y is standardized with a zero mean and a unit variance
-        if preprocessed: 
-            X = np_to_tensor(self.X_real)  
-            Y = np_to_tensor(self.Y_real)  
-            Y_mean = torch.zeros(self.n_objectives)
-            Y_std = torch.ones(self.n_objectives)
-            # Update X_ranges
-            if X_ranges is None:
-                X_ranges = [[0,1]] * self.n_dim
+#         # Case 1, Input is Tensor, preprocessed
+#         # X is in a unit scale and 
+#         # Y is standardized with a zero mean and a unit variance
+#         if preprocessed: 
+#             X = np_to_tensor(self.X_real)  
+#             Y = np_to_tensor(self.Y_real)  
+#             Y_mean = torch.zeros(self.n_objectives)
+#             Y_std = torch.ones(self.n_objectives)
+#             # Update X_ranges
+#             if X_ranges is None:
+#                 X_ranges = [[0,1]] * self.n_dim
 
-            #  X_real needs to be computed 
-            X_real = ut.inverse_unitscale_X(X_real, 
-                                            X_ranges = X_ranges, 
-                                            unit_flag = unit_flag, 
-                                            log_flags = log_flags, 
-                                            decimals = decimals)
+#             #  X_real needs to be computed 
+#             X_real = ut.inverse_unitscale_X(X_real, 
+#                                             X_ranges = X_ranges, 
+#                                             unit_flag = unit_flag, 
+#                                             log_flags = log_flags, 
+#                                             decimals = decimals)
         
-        # Case 2, Input is numpy matrix, not processed
-        # Handle X first than Y
-        else: 
-            # Case 2.1, Input X is in a unit scale, an DOE plan for example
-            if unit_flag:
-                # X is the input X_real
-                X = X_real.copy()
-                # Set X_ranges
-                if X_ranges is None:
-                    X_ranges = [[0,1]] * self.n_dim    
-                # X_real needs to be computed
-                X_real = ut.inverse_unitscale_X(X_real, 
-                                                X_ranges = X_ranges, 
-                                                log_flags = log_flags, 
-                                                decimals = decimals)
-            # Case 2.2 Input X is in a real scale
-            else:
-                # Set X_ranges
-                if X_ranges is None:
-                    X_ranges = ut.get_ranges_X(X_real)
+#         # Case 2, Input is numpy matrix, not processed
+#         # Handle X first than Y
+#         else: 
+#             # Case 2.1, Input X is in a unit scale, an DOE plan for example
+#             if unit_flag:
+#                 # X is the input X_real
+#                 X = X_real.copy()
+#                 # Set X_ranges
+#                 if X_ranges is None:
+#                     X_ranges = [[0,1]] * self.n_dim    
+#                 # X_real needs to be computed
+#                 X_real = ut.inverse_unitscale_X(X_real, 
+#                                                 X_ranges = X_ranges, 
+#                                                 log_flags = log_flags, 
+#                                                 decimals = decimals)
+#             # Case 2.2 Input X is in a real scale
+#             else:
+#                 # Set X_ranges
+#                 if X_ranges is None:
+#                     X_ranges = ut.get_ranges_X(X_real)
                     
-                # Scale X to a unit scale
-                X = ut.unitscale_X(X_real, 
-                                   X_ranges = X_ranges, 
-                                   log_flags = log_flags, 
-                                   decimals = decimals)
+#                 # Scale X to a unit scale
+#                 X = ut.unitscale_X(X_real, 
+#                                    X_ranges = X_ranges, 
+#                                    log_flags = log_flags, 
+#                                    decimals = decimals)
 
-            # Standardize Y
-            Y = ut.standardize_X(Y_real)
-            # Convert to Tensor
-            X = np_to_tensor(X)
-            Y = np_to_tensor(Y)
-            # Get mean and std
-            Y_mean = np_to_tensor(Y_real.mean(axis = 0))
-            Y_std = np_to_tensor(Y_real.std(axis = 0))
+#             # Standardize Y
+#             Y = ut.standardize_X(Y_real)
+#             # Convert to Tensor
+#             X = np_to_tensor(X)
+#             Y = np_to_tensor(Y)
+#             # Get mean and std
+#             Y_mean = np_to_tensor(Y_real.mean(axis = 0))
+#             Y_std = np_to_tensor(Y_real.std(axis = 0))
 
-        # Assign to self
-        self.X = X # in a unit scale, tensor
-        self.Y = Y # in a unit scale, tensor
-        self.X_init = X.detach().clone() # in a unit scale, tensor
-        self.Y_init = Y.detach().clone() # in a unit scale, tensor
-        self.X_ranges = ut.expand_ranges_X(X_ranges) # 2d list
-        self.Y_mean = Y_mean # tensor
-        self.Y_std = Y_std # tensor
+#         # Assign to self
+#         self.X = X # in a unit scale, tensor
+#         self.Y = Y # in a unit scale, tensor
+#         self.X_init = X.detach().clone() # in a unit scale, tensor
+#         self.Y_init = Y.detach().clone() # in a unit scale, tensor
+#         self.X_ranges = ut.expand_ranges_X(X_ranges) # 2d list
+#         self.Y_mean = Y_mean # tensor
+#         self.Y_std = Y_std # tensor
 
-        self.log_flags = log_flags # list of bool
-        self.decimals =decimals # list of int
+#         self.log_flags = log_flags # list of bool
+#         self.decimals =decimals # list of int
 
-        self.X_real = X_real  # in a real scale, numpy array
-        self.Y_real = Y_real  # in a real scale, numpy array
-        self.X_init_real = X_real.copy()  # in a real scale, numpy array
-        self.Y_init_real = Y_real.copy()  # in a real scale, numpy array
+#         self.X_real = X_real  # in a real scale, numpy array
+#         self.Y_real = Y_real  # in a real scale, numpy array
+#         self.X_init_real = X_real.copy()  # in a real scale, numpy array
+#         self.Y_init_real = Y_real.copy()  # in a real scale, numpy array
 
 
-    def input_data(self,
-        X_real: MatrixLike2d,
-        Y_real: MatrixLike2d,
-        X_names: Optional[List[str]] = None,
-        Y_names: Optional[List[str]] = None, 
-        preprocessed: Optional[bool] = False,
-        X_ranges: Optional[MatrixLike2d] = None,
-        unit_flag: Optional[bool] = False,
-        log_flags: Optional[list] = None, 
-        decimals: Optional[int] = None
-    ):
-        """Input data into Experiment object
+#     def input_data(self,
+#         X_real: MatrixLike2d,
+#         Y_real: MatrixLike2d,
+#         X_names: Optional[List[str]] = None,
+#         Y_names: Optional[List[str]] = None, 
+#         preprocessed: Optional[bool] = False,
+#         X_ranges: Optional[MatrixLike2d] = None,
+#         unit_flag: Optional[bool] = False,
+#         log_flags: Optional[list] = None, 
+#         decimals: Optional[int] = None
+#     ):
+#         """Input data into Experiment object
         
-        Parameters
-        ----------
-        X_real : MatrixLike2d
-            original independent data in a real scale
-        Y_real : MatrixLike2d
-            original dependent data in a real scale
-        X_names : Optional[List[str]], optional
-            Names of independent varibles, by default None
-        Y_names : Optional[List[str]], optional
-            Names of dependent varibles, by default None
-        preprocessed : Optional[bool], optional
-            by default False, the input data will be processed
-            if true, skip processing
-        X_ranges : Optional[MatrixLike2d], optional
-            list of x ranges, by default None
-        unit_flag: Optional[bool], optional,
-            by default, False 
-            If true, the X is in a unit scale so
-            the function is used to scale X to a log scale
-        log_flags : Optional[list], optional
-            list of boolean flags
-            True: use the log scale on this dimensional
-            False: use the normal scale 
-            by default []
-        decimals : Optional[int], optional
-            Number of decimal places to keep
-            by default None, i.e. no rounding up
-        """
-        # expand to 2D
-        if len(X_real.shape)<2:
-            X_real = np.expand_dims(X_real, axis=1) #If 1D, make it 2D array
-        if len(Y_real.shape)<2:
-            Y_real = np.expand_dims(Y_real, axis=1) #If 1D, make it 2D array
+#         Parameters
+#         ----------
+#         X_real : MatrixLike2d
+#             original independent data in a real scale
+#         Y_real : MatrixLike2d
+#             original dependent data in a real scale
+#         X_names : Optional[List[str]], optional
+#             Names of independent varibles, by default None
+#         Y_names : Optional[List[str]], optional
+#             Names of dependent varibles, by default None
+#         preprocessed : Optional[bool], optional
+#             by default False, the input data will be processed
+#             if true, skip processing
+#         X_ranges : Optional[MatrixLike2d], optional
+#             list of x ranges, by default None
+#         unit_flag: Optional[bool], optional,
+#             by default, False 
+#             If true, the X is in a unit scale so
+#             the function is used to scale X to a log scale
+#         log_flags : Optional[list], optional
+#             list of boolean flags
+#             True: use the log scale on this dimensional
+#             False: use the normal scale 
+#             by default []
+#         decimals : Optional[int], optional
+#             Number of decimal places to keep
+#             by default None, i.e. no rounding up
+#         """
+#         # expand to 2D
+#         if len(X_real.shape)<2:
+#             X_real = np.expand_dims(X_real, axis=1) #If 1D, make it 2D array
+#         if len(Y_real.shape)<2:
+#             Y_real = np.expand_dims(Y_real, axis=1) #If 1D, make it 2D array
 
-        # get specs of the data
-        self.n_dim = X_real.shape[1] # number of independent variables
-        self.n_points = X_real.shape[0] # number of data points
-        self.n_points_init = X_real.shape[0] # number of data points for the initial design
-        self.n_objectives = Y_real.shape[1] # number of dependent variables
+#         # get specs of the data
+#         self.n_dim = X_real.shape[1] # number of independent variables
+#         self.n_points = X_real.shape[0] # number of data points
+#         self.n_points_init = X_real.shape[0] # number of data points for the initial design
+#         self.n_objectives = Y_real.shape[1] # number of dependent variables
 
-        # assign variable names
-        if X_names is None:
-            if self.n_dim > 1:
-                X_names = ['x' + str(i+1) for i in range(self.n_dim)]
-            else:
-                X_names = ['x']
-        if Y_names is None:
-            if self.n_objectives > 1:
-                Y_names = ['y' + str(i+1) for i in range(self.n_objectives)]
-            else:
-                Y_names = ['y']
-        self.X_names = X_names
-        self.Y_names = Y_names
+#         # assign variable names
+#         if X_names is None:
+#             if self.n_dim > 1:
+#                 X_names = ['x' + str(i+1) for i in range(self.n_dim)]
+#             else:
+#                 X_names = ['x']
+#         if Y_names is None:
+#             if self.n_objectives > 1:
+#                 Y_names = ['y' + str(i+1) for i in range(self.n_objectives)]
+#             else:
+#                 Y_names = ['y']
+#         self.X_names = X_names
+#         self.Y_names = Y_names
 
-        # Preprocess the data 
-        self.preprocess_data(X_real, 
-                            Y_real,
-                            preprocessed = preprocessed,
-                            X_ranges = X_ranges,
-                            unit_flag = unit_flag,
-                            log_flags = log_flags, 
-                            decimals = decimals)
-        '''
-        Some print statements
-        '''
+#         # Preprocess the data 
+#         self.preprocess_data(X_real, 
+#                             Y_real,
+#                             preprocessed = preprocessed,
+#                             X_ranges = X_ranges,
+#                             unit_flag = unit_flag,
+#                             log_flags = log_flags, 
+#                             decimals = decimals)
+#         '''
+#         Some print statements
+#         '''
 
+
+#%%
 class BasicExperiment(Database):
     """
     BasicExperiment class
@@ -967,6 +940,38 @@ class BasicExperiment(Database):
     The generic class for the experiment classes
     Handles prediction and running the next trial
     """
+    def fit_model(self):
+        """Train a GP model given X, Y and the sign of Y
+        """
+
+        # create a GP model based on input data
+        # In the case of minimize, the negative reponses values are used to fit the GP
+        self.model = create_and_fit_gp(self.X, self.objective_sign * self.Y)
+    
+
+    def assign_weights(
+        self, 
+        Y_weights: Optional[ArrayLike1d] = None):
+        """Assign weights to each objective Y
+
+        Parameters
+        ----------
+        Y_weights : Optional[ArrayLike1d], optional
+            Weights assigned to each objective Y, sums to 1
+            by default None, each objective is treated equally
+        """
+        
+        # if no input, assign equal weights to each objective 
+        if Y_weights is None:
+            Y_weights = torch.ones(self.n_objectives)
+
+        # Normalize the weights to sum as 1
+        Y_weights = np_to_tensor(Y_weights)
+        Y_weights = torch.div(Y_weights, torch.sum(Y_weights))
+
+        self.Y_weights = Y_weights
+
+
     def set_optim_specs(self,
         objective_func: Optional[object] = None,  
         model: Optional[Model] = None, 
@@ -992,51 +997,31 @@ class BasicExperiment(Database):
         """
         # assign objective function
         self.objective_func = objective_func
-        # set optimization goal
-        self.maximize = maximize
 
+        # Set the sign for the objective
         if maximize: 
             self.objective_sign = 1 # sign for the reponses
             self.negate_Y = False # if true (minimization), negate the model predicted values        
         else:
             self.objective_sign = -1 
             self.negate_Y = True
+        
+        # set optimization goal
+        self.maximize = maximize
 
-        # create a GP model based on input data
-        # In the case of minimize, the negative reponses values are used to fit the GP
+        # fit a GP model if no model is input
         if model is None:
-            self.model = create_and_fit_gp(self.X, self.objective_sign * self.Y)
+            self.fit_model()
+
         # assign weights to each objective, useful only to multi-objective systems
         if Y_weights is not None:
             self.assign_weights(Y_weights)
-
-    def assign_weights(
-        self, 
-        Y_weights: Optional[ArrayLike1d] = None):
-        """Assign weights to each objective Y
-
-        Parameters
-        ----------
-        Y_weights : Optional[ArrayLike1d], optional
-            Weights assigned to each objective Y, sums to 1
-            by default None, each objective is treated equally
-        """
-        
-        # if no input, assign equal weights to each objective 
-        if Y_weights is None:
-            Y_weights = torch.ones(self.n_objectives)
-
-        # Normalize the weights to sum as 1
-        Y_weights = np_to_tensor(Y_weights)
-        Y_weights = torch.div(Y_weights, torch.sum(Y_weights))
-
-        self.Y_weights = Y_weights
 
 
     def run_trial(self, 
         X_new: MatrixLike2d,
         X_new_real: Matrix,
-        Y_new_real: Optional[Matrix] = None
+        Y_new_real: Optional[Matrix] = None,
     ) -> Tensor:
         """Run trial candidate points
         Fit the GP model to new data
@@ -1096,7 +1081,8 @@ class BasicExperiment(Database):
         Parameters
         ----------
         X_test : MatrixLike2d
-            X matrix used for testing, must have the same dimension 
+            X matrix in a unit scale used for testing,
+            must have the same dimension 
             as X for training
         show_confidence : Optional[bool], optional
             by default False, only return posterior mean
@@ -1118,6 +1104,7 @@ class BasicExperiment(Database):
         
         return Y_test
 
+
     def predict_real(self, 
                     X_test: MatrixLike2d,
                     show_confidence: Optional[bool] = False
@@ -1127,7 +1114,8 @@ class BasicExperiment(Database):
         Parameters
         ----------
         X_test : MatrixLike2d
-            X matrix used for testing, must have the same dimension 
+            X matrix in a real scale used for testing, 
+            must have the same dimension 
             as X for training
         show_confidence : Optional[bool], optional
             by default False, only return posterior mean
@@ -1185,6 +1173,7 @@ class BasicExperiment(Database):
         
         return Y_real
 
+
     def run_trials_auto(self, 
                         n_trials: int,
                         acq_func_name: Optional[str] = 'EI'):
@@ -1204,7 +1193,7 @@ class BasicExperiment(Database):
             Must be one of "EI", "PI", "UCB", "qEI", "qPI", "qUCB"
             by default 'EI'
         """        
-        for i in range(n_trials):
+        for _ in range(n_trials):
             # Generate the next experiment point
             # by default 1 point per trial
             X_new, X_new_real, _ = self.generate_next_point(acq_func_name)
@@ -1300,15 +1289,20 @@ class Experiment(BasicExperiment):
                                      acq_func_name=acq_func_name,
                                      bounds=unit_bounds,
                                      k=n_candidates)
+        
+        # Encode the X_new if all_continous is false
+        # Encoding simply finds the nearest point in the continous space 
+        # and use it as X_new
+        if not self.all_continous:  
+            X_new, X_new_real = self.encode_X(X_new)
+        else: 
+            X_new_real = ut.inverse_unitscale_X(X_new, 
+                                                X_ranges = self.X_ranges, 
+                                                log_flags= self.log_flags,
+                                                decimals = self.decimals)
 
         # Assign acq_func object to self
         self.acq_func_current = acq_func
-
-        # Get X_new_real
-        X_new_real = ut.inverse_unitscale_X(X_new, 
-                                            X_ranges = self.X_ranges, 
-                                            log_flags= self.log_flags,
-                                            decimals = self.decimals)
 
         return X_new, X_new_real, acq_func
 
@@ -1344,7 +1338,8 @@ class Experiment(BasicExperiment):
         return y_real_opt, X_real_opt, index_opt
 
 
-        
+
+#%% MOO classes
 class WeightedExperiment(BasicExperiment):
     """
     WeightedExperiment class
@@ -1432,14 +1427,19 @@ class WeightedExperiment(BasicExperiment):
                                      bounds=unit_bounds,
                                      k=n_candidates)
 
+        # Encode the X_new if all_continous is false
+        # Encoding simply finds the nearest point in the continous space 
+        # and use it as X_new
+        if not self.all_continous:  
+            X_new, X_new_real = self.encode_X(X_new)
+        else: 
+            X_new_real = ut.inverse_unitscale_X(X_new, 
+                                                X_ranges = self.X_ranges, 
+                                                log_flags= self.log_flags,
+                                                decimals = self.decimals)
+
         # Assign acq_func object to self
         self.acq_func_current = acq_func
-
-        # Get X_new_real
-        X_new_real = ut.inverse_unitscale_X(X_new, 
-                                            X_ranges = self.X_ranges, 
-                                            log_flags= self.log_flags,
-                                            decimals = self.decimals)
 
         return X_new, X_new_real, acq_func
 
@@ -1592,7 +1592,7 @@ class MOOExperiment(Database):
             experiment_i.run_trials_auto(n_trials, acq_func_name)
 
             # Save the optimum locations and values
-            Y_real_opt, X_real_opt, index_opt = experiment_i.get_weighted_optim()
+            Y_real_opt, X_real_opt, _ = experiment_i.get_weighted_optim()
             X_real_opts.append(X_real_opt)
             Y_real_opts.append(Y_real_opt)
             print('Running experiments {:.2f} % '.format((i+1)/self.n_exp *100))
@@ -1613,6 +1613,9 @@ class MOOExperiment(Database):
         """
         return self.Y_real_opts, self.X_real_opts
 
+
+
+#%% CFD classes
 class COMSOLExperiment(Experiment):
     """
     COMSOLExperiment class
@@ -1628,7 +1631,7 @@ class COMSOLExperiment(Experiment):
         X_units: List[str],
         Y_names: Optional[List[str]] = None,
         Y_units: Optional[List[str]] = None, 
-        preprocessed: Optional[bool] = False,
+        standardized: Optional[bool] = False,
         X_ranges: Optional[MatrixLike2d] = None,
         unit_flag: Optional[bool] = False,
         log_flags: Optional[list] = None, 
@@ -1650,8 +1653,8 @@ class COMSOLExperiment(Experiment):
             Names of dependent varibles
         Y_units : Optional[List[str]]
             Units of dependent varibles            
-        preprocessed : Optional[bool], optional
-            by default False, the input data will be processed
+        standardized : Optional[bool], optional
+            by default False, the input Y is standardized 
             if true, skip processing
         X_ranges : Optional[MatrixLike2d], optional
             list of x ranges, by default None
@@ -1669,7 +1672,15 @@ class COMSOLExperiment(Experiment):
             by default None, i.e. no rounding up
         """
 
-        super().input_data(X_real, Y_real, X_names, Y_names, preprocessed, X_ranges, unit_flag, log_flags, decimals)
+        super().input_data(X_real=X_real,
+                        Y_real=Y_real,
+                        X_names=X_names,
+                        Y_names=Y_names,
+                        standardized=standardized,
+                        X_ranges=X_ranges,
+                        unit_flag=unit_flag,
+                        log_flags=log_flags, 
+                        decimals=decimals)
 
         # assign variable names and units
         self.X_names = X_names

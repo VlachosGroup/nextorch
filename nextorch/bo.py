@@ -617,9 +617,6 @@ class Database():
         self.Y_mean = Y_mean # tensor
         self.Y_std = Y_std # tensor
 
-        self.log_flags = log_flags # list of bool
-        self.decimals =decimals # list of int
-
         self.X_real = X_real  # in a real scale, numpy array
         self.Y_real = Y_real  # in a real scale, numpy array
         self.X_init_real = X_real.copy()  # in a real scale, numpy array
@@ -684,6 +681,7 @@ class Database():
             parameters = [Parameter() for _ in range(self.n_dim)]
             # Set the X ranges for the parameters
             if X_ranges is not None:
+                X_ranges = ut.expand_ranges_X(X_ranges) # 2d list
                 for i in range(self.n_dim):
                     parameters[i].x_range = X_ranges[i]    
             self.define_space(parameters)
@@ -709,6 +707,10 @@ class Database():
 
         self.X_names = X_names
         self.Y_names = Y_names
+
+        # Set other specs
+        self.log_flags = log_flags # list of bool
+        self.decimals =decimals # list of int
 
         # Preprocess the data 
         self.preprocess_data(X_real, 

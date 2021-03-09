@@ -604,7 +604,7 @@ def prepare_full_X_real(
     for di in range(n_dim):
         if di in x_indices:
             # Get a column from X_test
-            xi = X_test[:, di]
+            xi = X_test[:, di_test]
             # Convert xi to a real scale
             xi = inverse_unitscale_xv(xi, X_ranges[di])
             di_test += 1

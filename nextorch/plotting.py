@@ -496,7 +496,7 @@ def acq_func_1d_exp(Exp: Experiment,
                 i_iter = Exp.n_points - Exp.n_points_init)
 
 
-def objective_func_1d(
+def response_1d(
     model: Model, 
     X_test: MatrixLike2d, 
     n_dim: Optional[int] = 1,
@@ -516,7 +516,7 @@ def objective_func_1d(
     save_fig: Optional[bool] = False,
     save_path: Optional[str] = None, 
     i_iter: Optional[Union[str, int]] = ''):
-    """Plot objective function values
+    """Plot response values
     at the given dimension defined by x_index
     Input X variables are in a unit scale and
     Input Y variables are in a real scale
@@ -672,7 +672,7 @@ def objective_func_1d(
                     bbox_inches="tight")
 
 
-def objective_func_1d_exp(
+def response_1d_exp(
     Exp: Experiment,
     X_new: Optional[MatrixLike2d] = None,
     Y_new: Optional[MatrixLike2d] = None,
@@ -684,7 +684,7 @@ def objective_func_1d_exp(
     mesh_size: Optional[int] = 41,
     plot_real: Optional[bool] = False, 
     save_fig: Optional[bool] = False):
-    """Plot objective function valus
+    """Plot reponse valus
     at the given dimension defined by x_index
     using Experiment object
 
@@ -741,25 +741,25 @@ def objective_func_1d_exp(
     if (Exp.objective_func is not None) and (Y_new is None):
         Y_new = eval_objective_func(X_new, Exp.X_ranges, Exp.objective_func)
 
-    objective_func_1d(model = Exp.model, 
-                    X_test = X_test,
-                    n_dim=Exp.n_dim,
-                    x_index=x_index,
-                    X_ranges=Exp.X_ranges,
-                    Y_test = Y_test,
-                    X_train = Exp.X,
-                    Y_train = Exp.Y_real, #be sure to use Y_real
-                    X_new = X_new,
-                    Y_new = Y_new,
-                    negate_Y = Exp.negate_Y,
-                    plot_real = plot_real,
-                    Y_mean = Exp.Y_mean,
-                    Y_std= Exp.Y_std, 
-                    X_names=Exp.X_names, 
-                    Y_name=Exp.Y_names[y_index], 
-                    save_fig= save_fig,
-                    save_path=Exp.exp_path,
-                    i_iter = Exp.n_points - Exp.n_points_init)
+    response_1d(model = Exp.model, 
+                X_test = X_test,
+                n_dim=Exp.n_dim,
+                x_index=x_index,
+                X_ranges=Exp.X_ranges,
+                Y_test = Y_test,
+                X_train = Exp.X,
+                Y_train = Exp.Y_real, #be sure to use Y_real
+                X_new = X_new,
+                Y_new = Y_new,
+                negate_Y = Exp.negate_Y,
+                plot_real = plot_real,
+                Y_mean = Exp.Y_mean,
+                Y_std= Exp.Y_std, 
+                X_names=Exp.X_names, 
+                Y_name=Exp.Y_names[y_index], 
+                save_fig= save_fig,
+                save_path=Exp.exp_path,
+                i_iter = Exp.n_points - Exp.n_points_init)
 
 
 #%% Functions for 2 dimensional systems on sampling
@@ -1316,7 +1316,7 @@ def response_heatmap(
     
     # Set default axis names 
     if X_names is None:
-        X_names = ['x' + str(xi + 1) for xi in x_indices]
+        X_names = ['x' + str(xi + 1) for xi in range(n_dim)]
 
     # Set Y_name in file name
     if Y_name is None: 
@@ -1775,7 +1775,7 @@ def response_surface(
     
     # Set default axis names 
     if X_names is None:
-            X_names = ['x' + str(xi + 1) for xi in x_indices]
+            X_names = ['x' + str(xi + 1) for xi in range(n_dim)]
     # Set Y_name in file name
     if Y_name is None:
         Y_name = 'y'

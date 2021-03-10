@@ -2118,8 +2118,8 @@ def pareto_front(
     # now plot both limits against eachother
     if diagonal:
         ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
-    ax.set_xlim(lims)
-    ax.set_ylim(lims)
+    ax.set_xlim([y1.min(), y1.max()]) #ax.set_xlim(lims)
+    ax.set_ylim([y2.min(), y2.max()]) #ax.set_ylim(lims)
     ax.set_xticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
     ax.set_yticks(np.around(np.linspace(lims[0], lims[1], nsections), 2))
     ax.set_xticklabels(np.around(np.linspace(lims[0], lims[1], nsections), 2))

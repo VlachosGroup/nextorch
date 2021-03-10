@@ -152,6 +152,56 @@ def eval_objective_func(
 
     return Y
 
+def eval_objective_func_encoding(
+    X_unit: MatrixLike2d, 
+    parameter_space: MatrixLike2d, 
+    objective_func: object,
+    return_type: Optional[str] = 'tensor'
+) -> MatrixLike2d:
+    """Evaluate the objective function
+
+    Parameters
+    ----------
+    X_unit : MatrixLike2d, matrix or 2d tensor
+        X in a unit scale
+    X_range : MatrixLike2d, matrix or 2d tensor
+        list of x ranges
+    objective_func : function object
+        a objective function to optimize
+    return_type: Optional[str], optional
+        either 'tensor' or 'np'
+        by default 'tensor'
+
+    Returns
+    -------
+    Y: MatrixLike2d
+        model predicted values
+
+    Raises
+    ------
+    ValueError
+        if input return_type not defined
+    """
+    # Convert to tensor
+    if return_type not in ['tensor', 'np']:
+        raise ValueError('return_type must be either tensor or np')
+
+    # Convert matrix type from tensor to numpy matrix
+    X_unit_np = tensor_to_np(X_unit)
+    #X_range_np = tensor_to_np(X_range)    
+    
+    # transform to real scale 
+    X_real = ut.encode_to_real_ParameterSpace(X_unit_np, parameter_space)
+    # evaluate y
+    Y = objective_func(X_real)
+
+    if return_type == 'tensor':
+        Y = np_to_tensor(Y)
+
+    return Y
+
+
+
 def model_predict(
     model: Model, 
     X_test: MatrixLike2d,

@@ -109,8 +109,8 @@ Y_init = objective_func(X_init)
 Exp = bo.Experiment('simple_1d') 
 
 # Define parameter space
-#parameter = Parameter()
-#Exp.define_space(parameter)
+parameter = Parameter()
+Exp.define_space(parameter)
 
 # Import the initial data
 # Set unit_flag to true since the X is in a unit scale

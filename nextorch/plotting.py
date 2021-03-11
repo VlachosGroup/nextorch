@@ -1832,6 +1832,119 @@ def response_surface(
                     bbox_inches="tight")
 
 
+def response_scatter_exp(
+    Exp: Experiment,
+    Y_real_range: Optional[ArrayLike1d] = None,
+    Y_name: Optional[str] = None,
+    n_dim: Optional[int] = 3,
+    log_flag: Optional[bool] = False,
+    x_indices: Optional[List[int]] = [0, 1, 2],
+    X_ranges: Optional[MatrixLike2d] = None,
+    X_names: Optional[List[str]] = None, 
+    save_fig: Optional[bool] = False,
+    save_path: Optional[str] = None,
+    i_iter: Optional[Union[str, int]] = ''):
+    """Plot a response surface in 3-dimensional space
+
+    Parameters
+    ----------
+    Y_real_range : ArrayLike1d
+        Ranges of the response, [lb, rb]
+    Y_name : Optional[str], optional
+        Name of Y variable, by default None
+    n_dim : Optional[int], optional
+        Dimensional of X, i.e., number of columns 
+    log_flag : Optional[bool], optional
+        flag to plot in a log scale
+    x_indices : Optional[List[int]], optional
+        indices of two x variables, by default [0, 1]
+    X_ranges : MatrixLike2d, optional
+            list of x ranges, by default None
+    X_names: Optional[List(str)], optional
+        Names of X varibale shown as x,y,z-labels
+    save_fig: Optional[bool], optional
+        if true save the plot 
+        by default False
+    save_path: Optional[str], optional
+        Path where the figure is being saved
+        by default the current directory
+    i_iter: Optional[str], optional
+        Iteration number to add to the figure name
+        by default '''
+    """
+
+    Y_real = Exp.Y_real
+    # Set default Y_real_range
+    if Y_real_range is None:
+        Y_real_range = [np.min(Y_real), np.max(Y_real)]
+    if log_flag:
+        Y_real = np.log10(abs(Y_real))
+    
+    # Extract two variable indices for plotting
+    x_indices = sorted(x_indices) 
+    index_0 = x_indices[0]
+    index_1 = x_indices[1]
+    index_2 = x_indices[2]
+    
+    # Set default axis names 
+    if X_names is None:
+            X_names = ['x' + str(xi + 1) for xi in range(n_dim)]
+    # Set Y_name in file name
+    if Y_name is None:
+        Y_name = 'y'
+        Y_name_plot = 'y'
+    else: 
+        Y_name_plot = Y_name
+    # set the file name
+    filename = 'scatter_'+ Y_name + '_' + str(index_0) +\
+         str(index_1) + str(index_2) + '_i_' + str(i_iter) 
+    
+    # Set default X_ranges 
+    if X_ranges is None:
+        X_ranges = [[np.min(Exp.X_real[:, index_0]), np.max(Exp.X_real[:, index_0])], 
+                    [np.min(Exp.X_real[:, index_1]), np.max(Exp.X_real[:, index_1])], 
+                    [np.min(Exp.X_real[:, index_2]), np.max(Exp.X_real[:, index_2])]]
+    # Set default number of sections
+    n_tick_sections  = 5
+
+    # Visualize response - a 3D surfaceplot
+    fig  = plt.figure(figsize = (10,10))
+    ax = fig.add_subplot(111, projection='3d')
+    im = ax.scatter(Exp.X_real[:, index_0], Exp.X_real[:, index_1], Exp.X_real[:, index_2], 
+                      vmin=Y_real_range[0], vmax=Y_real_range[1], linewidths=1, alpha=0.7, 
+                      edgecolor='k', s=60, c=Y_real)
+
+    #  Obtain axes limits
+    xlim_plot = list(ax.set_xlim(X_ranges[index_0]))
+    ylim_plot = list(ax.set_ylim(X_ranges[index_1]))
+    zlim_plot = list(ax.set_zlim(X_ranges[index_2]))
+    
+    # set axis labels and ticks   
+    ax.set_xlabel(X_names[index_0], labelpad=15)
+    ax.set_ylabel(X_names[index_1], labelpad=15)
+    ax.set_zlabel(X_names[index_2], labelpad=15)
+    ax.set_xticks(set_axis_values(xlim_plot, n_tick_sections))
+    ax.set_xticklabels(set_axis_values(X_ranges[index_0], n_tick_sections))
+    ax.set_yticks(set_axis_values(ylim_plot, n_tick_sections))
+    ax.set_yticklabels(set_axis_values(X_ranges[index_1], n_tick_sections))
+    ax.set_zticks(set_axis_values(ylim_plot, n_tick_sections))
+    ax.set_zticklabels(set_axis_values(X_ranges[index_2], n_tick_sections))
+
+    # set colorbar for response
+    cbar = fig.colorbar(im, ax=ax).set_label(label=Y_name, rotation=270, labelpad=20)
+
+    ax.view_init(30, 45)
+
+    plt.show()
+    # save the figure as png
+    if save_fig:
+        if save_path is None: 
+            save_path = os.getcwd()
+
+        if not os.path.exists(save_path): os.makedirs(save_path)
+        fig.savefig(os.path.join(save_path, filename + '.png'), 
+                    bbox_inches="tight")
+
 def response_surface_exp(
     Exp: Experiment,
     Y_real_range: Optional[ArrayLike1d] = None, 

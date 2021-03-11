@@ -2055,9 +2055,9 @@ class COMSOLMOOExperiment(EHVIMOOExperiment):
         data = np.loadtxt(self.comsol_output_location, skiprows=5, delimiter=',')
 
         if (data.ndim == 1):
-            Y_new_real = np.array([[data[self.comsol_output_col - 1]]])
+            Y_new_real = np.array([[data[self.comsol_output_col[0] - 1], data[self.comsol_output_col[1] - 1]]])
         else:
-            Y_new_real = np.array([[data[-1, self.comsol_output_col - 1]]])
+            Y_new_real = np.array([[data[-1, self.comsol_output_col[0] - 1], data[-1, self.comsol_output_col[1] - 1]]])
 
         return Y_new_real
 
@@ -2065,7 +2065,7 @@ class COMSOLMOOExperiment(EHVIMOOExperiment):
         objective_file_name: str,
         comsol_location: str,
         comsol_output_location: str,
-        comsol_output_col: Optional[int] = 2, 
+        comsol_output_col: Optional[List[int]] = [2, 3], 
         model: Optional[Model] = None, 
         maximize: Optional[bool] = True,
         Y_weights: Optional[ArrayLike1d] = None
@@ -2081,7 +2081,7 @@ class COMSOLMOOExperiment(EHVIMOOExperiment):
         comsol_output_location : str
             the location of saved COMSOL output
             should be a text file
-        comsol_output_col : int
+        comsol_output_col : List[int]
             the column number of the objective
         model : Optional['botorch.models.model.Model'_], optional
             pre-trained GP model, by default None

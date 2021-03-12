@@ -19,6 +19,9 @@ from botorch.acquisition import AcquisitionFunction
 from botorch.acquisition.objective import AcquisitionObjective, ScalarizedObjective, LinearMCObjective
 from botorch.acquisition.analytic import ExpectedImprovement, UpperConfidenceBound, ProbabilityOfImprovement
 from botorch.acquisition.monte_carlo import qExpectedImprovement, qUpperConfidenceBound, qProbabilityOfImprovement
+from botorch.acquisition.multi_objective.monte_carlo import qExpectedHypervolumeImprovement
+from botorch.utils.multi_objective.pareto import is_non_dominated
+from botorch.utils.multi_objective.box_decompositions.non_dominated import NondominatedPartitioning
 from botorch.optim import optimize_acqf
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.optim.fit import fit_gpytorch_torch
@@ -33,7 +36,8 @@ acq_dict = {'EI': ExpectedImprovement,
             'UCB': UpperConfidenceBound,
             'qEI': qExpectedImprovement, 
             'qPI': qProbabilityOfImprovement,
-            'qUCB': qUpperConfidenceBound}
+            'qUCB': qUpperConfidenceBound,
+            'qEHVI': qExpectedHypervolumeImprovement}
 """dict: Keys are the names, values are the BoTorch objects"""
 
 
@@ -483,13 +487,14 @@ def get_top_k_candidates(
     return_best_only = True
     # Case 1 - if a Monte Carlo acquisition function is used
     # set the batch size equal to k, return the best of each batch
-    if acq_func_name in ['qEI', 'qPI', 'qUCB']:
+    if acq_func_name in ['qEI', 'qPI', 'qUCB', 'qEHVI']:
         X_new, acq_value = optimize_acqf(acq_func, 
                                         bounds= bounds, 
                                         q=k, 
                                         num_restarts=10, 
                                         raw_samples=100, 
-                                        return_best_only=return_best_only)
+                                        return_best_only=return_best_only,
+                                        sequential=True)
     # Case 2 - if an analytical acquisition function is used
     # return the best k points based on the acquisition values
     else:
@@ -1666,6 +1671,114 @@ class MOOExperiment(Database):
         return self.Y_real_opts, self.X_real_opts
 
 
+class EHVIMOOExperiment(Experiment):
+    """
+    EHVIMOOExperiment class
+    Base: Experiment
+    For multi-objective optimization (MOO)
+    """
+
+    def set_ref_point(self, 
+        ref_point: ArrayLike1d
+    ):
+        """Set the reference point
+
+        Parameters
+        ----------
+        ref_point : List[float]
+            reference point for the objectives
+
+        """
+        self.ref_point = ref_point
+
+
+    def generate_next_point(self, 
+        acq_func_name: Optional[str] = 'qEHVI', 
+        n_candidates: Optional[int] = 1,
+        eta: Optional[float] = 0.001,
+        **kwargs
+    ) -> Tuple[Tensor, Matrix, AcquisitionFunction]:
+        """Generate the next trial point(s)
+
+        Parameters
+        ----------
+        acq_func_name : Optional[str], optional
+            Name of the acquisition function
+            Must be one of "EHVI", "qEHVI"
+            by default 'qEHVI'
+        n_candidates : Optional[int], optional
+            Number of candidate points, by default 1
+            The point maximizes the acqucision function
+        eta : Optional[float], optional
+            hyperparameter used in qEHVI, by default 0.001
+        **kwargs：keyword arguments
+            Other parameters used by 'botorch.acquisition'_
+
+        Returns
+        -------
+        X_new: Tensor
+            where the acquisition function is optimized
+            A new trial shall be run at this point
+        X_new: Matrix
+            The new point in a real scale
+        acq_func: AcquisitionFunction
+            Current acquisition function, can be used for plotting
+
+        .._'botorch.acquisition': https://botorch.org/api/acquisition.html
+        """
+        self.eta = eta
+
+        # Set parameters for acquisition function
+        partitioning = NondominatedPartitioning(torch.tensor(self.ref_point), Y=self.Y)
+        acq_func = qExpectedHypervolumeImprovement(model=self.model,
+                                                   ref_point=self.ref_point,
+                                                   partitioning=partitioning, 
+                                                   eta = self.eta,
+                                                   **kwargs)
+        
+        unit_bounds = torch.stack([torch.zeros(self.n_dim), torch.ones(self.n_dim)])
+        
+        # Optimize the acquisition using the default setup
+        X_new = get_top_k_candidates(acq_func=acq_func,
+                                     acq_func_name=acq_func_name,
+                                     bounds=unit_bounds,
+                                     k=n_candidates)
+        
+        # Encode the X_new if all_continous is false
+        # Encoding simply finds the nearest point in the continous space 
+        # and use it as X_new
+        if not self.all_continous:  
+            X_new, X_new_real = self.encode_X(X_new)
+        else: 
+            X_new_real = ut.inverse_unitscale_X(X_new, 
+                                                X_ranges = self.X_ranges, 
+                                                log_flags= self.log_flags,
+                                                decimals = self.decimals)
+
+        # Assign acq_func object to self
+        self.acq_func_current = acq_func
+
+        return X_new, X_new_real, acq_func
+
+    def get_optim(self) -> Tuple[float, ArrayLike1d]:
+        """Get the optimal response and conditions 
+        from the model
+
+        Returns
+        -------
+        y_real_opt: float
+            Optimal response
+        X_real_opt: ArrayLike1d
+            parameters or independent variable values 
+            at the optimal poinrt
+        """
+
+        pareto_mask = is_non_dominated(torch.tensor(self.Y_real))
+        y_real_opt = self.Y_real[pareto_mask]
+        X_real_opt = self.X_real[pareto_mask]
+
+        return y_real_opt, X_real_opt
+
 
 #%% CFD classes
 class COMSOLExperiment(Experiment):
@@ -1842,54 +1955,69 @@ class COMSOLExperiment(Experiment):
         if Y_weights is not None:
             self.assign_weights(Y_weights)
 
-class COMSOLWeightedExperiment(WeightedExperiment):
+
+class COMSOLMOOExperiment(EHVIMOOExperiment):
     """
-    COMSOLWeightedExperiment class
-    Base: WeightedExperiment
-    Experiment consists of a set of trial points using COMSOL
-    For weighted objectives
+    COMSOLMOOExperiment class
+    Base: EHVIMOOExperiment
+    For multi-objective optimization (MOO)
+    Used for generating Pareto front
     """
 
-    def set_X_units(self, X_units):
-        """Run COMSOL simulation
+    def input_data(self,
+        X_real: MatrixLike2d,
+        Y_real: MatrixLike2d,
+        X_names: List[str],
+        X_units: List[str],
+        Y_names: Optional[List[str]] = None,
+        Y_units: Optional[List[str]] = None, 
+        standardized: Optional[bool] = False,
+        X_ranges: Optional[MatrixLike2d] = None,
+        unit_flag: Optional[bool] = False,
+        log_flags: Optional[list] = None, 
+        decimals: Optional[int] = None
+    ):
+        """Input data into Experiment object
         
         Parameters
         ----------
+        X_real : MatrixLike2d
+            original independent data in a real scale
+        Y_real : MatrixLike2d
+            original dependent data in a real scale
+        X_names : Optional[List[str]]
+            Names of independent varibles
         X_units : Optional[List[str]]
             Units of independent varibles
+        Y_names : Optional[List[str]]
+            Names of dependent varibles
+        Y_units : Optional[List[str]]
+            Units of dependent varibles            
+        standardized : Optional[bool], optional
+            by default False, the input data will be standardized
+            if true, skip processing
+        X_ranges : Optional[MatrixLike2d], optional
+            list of x ranges, by default None
+        unit_flag: Optional[bool], optional,
+            by default, False 
+            If true, the X is in a unit scale so
+            the function is used to scale X to a log scale
+        log_flags : Optional[list], optional
+            list of boolean flags
+            True: use the log scale on this dimensional
+            False: use the normal scale 
+            by default []
+        decimals : Optional[int], optional
+            Number of decimal places to keep
+            by default None, i.e. no rounding up
         """
+
+        super().input_data(X_real, Y_real, X_names, Y_names, standardized, X_ranges, unit_flag, log_flags, decimals)
+
+        # assign variable names and units
+        self.X_names = X_names
         self.X_units = X_units
-
-    def comsol_information(self,
-        objective_file_name: str,
-        comsol_location: str,
-        comsol_output_location: str,
-        comsol_output_col: Optional[ArrayLike1d] = [2, 3]          
-    ):
-        """Set the specs for Bayseian Optimization
-
-        Parameters
-        ----------
-        objective_file_name : str
-            the objective COMSOL file
-        comsol_location : str
-            the location COMSOL installed
-        comsol_output_location : str
-            the location of saved COMSOL output
-            should be a text file
-        comsol_output_col : List[int]
-            the column number of the objective
-        """
-
-        # assign objective COMSOL file and location
-        self.objective_file_name = objective_file_name
-        self.comsol_location = comsol_location
-        self.objective_func = self.comsol_simulation
-
-        # assign output file and objective column
-        self.comsol_output_location = comsol_output_location
-        self.comsol_output_col = comsol_output_col
-
+     
     def comsol_simulation(self, X_new_real):
         """Run COMSOL simulation
         
@@ -1909,7 +2037,7 @@ class COMSOLWeightedExperiment(WeightedExperiment):
 
             with open(self.objective_file_name+".java","w") as f:
                 f.write(data)
-
+    
         # run simulations
         subprocess.run([self.comsol_location,  "compile", self.objective_file_name+".java"])
         print("COMSOL file is sucessfully compiled. Simulation starts.")
@@ -1933,84 +2061,19 @@ class COMSOLWeightedExperiment(WeightedExperiment):
 
         return Y_new_real
 
-
-class COMSOLMOOExperiment(MOOExperiment):
-    """
-    COMSOLMOOExperiment class
-    Base: MOOExperiment
-    For multi-objective optimization (MOO)
-    Currently, only supports two objectives 
-    Used for generating Pareto front
-    """
-
-    def input_data(self,
-        X_real: MatrixLike2d,
-        Y_real: MatrixLike2d,
-        X_names: List[str],
-        X_units: List[str],
-        Y_names: Optional[List[str]] = None,
-        Y_units: Optional[List[str]] = None, 
-        preprocessed: Optional[bool] = False,
-        X_ranges: Optional[MatrixLike2d] = None,
-        unit_flag: Optional[bool] = False,
-        log_flags: Optional[list] = None, 
-        decimals: Optional[int] = None
-    ):
-        """Input data into Experiment object
-        
-        Parameters
-        ----------
-        X_real : MatrixLike2d
-            original independent data in a real scale
-        Y_real : MatrixLike2d
-            original dependent data in a real scale
-        X_names : Optional[List[str]]
-            Names of independent varibles
-        X_units : Optional[List[str]]
-            Units of independent varibles
-        Y_names : Optional[List[str]]
-            Names of dependent varibles
-        Y_units : Optional[List[str]]
-            Units of dependent varibles            
-        preprocessed : Optional[bool], optional
-            by default False, the input data will be processed
-            if true, skip processing
-        X_ranges : Optional[MatrixLike2d], optional
-            list of x ranges, by default None
-        unit_flag: Optional[bool], optional,
-            by default, False 
-            If true, the X is in a unit scale so
-            the function is used to scale X to a log scale
-        log_flags : Optional[list], optional
-            list of boolean flags
-            True: use the log scale on this dimensional
-            False: use the normal scale 
-            by default []
-        decimals : Optional[int], optional
-            Number of decimal places to keep
-            by default None, i.e. no rounding up
-        """
-
-        super().input_data(X_real, Y_real, X_names, Y_names, preprocessed, X_ranges, unit_flag, log_flags, decimals)
-
-        # assign variable names and units
-        self.X_names = X_names
-        self.X_units = X_units
-     
-    def set_optim_specs(self,
-        weights: Union[ArrayLike1d, float],
+    def set_optim_specs(self, 
         objective_file_name: str,
         comsol_location: str,
         comsol_output_location: str,
-        comsol_output_col: Optional[ArrayLike1d] = [2, 3],  
-        maximize: Optional[bool] = True
-    ):
+        comsol_output_col: Optional[List[int]] = [2, 3], 
+        model: Optional[Model] = None, 
+        maximize: Optional[bool] = True,
+        Y_weights: Optional[ArrayLike1d] = None
+    ):  
         """Set the specs for Bayseian Optimization
 
         Parameters
         ----------
-        weights : ArrayLike1d
-            List of weights for objective 1 between 0 and 1
         objective_file_name : str
             the objective COMSOL file
         comsol_location : str
@@ -2018,7 +2081,7 @@ class COMSOLMOOExperiment(MOOExperiment):
         comsol_output_location : str
             the location of saved COMSOL output
             should be a text file
-        comsol_output_col : int
+        comsol_output_col : List[int]
             the column number of the objective
         model : Optional['botorch.models.model.Model'_], optional
             pre-trained GP model, by default None
@@ -2032,46 +2095,30 @@ class COMSOLMOOExperiment(MOOExperiment):
         :_'botorch.models.model.Model': https://botorch.org/api/models.html#botorch.models.model.Model
         """
 
-        self.maximize = maximize
-        if maximize: 
-            self.objective_sign = 1
-        else:
-            self.objective_sign = -1
+        # assign objective COMSOL file and location
+        self.objective_file_name = objective_file_name
+        self.comsol_location = comsol_location
+        self.objective_func = self.comsol_simulation
 
-        # Total number of experiments
-        if isinstance(weights, float):
-            weights = [weights]
-        self.n_exp = len(weights)
-
-        # Compute the weight pairs 
-        # The weights for objective 2 is 1-weight_i
-        weight_pairs = []
-        for weight_i in weights:
-            weight_pairs.append([weight_i, 1-weight_i])
+        # assign output file and objective column
+        self.comsol_output_location = comsol_output_location
+        self.comsol_output_col = comsol_output_col
         
-        # List of experiment objects
-        experiments = [] 
+        # set optimization goal
+        self.maximize = maximize
 
-        print('Initializing {} experiments'.format(self.n_exp))
-        # initialize weighted experimnets with data and weights 
-        for i, weight_pair_i in enumerate(weight_pairs):
-            experiment_i = COMSOLWeightedExperiment()
-            experiment_i.input_data(self.X_init, 
-                                    self.Y_init_real, 
-                                    X_names = self.X_names, 
-                                    X_ranges = self.X_ranges, 
-                                    unit_flag=True)
-            experiment_i.set_X_units(self.X_units)
-            experiment_i.comsol_information(objective_file_name+"_"+str(i),
-                                            comsol_location,
-                                            comsol_output_location,
-                                            comsol_output_col)
-            experiment_i.set_optim_specs(objective_func=experiment_i.comsol_simulation,
-                                         model=None, #start fresh
-                                         maximize=maximize, 
-                                         Y_weights = weight_pair_i)
-            experiments.append(experiment_i)
-            print('Initializing experiments {:.2f} % '.format((i+1)/self.n_exp *100))
+        if maximize: 
+            self.objective_sign = 1 # sign for the reponses
+            self.negate_Y = False # if true (minimization), negate the model predicted values        
+        else:
+            self.objective_sign = -1 
+            self.negate_Y = True
 
-        self.experiments = experiments
+        # create a GP model based on input data
+        # In the case of minimize, the negative reponses values are used to fit the GP
+        if model is None:
+            self.model = create_and_fit_gp(self.X, self.objective_sign * self.Y)
+        # assign weights to each objective, useful only to multi-objective systems
+        if Y_weights is not None:
+            self.assign_weights(Y_weights)
         

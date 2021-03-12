@@ -6,7 +6,7 @@ import com.comsol.model.*;
 import com.comsol.model.util.*;
 
 /** Model exported on Mar 5 2021, 13:01 by COMSOL 5.4.0.388. */
-public class comsol_moo_example_0 {
+public class comsol_moo_example {
 
   public static Model run() {
     Model model = ModelUtil.create("Model");
@@ -462,9 +462,9 @@ public class comsol_moo_example_0 {
     model.sol("sol1").feature("v2").set("notsolmethod", "sol");
     model.sol("sol1").feature("v2").set("notsol", "sol1");
     model.sol("sol1").feature("v2").set("notsolnum", "auto");
-    model.sol("sol1").feature("v2").set("clist", new String[]{"range(0,1,50)", "0.05[s]"});
+    model.sol("sol1").feature("v2").set("clist", new String[]{"range(0,1,40)", "0.05[s]"});
     model.sol("sol1").feature("t1").set("control", "time");
-    model.sol("sol1").feature("t1").set("tlist", "range(0,1,50)");
+    model.sol("sol1").feature("t1").set("tlist", "range(0,1,40)");
     model.sol("sol1").feature("t1").set("rtol", 0.005);
     model.sol("sol1").feature("t1").set("atolglobalfactor", 0.05);
     model.sol("sol1").feature("t1")

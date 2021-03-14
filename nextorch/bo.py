@@ -645,7 +645,12 @@ class Database():
                                                     parameter_space=self.parameter_space,
                                                     log_flags=log_flags, 
                                                     decimals=decimals)
-        
+            else:
+                X = ut.unitscale_X(X, 
+                                X_ranges = self.X_ranges, 
+                                log_flags = log_flags, 
+                                decimals = decimals)
+
         # Step 3, Compute X_real from X 
         # Compute X_real from X unit if all_continuous is true 
         # and input X is in a unit scale

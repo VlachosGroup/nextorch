@@ -470,7 +470,7 @@ def get_top_k_candidates(
         acquisition function object
     acq_func_name : str
         Name of the acquisition function
-        Must be one of "EI", "PI", "UCB", "qEI", "qPI", "qUCB"
+        Must be one of "EI", "PI", "UCB", "qEI", "qPI", "qUCB", "qEHVI"
     bounds : Tensor
         Bounds of each X
     k : Optional[int], optional
@@ -1690,7 +1690,7 @@ class EHVIMOOExperiment(Experiment):
 
         Parameters
         ----------
-        ref_point : List[float]
+        ref_point : ArrayLike1d
             reference point for the objectives
 
         """
@@ -1783,6 +1783,7 @@ class EHVIMOOExperiment(Experiment):
         X_real_opt = self.X_real[pareto_mask]
 
         return y_real_opt, X_real_opt
+
 
 
 #%% CFD classes

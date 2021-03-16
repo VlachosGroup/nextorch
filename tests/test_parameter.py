@@ -49,7 +49,7 @@ X_real = ut.encode_to_real_ParameterSpace(X_encode, ps)
 
 
 #%% Use database copy
-ds = bo.DatabaseCopy()
+ds = bo.Database()
 ds.define_space([p1, p2])
 
 ds.input_data(Xunit, Y, X_names = ['lol', 'ox'], standardized=True)

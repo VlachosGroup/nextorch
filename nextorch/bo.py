@@ -19,7 +19,6 @@ from botorch.acquisition import AcquisitionFunction
 from botorch.acquisition.objective import AcquisitionObjective, ScalarizedObjective, LinearMCObjective
 from botorch.acquisition.analytic import ExpectedImprovement, UpperConfidenceBound, ProbabilityOfImprovement
 from botorch.acquisition.monte_carlo import qExpectedImprovement, qUpperConfidenceBound, qProbabilityOfImprovement
-from botorch.acquisition.multi_objective.analytic import ExpectedHypervolumeImprovement
 from botorch.acquisition.multi_objective.monte_carlo import qExpectedHypervolumeImprovement
 from botorch.utils.multi_objective.pareto import is_non_dominated
 from botorch.utils.multi_objective.box_decompositions.non_dominated import NondominatedPartitioning
@@ -38,7 +37,6 @@ acq_dict = {'EI': ExpectedImprovement,
             'qEI': qExpectedImprovement, 
             'qPI': qProbabilityOfImprovement,
             'qUCB': qUpperConfidenceBound,
-            'EHVI': ExpectedHypervolumeImprovement,
             'qEHVI': qExpectedHypervolumeImprovement}
 """dict: Keys are the names, values are the BoTorch objects"""
 
@@ -408,8 +406,10 @@ def get_acq_func(
         acq_func = acq_object(model, best_f=best_f, objective=objective,**kwargs)
     elif acq_func_name == 'qPI':
         acq_func = acq_object(model, best_f=best_f, objective=objective,**kwargs)
-    else: # acq_func_name == 'qUCB':
+    elif acq_func_name == 'qUCB':
         acq_func = acq_object(model, beta=beta, objective=objective, **kwargs)
+    else: # acq_func_name == 'qEHVI':
+        acq_func = acq_object(model, **kwargs)
 
     return acq_func
 
@@ -497,6 +497,7 @@ def get_top_k_candidates(
                                         raw_samples=100, 
                                         return_best_only=return_best_only,
                                         sequential=True)
+
     # Case 2 - if an analytical acquisition function is used
     # return the best k points based on the acquisition values
     else:
@@ -1705,13 +1706,12 @@ class EHVIMOOExperiment(Experiment):
         eta: Optional[float] = 0.001,
         **kwargs
     ) -> Tuple[Tensor, Matrix, AcquisitionFunction]:
-        """Generate the next trial point(s)
+        """Generate the next trial point(s) using qEHVI
 
         Parameters
         ----------
         acq_func_name : Optional[str], optional
             Name of the acquisition function
-            Must be one of "EHVI", "qEHVI"
             by default 'qEHVI'
         n_candidates : Optional[int], optional
             Number of candidate points, by default 1
@@ -1733,15 +1733,18 @@ class EHVIMOOExperiment(Experiment):
 
         .._'botorch.acquisition': https://botorch.org/api/acquisition.html
         """
+        # Set acq func name and hyperparameter
+        self.acq_func_name = acq_func_name
         self.eta = eta
 
         # Set parameters for acquisition function
         partitioning = NondominatedPartitioning(torch.tensor(self.ref_point), Y=self.Y)
-        acq_func = qExpectedHypervolumeImprovement(model=self.model,
-                                                   ref_point=self.ref_point,
-                                                   partitioning=partitioning, 
-                                                   eta = self.eta,
-                                                   **kwargs)
+        acq_func = get_acq_func(self.model,
+                                self.acq_func_name,  
+                                ref_point=self.ref_point,
+                                partitioning=partitioning, 
+                                eta=self.eta,
+                                **kwargs)
         
         unit_bounds = torch.stack([torch.zeros(self.n_dim), torch.ones(self.n_dim)])
         

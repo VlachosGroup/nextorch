@@ -148,7 +148,7 @@ for i in range(n_trials):
     
     # Plot the objective functions, and acqucision function
     print('Iteration {}, objective function'.format(i+1))
-    plotting.objective_func_1d_exp(Exp, mesh_size = 1000, X_new = X_new, plot_real = True, save_fig = save_fig_flag)
+    plotting.response_1d_exp(Exp, mesh_size = 1000, X_new = X_new, plot_real = True, save_fig = save_fig_flag)
     print('Iteration {}, acquisition function'.format(i+1))
     plotting.acq_func_1d_exp(Exp, mesh_size = 1000,X_new = X_new, save_fig = save_fig_flag)
     

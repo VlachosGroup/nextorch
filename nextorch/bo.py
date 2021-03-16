@@ -19,6 +19,7 @@ from botorch.acquisition import AcquisitionFunction
 from botorch.acquisition.objective import AcquisitionObjective, ScalarizedObjective, LinearMCObjective
 from botorch.acquisition.analytic import ExpectedImprovement, UpperConfidenceBound, ProbabilityOfImprovement
 from botorch.acquisition.monte_carlo import qExpectedImprovement, qUpperConfidenceBound, qProbabilityOfImprovement
+from botorch.acquisition.multi_objective.analytic import ExpectedHypervolumeImprovement
 from botorch.acquisition.multi_objective.monte_carlo import qExpectedHypervolumeImprovement
 from botorch.utils.multi_objective.pareto import is_non_dominated
 from botorch.utils.multi_objective.box_decompositions.non_dominated import NondominatedPartitioning
@@ -37,6 +38,7 @@ acq_dict = {'EI': ExpectedImprovement,
             'qEI': qExpectedImprovement, 
             'qPI': qProbabilityOfImprovement,
             'qUCB': qUpperConfidenceBound,
+            'EHVI': ExpectedHypervolumeImprovement,
             'qEHVI': qExpectedHypervolumeImprovement}
 """dict: Keys are the names, values are the BoTorch objects"""
 
@@ -1765,13 +1767,13 @@ class EHVIMOOExperiment(Experiment):
 
         return X_new, X_new_real, acq_func
 
-    def get_optim(self) -> Tuple[float, ArrayLike1d]:
+    def get_optim(self) -> Tuple[ArrayLike1d, ArrayLike1d]:
         """Get the optimal response and conditions 
         from the model
 
         Returns
         -------
-        y_real_opt: float
+        y_real_opt: ArrayLike1d
             Optimal response
         X_real_opt: ArrayLike1d
             parameters or independent variable values 
@@ -1779,10 +1781,10 @@ class EHVIMOOExperiment(Experiment):
         """
 
         pareto_mask = is_non_dominated(torch.tensor(self.Y_real))
-        y_real_opt = self.Y_real[pareto_mask]
+        Y_real_opt = self.Y_real[pareto_mask]
         X_real_opt = self.X_real[pareto_mask]
 
-        return y_real_opt, X_real_opt
+        return Y_real_opt, X_real_opt
 
 
 

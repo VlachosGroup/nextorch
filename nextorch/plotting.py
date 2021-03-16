@@ -22,7 +22,7 @@ from typing import Optional, TypeVar, Union, Tuple, List
 from nextorch.utils import  ArrayLike1d, MatrixLike2d, create_full_X_test_1d, create_full_X_test_2d
 from nextorch.utils import tensor_to_np, standardize_X, transform_Y_mesh_2d, unitscale_xv
 from nextorch.bo import eval_acq_func, eval_objective_func, \
-    model_predict, model_predict_real, Experiment, MOOExperiment
+    model_predict, model_predict_real, Experiment, EHVIMOOExperiment, WeightedMOOExperiment
 
 
 # Set matplotlib default values
@@ -2253,7 +2253,7 @@ def pareto_front(
 
 
 def pareto_front_exp(
-    Exp: MOOExperiment, 
+    Exp: Union[WeightedMOOExperiment, EHVIMOOExperiment], 
     fill: Optional[bool] = True,
     diagonal: Optional[bool] = True,
     save_fig: Optional[bool] = False, 
@@ -2264,7 +2264,7 @@ def pareto_front_exp(
 
     Parameters
     ---------
-    Exp: MOOExperiment
+    Exp: Union[WeightedMOOExperiment, EHVIMOOExperiment]
         MOOExperiment object
     fill: Optional[bool], optional
         if true fill the space enclosed by the points 

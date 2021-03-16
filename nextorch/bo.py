@@ -1402,7 +1402,7 @@ class Experiment(BasicExperiment):
 
 
 #%% MOO classes
-class WeightedExperiment(BasicExperiment):
+class SingleWeightedExperiment(BasicExperiment):
     """
     WeightedExperiment class
     Base: BasicExperiment
@@ -1543,7 +1543,7 @@ class WeightedExperiment(BasicExperiment):
 
 
 
-class MOOExperiment(Database):
+class WeightedMOOExperiment(Database):
     """
     MOOExperiment class
     Base: Database
@@ -1605,7 +1605,7 @@ class MOOExperiment(Database):
         print('Initializing {} experiments'.format(self.n_exp))
         # initialize weighted experimnets with data and weights 
         for i, weight_pair_i in enumerate(weight_pairs):
-            experiment_i = WeightedExperiment()
+            experiment_i = SingleWeightedExperiment()
             experiment_i.input_data(self.X_init, 
                                     self.Y_init_real, 
                                     X_ranges = self.X_ranges, 

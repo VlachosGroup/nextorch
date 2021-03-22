@@ -232,6 +232,7 @@ def parity_with_ci_exp(Exp: Experiment,
 #%% Discovery plots
 def opt_per_trial(
     Ys: Union[list, ArrayLike1d],
+    maximize: Optional[bool] = True,
     Y_real_range: Optional[ArrayLike1d] = None, 
     Y_name: Optional[str] = None,
     log_flag: Optional[bool] = False,
@@ -247,6 +248,9 @@ def opt_per_trial(
     ----------
     Ys : Union[list, ArrayLike1d]
         Response of each design in a real scale
+    maximize : Optional[bool], optional
+        by default True, maximize the objective function
+        Otherwise False, minimize the objective function
     Y_real_range : ArrayLike1d
         Ranges of the response, [lb, rb]
         to show on the plot, by default None
@@ -291,13 +295,16 @@ def opt_per_trial(
     for yi, ci, name_i in zip(Ys, colors, design_names):
         if log_flag:
             yi = np.log10(abs(yi))
-        opt_yi = np.maximum.accumulate(yi)
+        if maximize:
+            opt_yi = np.maximum.accumulate(yi)
+        else:
+            opt_yi = np.minimum.accumulate(yi)
         ax.plot(np.arange(len(yi)), opt_yi,  '-o', color = ci, \
             label = name_i, markersize=5, linewidth = 3, markerfacecolor="None")
     if Y_real_range is not None:
         ax.set_ylim(Y_real_range)
     ax.set_xlabel('Trial Index')
-    ax.set_ylabel('Best Observed'+ Y_name)
+    ax.set_ylabel('Best Observed '+ Y_name)
     ax.legend()
 
     # save the figure as png
@@ -333,6 +340,7 @@ def opt_per_trial_exp(
         by default False
     """
     opt_per_trial(Ys=Exp.Y_real,
+                  maximize=Exp.maximize,
                   Y_name=Exp.Y_names[0],
                   Y_real_range=Y_real_range,
                   log_flag=log_flag,

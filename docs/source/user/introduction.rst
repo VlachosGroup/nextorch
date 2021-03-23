@@ -19,7 +19,7 @@ Prior works
 ===============
 
 Machine learning and scientific research communities have developed several BO (kriging) software tools and most of them have interfaces in Python. 
-We curate a list of open-source BO packages and provide further discussions in our paper. 
+We curate a list of open-source BO packages and provide further discussions in `our paper`_. 
 
 Their documentation pages can be found at:
 
@@ -65,7 +65,7 @@ NEXTorch is unique for several reasons:
 1. NEXTorch benefits from the modern architecture and a variety of models, functions offered by BoTorch.
 
 2. NEXTorch provides connections to real-world problems, going beyond BoTorch, including automatic parameter scaling, data type conversions, and visualization capabilities. 
-These features allow human-in-the-loop design where decision-making on the next experiments can be aided by domain knowledge.
+   These features allow human-in-the-loop design where decision-making on the next experiments can be aided by domain knowledge.
 
 3. NEXTorch is modular in design which makes it easy to extend to other frameworks. It also serves as a library for learning the theory and implementation of BO. 
 
@@ -93,4 +93,5 @@ Reference:
 .. _PyKrige: https://geostat-framework.readthedocs.io/projects/pykrige/en/stable/index.html
 .. _PyTorch: https://pytorch.org/
 .. _TensorFlow: https://www.tensorflow.org/
+.. _our paper: 
 .. _[1]: https://www.nature.com/articles/s41586-021-03213-y

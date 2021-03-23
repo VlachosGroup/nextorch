@@ -2,7 +2,8 @@
 Glossary
 =========
 
-array:
+array
+-----
     A vector, a collection of elements of the same type in a one-dimensional list-like structure.
 
 *matrix*

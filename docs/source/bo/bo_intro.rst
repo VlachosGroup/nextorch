@@ -3,7 +3,6 @@ Key Concepts in BO
 ===================
 
 
-
 .. contents:: Table of Contents
     :depth: 2
 
@@ -15,8 +14,8 @@ science fields, including catalyst synthesis, high throughput reactions, and com
 close variant, kriging, originating in geostatistics, has also been widely applied in process engineering. Fundamentally, 
 BO is a sequential global optimization approach consisting of two essential parts: 
 
-1.a surrogate model (often a Gaussian process8) to approximate the system behavior and 
-2.an acquisition function to suggest new experiments to run. 
+1. a surrogate model to approximate the system behavior
+2. an acquisition function to suggest new experiments to run. 
 
 The method is designed to balance the exploration of uncertainty and exploitation of current knowledge in the parameter 
 space. It often outperforms experts or other algorithms in locating the optima and producing accurate surrogate models. 
@@ -24,18 +23,18 @@ space. It often outperforms experts or other algorithms in locating the optima a
 
 Key Concepts and Terminology
 ============================
-To talk more specifically what BO does, we need to introduce additional terminology. We need to talk about
+To talk more specifically what BO does, we need to introduce additional terminology. We need to talk about:
 
-*surrogate model
-*gaussian process
-*acquisition function
-*multi-objective optimization
+- surrogate model
+- gaussian process
+- acquisition function
+- multi-objective optimization
 
-Surrogate model
+Surrogate Model
 ----------------
 A surrogate model is the method used when the response cannot be easily measured, so a model to easily estimate the response 
 is used instead. Most engineering design problems require experiments and/or simulations to evaluate design objective and 
-constraint functions as a function of design variables. 
+constraint functions as a function of design variables. In BO, the surrogate model used is oftern a gaussian process.
 
 
 Gaussian Process (GP)
@@ -123,7 +122,7 @@ In NEXTorch, one can use either weighted sum method or Monte Carlo EHVI (qEHVI) 
 
 References
 ----------
-`[1]`_ S. Daulton, M. Balandat, and E. Bakshy. Differentiable Expected Hypervolume Improvement for Parallel 
+`[1]`_ Daulton S.; Balandat M.; Bakshy E. Differentiable Expected Hypervolume Improvement for Parallel 
 Multi-Objective Bayesian Optimization. Advances in Neural Information Processing Systems 33, 2020.
 
-.. _[1]:: https://arxiv.org/abs/2006.05078
+.. _[1]: https://arxiv.org/abs/2006.05078

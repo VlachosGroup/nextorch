@@ -14,8 +14,9 @@ and improving prediction accuracy with fewer training data or lower computationa
 BO, a popular active learning framework, refers to a suite of techniques for global optimization of expensive functions.
 
 
-Why we build this?
-====================
+
+Prior works
+===============
 
 Machine learning and scientific research communities have developed several BO (kriging) software tools and most of them have interfaces in Python. 
 We curate a list of open-source BO packages and provide further discussions in our paper. 
@@ -40,6 +41,10 @@ to benefit from the fast matrix operations, batched computation, and GPU acceler
 BoTorch stands out since it naturally supports parallel optimization, Monte Carlo acquisition functions, and advanced cases such as multi-task and multi-objective optimization. 
 The PyTorch backend also makes it suitable for easy experimentation and fast prototyping. 
 
+
+Why we build this?
+====================
+
 However, most tools are designed for AI researchers or software engineers, often requiring a steep learning curve. The workflow can also be less transparent to end-users. 
 Occasionally, design choices are made intentionally to keep humans out of the optimization loop.
 The above reasons make them difficult to extend to chemistry or engineering problems, where domain knowledge is essential. 
@@ -50,7 +55,6 @@ However, the software is still based on command-line scripts, and clear document
 
 From a practical perspective, we believe a BO tool should be scalable, flexible, and accessible to the end-users, i.e., chemists and engineers. 
 Hence, we build NEXTorch, extending the capabilities of BoTorch, to democratize the use of BO in chemical sciences. 
-
 
 
 Why NEXTorch

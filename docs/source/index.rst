@@ -18,7 +18,9 @@ Welcome to nextorch's documentation!
 
    user/introduction
    user/installation
+   user/overview
    user/io
+   user/parameters
    user/doe
    user/experiment
    user/visualization
@@ -49,7 +51,6 @@ Welcome to nextorch's documentation!
    appendix/glossary
    appendix/cite
    appendix/publications
-   appendix/references
    
 .. toctree::
    :maxdepth: 1

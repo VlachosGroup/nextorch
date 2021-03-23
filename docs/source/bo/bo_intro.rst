@@ -10,14 +10,32 @@ Key Concepts in BO
 
 What can BO do?
 ===============
+Bayesian Optimization (BO), an active learning framework, has seen a rise in its applications in various chemical 
+science fields, including catalyst synthesis, high throughput reactions, and computational material discovery. Its 
+close variant, kriging, originating in geostatistics, has also been widely applied in process engineering. Fundamentally, 
+BO is a sequential global optimization approach consisting of two essential parts: 
+
+1.a surrogate model (often a Gaussian process8) to approximate the system behavior and 
+2.an acquisition function to suggest new experiments to run. 
+
+The method is designed to balance the exploration of uncertainty and exploitation of current knowledge in the parameter 
+space. It often outperforms experts or other algorithms in locating the optima and producing accurate surrogate models. 
 
 
 Key Concepts and Terminology
 ============================
+To talk more specifically what BO does, we need to introduce additional terminology. We need to talk about
 
+*surrogate model
+*gaussian process
+*acquisition function
+*multi-objective optimization
 
-Surrogate module
+Surrogate model
 ----------------
+A surrogate model is the method used when the response cannot be easily measured, so a model to easily estimate the response 
+is used instead. Most engineering design problems require experiments and/or simulations to evaluate design objective and 
+constraint functions as a function of design variables. 
 
 
 Gaussian Process (GP)
@@ -37,7 +55,7 @@ function over the GP. Once a new observation is obtained from :math:`\hat{f}`, i
 and the GP is updated.
 
 
-Acquisition Functions
+Acquisition Function
 ---------------------
 The acquisition function is applied to obtain the new sampling point :math:`\bf X_{new}`. It measures the value of evaluating 
 the objective function at :math:`\bf X_{new}`, based on the current posterior distribution over :math:`\hat{f}`. The most 
@@ -59,7 +77,7 @@ Multi-objective optimization involves more than one objective function that are 
 is not a single point but a set of solutions that define the best tradeoff between competing objectives. This is common 
 in engineering problems. For instance, an increase in selectivity of a product would lead to a decrease in the yield in 
 a reaction. In the MOO, the goodness of a solution is determined by the dominance, where :math:`{\bf X_{1}}` dominates 
-:math:`{\bf X_{2}}` when :math:`{\bf X_{1}}`  is no worse than :math:`{\bf X_{2}}`  in all objectives, and :math:`{\\bf X_{1}}` 
+:math:`{\bf X_{2}}` when :math:`{\bf X_{1}}`  is no worse than :math:`{\bf X_{2}}`  in all objectives, and :math:`{\bf X_{1}}` 
 is strictly better than :math:`{\bf X_{2}}` in at least one objective. A Pareto optimal set is the set where all the 
 points of the set are not dominated by each other in that set, and the boundary defined by the response of this set is 
 the Pareto front. 
@@ -73,7 +91,39 @@ optimal in a desired region of the design space.
 
 .. image:: ../_images/bo/weighted_sum.png
 
-An alternative is to use expected hypervolume improvement (EHVI) as the acquisition function. A hypervolume indicator (HV) 
-is used to approximate the Pareto set and EHVI evaluates its EI. In NEXTorch, one can use either weighted sum method or 
-Monte Carlo EHVI (qEHVI) as acquisition function to perform MOO.
+An alternative is to use expected hypervolume improvement (EHVI) as the acquisition function `[1]`_. A hypervolume indicator (HV) 
+is used to approximate the Pareto set and EHVI evaluates its EI. 
 
+Given a Pareto set :math:`S^{*}` and a reference point :math:`r\in{\mathbb{R}}^{M}`, the hypervolume (HV) of :math:`S^{*}` 
+is the :math:`M`-dimensional Lebesgue measure :math:`\lambda_{M}` of the region weakly dominated by :math:`S^{*}` and 
+bounded above by :math:`r`.
+
+.. math::
+
+    HV(S^{*})={\lambda_{M}}(\cup_{p_{i} \in S} \lbrack r, p_{i}\rbrack)
+
+where :math:`p_{i}` is the :math:`i`-th point in the :math:`S^{*}`. Given a new set of points :math:`S^{'}`, the 
+hypervolume improvement (HVI) is define as:
+
+.. math::
+
+    HVI(S^{'},S^{*})=HV(S^{*} \cup S^{'})-HV(S^{*})
+
+.. image:: ../_images/bo/hvi.png
+
+In this regard, for a set of point :math:`\bf X`, the EHVI is the expectation of HVI over the posterior :math:`\hat{f}` 
+and can be expressed as:
+
+.. math::
+
+    EHVI({\bf X})=\mathbb{E} \lbrack HVI(\hat{f}({\bf X}), \hat{f}(S^{*}) \rbrack
+
+
+In NEXTorch, one can use either weighted sum method or Monte Carlo EHVI (qEHVI) as acquisition function to perform MOO.
+
+References
+----------
+`[1]`_ S. Daulton, M. Balandat, and E. Bakshy. Differentiable Expected Hypervolume Improvement for Parallel 
+Multi-Objective Bayesian Optimization. Advances in Neural Information Processing Systems 33, 2020.
+
+.. _[1]:: https://arxiv.org/abs/2006.05078

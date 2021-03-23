@@ -1,8 +1,8 @@
 """
-nextorch.bo
-
 Contains Gaussian Processes (GP) and Bayesian Optimization (BO) methods 
 """
+
+
 import os, sys
 import subprocess
 import numpy as np

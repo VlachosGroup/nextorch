@@ -21,9 +21,10 @@ For ordinal parameters, these values are the ordered discrete values.
 For categorical parameters, we encode the categories with integers from 0 to n_category-1 and then perform continuous relaxation in the encoding space. 
 Since a parameter can be approximated as continuous given a high order discretization, this approach usually works well for problems with high discrete combinations. 
 
-In NEXTorch, a Parameter class stores the range and type of each parameter. A ParameterSpace class consists of all Parameter classes. 
+In NEXTorch, a `Parameter` class stores the range and type of each parameter. A `ParameterSpace` class consists of all Parameter classes. 
 
 .. autosummary::
+    :toctree: parameter
     :nosignatures:
 
     Parameter

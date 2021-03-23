@@ -1,12 +1,10 @@
 """
-nextorch.utils
-
 Utility functions for Bayesian Optimization
-
-
-# experiments are in tensor
-# plot in numpy
-# util functions works for both tensor and numpy
+- PyTorch tensor to numpy array conversion
+- Ordinal, categorical variable encoding/decoding
+- (Inverse) normalization
+- (Inverse) standardization
+- Mesh test points generation
 """
 
 #from nextorch.bo import ParameterSpace

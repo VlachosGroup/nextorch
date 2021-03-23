@@ -1,7 +1,5 @@
 """
-nextorch.io
-
-Handles input and output files
+Handles input and output
 """
 
 import os

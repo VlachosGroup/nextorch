@@ -20,8 +20,9 @@ Welcome to nextorch's documentation!
    user/installation
    user/overview
    user/io
-   user/parameters
+   user/parameter
    user/doe
+   user/botorch
    user/experiment
    user/visualization
    user/examples

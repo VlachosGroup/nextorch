@@ -1,8 +1,10 @@
 """
-nextorch.bo
+Imports Gaussian Processes (GP) and Bayesian Optimization (BO) methods from BoTorch
 
-Contains Gaussian Processes (GP) and Bayesian Optimization (BO) methods 
+Contains all Experiment classes
 """
+
+
 import os, sys
 import subprocess
 import numpy as np

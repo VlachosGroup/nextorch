@@ -1,9 +1,9 @@
 """
-nextorch.plotting
+Creates 1-dimensional, 2-dimensional and 3-dimensional visualizations 
 
-Creates 2-dimensional and 3-dimensional visualizations 
 The plots are rendered using matplotlib as a backend
 """
+
 import os, sys
 import matplotlib.pyplot as plt
 import matplotlib

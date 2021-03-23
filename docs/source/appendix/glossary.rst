@@ -168,7 +168,8 @@ to evaluate, such as integrals.
 
 multi-fidelity
 ^^^^^^^^^^^^^^
- 
+Multi-fidelity enables the fusion of information from a collection of heterogeneous sources of variable accuracy and cost. 
+
 multi-objective optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The method to minimize or maximize multiple objectives. It often involves more than one objective functions that are to 
@@ -176,6 +177,7 @@ be minimized or maximized optimized simultaneously.
 
 multi-task
 ^^^^^^^^^^
+Multiple tasks are solved at the same time, while exploiting commonalities and differences across tasks. 
 
 normalization
 ^^^^^^^^^^^^^
@@ -234,7 +236,7 @@ set of n points.
 
 q-acquisition function
 ^^^^^^^^^^^^^^^^^^^^^^
-An acquisition function used in BoTorch (https://botorch.org/docs/acquisition) where (quasi-) Monte-Carlo sampling are 
+An `acquisition function used in BoTorch`_ where (quasi-) Monte-Carlo sampling are 
 used to approximate the integrals when evaluating the acquisition function. Examples include qEI, qUCB, qPI etc.
 
 random design
@@ -291,3 +293,5 @@ upper confidence bound
 A type of acquisition function, that comprises of the posterior mean plus the posterior standard deviation weighted by 
 a trade-off parameter, :math:`\beta: UCB(x)=\mu_{n}(x)+\beta \sigma_{n}(x)`. The igher the :math:`\beta` value, the 
 higher the amount of exploration.
+
+.. _`acquisition function used in BoTorch`: https://botorch.org/docs/acquisition

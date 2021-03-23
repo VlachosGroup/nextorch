@@ -2,7 +2,7 @@
 Parameter
 ============
 
-.. currentmodule:: nextorch.doe
+.. currentmodule:: nextorch.utils
 
 Parameters and the data associated with them are generally of three types: 
 

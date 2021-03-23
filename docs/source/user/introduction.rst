@@ -67,6 +67,10 @@ These features allow human-in-the-loop design where decision-making on the next 
 
 We believe its ease of use could serve the community including experimentalists with little or no programming background. 
 
+----------------
+
+Reference: 
+--------
 
 `[1]`_ Shields, B. J.; Stevens, J.; Li, J.; Parasram, M.; Damani, F.; Alvarado, J. I. M.; Janey, J. M.; Adams, R. P.; Doyle, A. G. Bayesian Reaction Optimization as a Tool for Chemical Synthesis. Nature 2021, 590, 89–96.
 

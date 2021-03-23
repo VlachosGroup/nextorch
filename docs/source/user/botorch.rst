@@ -1,3 +1,3 @@
 =============================
-BoTorch models and functions
+BoTorch Models and Functions
 =============================

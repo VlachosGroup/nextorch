@@ -28,7 +28,7 @@ A Matern covariance function is typically used as the kernel function:
 
 .. math::
 
-    C_{v}(d)=\sigma^{2} \\frac{2^{1-\upsilon}}{\Gamma(\upsilon)} {(\sqrt{2} \upsilon \frac{d}{\rho})}^{\upsilon} K_{\upsilon} (\sqrt{2} \upsilon \frac{d}{\rho})
+    {C_{v}(d)=\sigma^{2} \frac{2^{1-\upsilon}}{\Gamma(\upsilon)} {(\sqrt{2} \upsilon \frac{d}{\rho})}^{\upsilon} K_{\upsilon} (\sqrt{2} \upsilon \frac{d}{\rho})}
 
 where :math:`d` is the distance between two points, :math:`\\sigma` is the standard deviation, :math:`\\upsilon` and 
 :math:`\\rho` are non-negative parameters, :math:`\\Gamma` represents the gamma function, and :math:`K_{\upsilon}` is 
@@ -39,10 +39,10 @@ and the GP is updated.
 
 Acquisition Functions
 ---------------------
-The acquisition function is applied to obtain the new sampling point :math:`{\\bf X_{new}}`. It measures the value of evaluating 
-the objective function at :math:`{\\bf X_{new}}`, based on the current posterior distribution over :math:`\\hat{f}`. The most 
+The acquisition function is applied to obtain the new sampling point :math:`\\bf X_{new}`. It measures the value of evaluating 
+the objective function at :math:`\\bf X_{new}`, based on the current posterior distribution over :math:`\\hat{f}`. The most 
 commonly used acquisition function is expected improvement (EI). The EI is the expectation taken under the posterior 
-distribution :math:`\\hat{f}` of the improvement of the new observation at :math:`{\\bf X}` over the current best 
+distribution :math:`\\hat{f}` of the improvement of the new observation at :math:`\\bf X` over the current best 
 observation :math:`f^{*}`:
 
 .. math::

@@ -19,6 +19,7 @@ Why we build this?
 
 Machine learning and scientific research communities havae developed several BO (kriging) software tools and most of them have interfaces in Python. 
 We curate a list of open-source BO packages and provide further discussions in our paper. Their documentation pages can be found at:
+
 - Spearmint_
 - GyOpt_
 - GPflowOpt_
@@ -65,13 +66,13 @@ Hence, we build NEXTorch, extending the capabilities of BoTorch, to democratize 
 Why NEXTorch
 =============
 
-NEXTorch is unique for several reasons. 
+NEXTorch is unique for several reasons:
 
-First, it benefits from the modern architecture and a variety of models, functions offered by BoTorch.
+1. NEXTorch benefits from the modern architecture and a variety of models, functions offered by BoTorch.
 
-Second, going beyond BoTorch, NEXTorch provides connections to real-world problems, including automatic parameter scaling, data type conversions, and visualization capabilities. 
+2. NEXTorch provides connections to real-world problems, going beyond BoTorch, including automatic parameter scaling, data type conversions, and visualization capabilities. 
 These features allow human-in-the-loop design where decision-making on the next experiments can be aided by domain knowledge.
 
-Third, NEXTorch is modular in design which makes it easy to extend to other frameworks. It also serves as a library for learning the theory and implementation of BO. 
+3. NEXTorch is modular in design which makes it easy to extend to other frameworks. It also serves as a library for learning the theory and implementation of BO. 
 
 We believe its ease of use could serve the community including experimentalists with little or no programming background. 

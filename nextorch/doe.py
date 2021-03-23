@@ -1,5 +1,6 @@
 """
 Generates initial design of experiment (DOE)
+
 Includes full factorial design, latin hypercube design and random design
 """
 

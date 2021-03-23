@@ -1,10 +1,12 @@
 """
 Utility functions for Bayesian Optimization
+
 - PyTorch tensor to numpy array conversion
 - Ordinal, categorical variable encoding/decoding
 - (Inverse) normalization
 - (Inverse) standardization
 - Mesh test points generation
+
 """
 
 #from nextorch.bo import ParameterSpace

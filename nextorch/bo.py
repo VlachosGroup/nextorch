@@ -1,5 +1,7 @@
 """
-Contains Gaussian Processes (GP) and Bayesian Optimization (BO) methods 
+Imports Gaussian Processes (GP) and Bayesian Optimization (BO) methods from BoTorch
+
+Contains all Experiment classes
 """
 
 

@@ -1,9 +1,4 @@
 
-.vscode/settings.json
-.vscode/settings.json
-.vscode/settings.json
-.vscode/settings.json
-nextorch/__pycache__/utils.cpython-37.pyc
-nextorch/__pycache__/plotting.cpython-37.pyc
-nextorch/__pycache__/parameter.cpython-37.pyc
-nextorch/__pycache__/bo.cpython-37.pyc
+.vscode/
+nextorch/__pycache__/
+nextorch/.vscode/

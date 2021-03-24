@@ -23,8 +23,8 @@ Developers
 Dependencies
 ------------
 
--  Python3
--  `PyTorch`_ >= 3.7: Used for tensor operations with GPU and autograd support
+-  Python3 >= 3.7
+-  `PyTorch`_ >= 1.8: Used for tensor operations with GPU and autograd support
 -  `BoTorch`_ >= 0.4.0: Used for providing Bayesian Optimization framework
 -  `GPyTorch`_ >= 1.4: Used for training Gaussian Processes
 -  `PyDOE2`_: Used for constructing experimental designs

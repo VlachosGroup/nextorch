@@ -23,6 +23,21 @@ Since a parameter can be approximated as continuous given a high order discretiz
 
 In NEXTorch, a `Parameter` class stores the range and type of each parameter. A `ParameterSpace` class consists of all Parameter classes. 
 
+
+Example
+------------
+
+
+# Set the type and range for each parameter
+parameter_1 = Parameter(x_type = 'ordinal', x_range=[140, 200], interval = 5)
+parameter_2 = Parameter(x_type = 'categorical', values=['low', 'medium low', 'medium', 'medium high', 'high'])
+parameter_3 = Parameter(x_type = 'continuous', x_range=[-2, 2])
+parameters = [parameter_1, parameter_2, parameter_3]
+
+# Initialize a ParameterSpace
+parameter_space = ParameterSpace(parameters)
+
+
 .. autosummary::
     :toctree: parameter
     :nosignatures:

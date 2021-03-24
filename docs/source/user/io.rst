@@ -4,7 +4,7 @@ Input and Output
 
 .. currentmodule:: nextorch.io
 
-NEXTorch can read data from CSV or Excel files. It can also output the same format. 
+NEXTorch can read data from CSV or Excel files. It can output the same format. 
 
 IO functions that interfaces with CSV or Excel are built on pandas_. 
 The data are first read in as pandas.DataFrame_. They are then converted to numpy.ndarray_, passed to :code:`Experiment` classes and used for plotting. 
@@ -36,7 +36,7 @@ Convert the output data from a numpy.ndarray_ to a pandas.DataFrame_ and then ex
 
 
 
-Here is a complete list of IO functions in :code:`nextorch.io` module.
+Here is a list of IO functions in :code:`nextorch.io` module.
 
 .. autosummary::
     :nosignatures:

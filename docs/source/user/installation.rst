@@ -11,7 +11,8 @@ applications. It is supported on Linux, Windows and Mac OS X.
 Installing PyTorch, BoTorch and GPyTorch
 ------------------------------------------
 Using `conda` is the recommended method.
-::
+.. code-block::
+
     conda install botorch -c pytorch -c gpytorch
 
 
@@ -23,7 +24,7 @@ Using `pip` is the most straightforward way to install NEXTorch.
    Anaconda on Windows, open the Anaconda Prompt from the start menu).
 
 2. Install NEXTorch by typing the following in the command prompt:
-::
+.. code-block::
 
     pip install nextorch
 
@@ -35,7 +36,7 @@ Installing NEXTorch from source
 ----------------------------------
 If you would prefer to install from source or you are interested in development,
 follow the instructions below.
-::
+.. code-block::
 
     pip install git+https://github.com/VlachosGroup/nextorch.git
 
@@ -43,7 +44,7 @@ follow the instructions below.
 Upgrading NEXTorch using pip
 -------------------------------
 To upgrade to a newer release, use the --upgrade flag:
-::
+.. code-block::
 
     pip install --upgrade nextorch
 
@@ -52,7 +53,7 @@ Running unit tests
 ------------------
 NEXTorch has a suite of unit tests that should be run before committing any code.
 To run the tests, run the following commands in a Python terminal.
-::
+.. code-block::
 
      import nextorch
      nextorch.run_tests()

@@ -22,9 +22,9 @@ Dependencies
 ------------
 
 -  Python3
--  `PyTorch`_: Used for tensor operations with GPU and autograd support
--  `BoTorch`_: Used for providing Bayesian Optimization framework
--  `GPyTorch`_: Used for training Gaussian Processes
+-  `PyTorch`_ >= 3.7: Used for tensor operations with GPU and autograd support
+-  `BoTorch`_ >= 0.4.0: Used for providing Bayesian Optimization framework
+-  `GPyTorch`_ >= 1.4: Used for training Gaussian Processes
 -  `PyDOE2`_: Used for constructing experimental designs
 -  `Numpy`_: Used for vector and matrix operations
 -  `Pandas`_: Used to import data from Excel or CSV files

@@ -33,7 +33,7 @@ dtype = torch.float
 torch.set_default_dtype(dtype)
 
 
-from nextorch.parameter import Parameter, ParameterSpace
+from nextorch.parameter import ParameterSpace
 #%% Type conversion
 
 def np_to_tensor(X: MatrixLike2d) -> Tensor:
@@ -496,7 +496,7 @@ def transform_Y_mesh_2d(X: ArrayLike1d, mesh_size: Optional[int] = 41
     
 
 
-def transform_2D_X(X1: Matrix, X2: Matrix, X_ranges: Matrix
+def transform_X_2d(X1: Matrix, X2: Matrix, X_ranges: Matrix
 ) -> Tuple[Matrix, Matrix]:
     """Transform X1 and X2 in unit scale to real scales for plotting
 

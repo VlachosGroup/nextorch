@@ -29,7 +29,7 @@ Next, an acquisition function gives the new sampling points (i.e., infill points
 At this stage, one could choose to visualize the response surfaces using the surrogate model or the infill points locations in the design space. 
 A new set of data would be collected by evaluating f at :code:`X_new` and used to train :math:`\hat{f}`.
 
-This process is repeated until the accuracy of f ̂ is satisfactory or the optima location :math:`{\bf x^{*}} = \underset{{\bf x} \in A}{\operatorname{argmax}} f({\bf x})` is found.
+This process is repeated until the accuracy of :math:`\hat{f}` is satisfactory or the optima location :math:`{\bf x^{*}} = \underset{{\bf x} \in A}{\operatorname{argmax}} f({\bf x})` is found.
 
 
 NEXTorch Design

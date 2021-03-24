@@ -26,7 +26,7 @@ In NEXTorch, a :code:`Parameter` class stores the range and type of each paramet
 
 .. note::
     The default parameter type is continuous. If all parameters are continuous, it is not required to initialize any :code:`Parameter` or :code:`ParameterSpace` class. 
-    We can skip the :code:`define_space` step and input the data directly into an :code:`Experiment` class.
+    We can skip the :code:`define_space` step and use :code:`input_data` to input the data directly into an :code:`Experiment` class.
 
 Example
 ------------

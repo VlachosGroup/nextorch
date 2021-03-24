@@ -16,6 +16,7 @@ Parity Plots
 
 .. autosummary::
     :nosignatures:
+
     parity
     parity_exp
     parity_with_ci
@@ -27,6 +28,7 @@ Discovery Plots
 
 .. autosummary::
     :nosignatures:
+
     opt_per_trial
     opt_per_trial_exp
 
@@ -36,6 +38,7 @@ Functions in 1-dimension Parameter Space
 
 .. autosummary::
     :nosignatures:
+
     acq_func_1d
     acq_func_1d_exp
     response_1d
@@ -47,6 +50,7 @@ Functions in 2-dimensional Parameter Spaces
 
 .. autosummary::
     :nosignatures:
+
     sampling_2d
     sampling_2d_exp
     response_heatmap
@@ -64,6 +68,7 @@ Functions in 3-dimensional Parameter Spaces
 --------------------------------------------
 .. autosummary::
     :nosignatures:
+
     sampling_3d
     sampling_3d_exp
     response_scatter_exp
@@ -73,6 +78,7 @@ Pareto Front
 -------------------
 .. autosummary::
     :nosignatures:
+    
     pareto_front
     pareto_front_exp
 

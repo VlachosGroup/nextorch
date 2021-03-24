@@ -7,7 +7,7 @@ Data Type and Preprocessing
 
 Data Types 
 ------------
-Python list_, numpy.ndarray_, and torch.tensor_(PyTorch tensors) are the base data types. 
+Python list_, numpy.ndarray_, and torch.tensor_ (PyTorch tensors) are the base data types. 
 The :code:`Experiment` class can handle data saved in any base type.
 
 We use several customized types to specify the dimensionality and the base type of the data.
@@ -17,8 +17,8 @@ Customized Type           Base Type
 =======================  ===================================================== 
 :code:`Array`             1D numpy.ndarray_
 :code:`Matrix`            2D numpy.ndarray_
-:code: `ArrayLike1d`      1D numpy.ndarray_, list_, or torch.tensor_
-:code: `MatrixLike2d`     2D numpy.ndarray_, list_, or torch.tensor_
+:code:`ArrayLike1d`      1D numpy.ndarray_, list_, or torch.tensor_
+:code:`MatrixLike2d`     2D numpy.ndarray_, list_, or torch.tensor_
 =======================  ===================================================== 
 
 Usually, users provide data in numpy.ndarray_ or list_. NEXTorch converts them to torch.tensor_ and then pass them between BoTorch functions. 
@@ -52,7 +52,7 @@ This step is often needed for :code:`X`.
 
 (Inverse) Standardization
 --------------------------
-Convert arrays or matrics from a real scale into a standardized scale with zero mean and a unit variance in each dimension, vice versa.
+Convert arrays or matrics from a real scale into a standardized scale with a zero mean and unit variance in each dimension, vice versa.
 This step is often needed for :code:`Y`. 
 
 .. autosummary::
@@ -71,7 +71,7 @@ Generate :code:`X` points as in a mesh grid for visualization or testing purpose
 
     create_X_mesh_2d
     transform_Y_mesh_2d
-    transform_2D_X
+    transform_X_2d
     prepare_full_X_unit
     prepare_full_X_real
     get_baseline_unit
@@ -88,7 +88,7 @@ We can do it with :code:`real_to_encode_X`. These encodings are used to train BO
 
 To convert the unit-scale encodings back to the original variable values, we can do it in two steps: using :code:`unit_to_encode_X` and :code:`encode_to_real_X`.
 
-A :code: `ParameterSpace` class can also be the input to these functions.
+A :code:`ParameterSpace` class can also be the input to these functions.
 
 .. autosummary::
     :nosignatures:

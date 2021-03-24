@@ -5,7 +5,7 @@ Next EXperiment toolkit implementation in PyTorch/BoTorch (NEXTorch)
 
 .. image:: docs/source/logos/nextorch_logo_web.svg
    :target: https://vlachosgroup.github.io/nextorch/
-   :align: left
+   :align: center
 
 Documentation
 -------------

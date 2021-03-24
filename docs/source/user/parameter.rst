@@ -25,8 +25,8 @@ Since a parameter can be approximated as continuous given a high order discretiz
 In NEXTorch, a :code:`Parameter` class stores the range and type of each parameter. A :code:`ParameterSpace` class consists of all Parameter classes. 
 
 .. note::
-    The default parameter type is continuous. If all parameters are continuous, it is not required to initialize any :code:`Parameter` or :code:`ParameterSpace` class. 
-    We can skip the :code:`define_space` step and use :code:`input_data` to input the data directly into an :code:`Experiment` class.
+    The default parameter type is continuous. If all parameters are continuous, it is not required to initialize any :code:`Parameter` or :code:`ParameterSpace` object. 
+    We can skip the :code:`define_space` step and use :code:`input_data` to input the data directly into an :code:`Experiment` object.
 
 Example
 ------------
@@ -40,7 +40,7 @@ Set the type and range for each parameter. Input their type, range or interval.
     parameter_2 = parameter.Parameter(x_type = 'categorical', values=['low', 'medium low', 'medium', 'medium high', 'high'])
     parameter_3 = parameter.Parameter(x_type = 'continuous', x_range=[-2, 2])
 
-Input a list of :code:`Parameter` into a :code:`ParameterSpace` class.
+Input a list of :code:`Parameter` into a :code:`ParameterSpace` object.
 
 .. code-block:: python
     
@@ -49,7 +49,7 @@ Input a list of :code:`Parameter` into a :code:`ParameterSpace` class.
     parameters = [parameter_1, parameter_2, parameter_3]
     parameter_space = parameter.ParameterSpace(parameters)
 
-Set the parameter space for an :code:`Experiment` class.
+Set the parameter space for an :code:`Experiment` object.
 
 .. code-block:: python
     

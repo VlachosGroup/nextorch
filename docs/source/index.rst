@@ -41,6 +41,7 @@ Welcome to nextorch's documentation!
 
    api/io
    api/doe
+   api/parameter
    api/utils
    api/bo
    api/plotting

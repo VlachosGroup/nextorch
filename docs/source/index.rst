@@ -48,6 +48,7 @@ Welcome to nextorch's documentation!
    api/plotting
    
 .. toctree::
+   :titlesonly:
    :caption: Appendix
 
    appendix/glossary

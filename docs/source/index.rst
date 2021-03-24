@@ -10,7 +10,7 @@ Welcome to nextorch's documentation!
    :maxdepth: 1
    :caption: Getting Started
 
-   readme_copy
+   ../../README
 
 .. toctree::
    :maxdepth: 1

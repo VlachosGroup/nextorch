@@ -96,7 +96,7 @@ optimal in a desired region of the design space.
 Expected Hypervolume Improvement (EHVI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An alternative is to use expected hypervolume improvement (EHVI) as the acquisition function `[1]`_. A hypervolume indicator (HV) 
+An alternative is to use expected hypervolume improvement (EHVI) as the acquisition function. A hypervolume indicator (HV) 
 is used to approximate the Pareto set and EHVI evaluates its EI. 
 
 Given a Pareto set :math:`S^{*}` and a reference point :math:`r\in{\mathbb{R}}^{M}`, the hypervolume (HV) of :math:`S^{*}` 
@@ -128,9 +128,40 @@ In NEXTorch, one can use either weighted sum method or Monte Carlo EHVI (qEHVI) 
 
 -----------------------------------
 
+
+Key Papers and Books
+============================
+
+Gaussian Processes
+------------------
+`[1]`_ Rasmussen, C. E. Gaussian Processes in Machine Learning; MIT Press, 2006.
+
+Kriging 
+----------------------------
+`[2]`_ Jones, D. R.; Schonlau, M.; W. J. Welch. Efficient Global Optimization of Expensive Black-Box Functions," , Vol. 13, No. 4, Pp. 455-492, 1998. J. Glob. Optim. 1998, 13, 455–492.
+`[3]`_ Jones, D. R. A Taxonomy of Global Optimization Methods Based on Response Surfaces. J. Glob. Optim. 2001, 21, 345–383.
+`[4]`_ Forrester, A. I. J.; Sbester, A.; Keane, A. J. Engineering Design via Surrogate Modelling; John Wiley & Sons, Ltd: Chichester, UK, 2008.
+
+BO Tutorial and Reviews
+----------------------------
+
+
+
+
+Multi-objective Optimization (MOO)
+------------------------------------
+
+`[1]`_ (1) Daulton, S.; Balandat, M.; Bakshy, E. Differentiable Expected Hypervolume Improvement for Parallel Multi-Objective Bayesian Optimization. 2020.
+
+
+BoTorch Papers
+----------------------
+
+(1) Balandat, M.; Karrer, B.; Jiang, D. R.; Daulton, S.; Letham, B.; Wilson, A. G.; Bakshy, E. BoTorch: Programmable Bayesian Optimization in PyTorch. 2019.
+
+
 References
 ----------
-`[1]`_ Daulton S.; Balandat M.; Bakshy E. Differentiable Expected Hypervolume Improvement for Parallel 
-Multi-Objective Bayesian Optimization. Advances in Neural Information Processing Systems 33, 2020.
+
 
 .. _[1]: https://arxiv.org/abs/2006.05078

@@ -5,7 +5,7 @@ Overview
 .. contents:: Table of Contents
     :depth: 2
 
-    
+
 Active Learning Framework
 --------------------------
 
@@ -16,21 +16,19 @@ The objective function can be complex computer simulations or real-world experim
 
 
 :math:`{\bf X}` denotes the input variables (parameters). Here, :math:`{\bf X= x_{1},x_{2},x_{3},…x_{d}}`; 
-each of :math:`{\bf x_{i}}` is a vector :math:`{\bf x_{i}} = (x_{1i},x_{2i},…,x_{ni} )^T`
+each of :math:`{\bf x_{i}}` is a vector :math:`{\bf x_{i}} = (x_{1i},x_{2i},…,x_{ni} )^T`. 
 :math:`n` is the number of sample points, and :math:`d` is the dimensionality of the input. 
 Each parameter is bounded, and the resulting multidimensional space is called a design space :math:`A`, i.e., :math:`{\bf X} \in A \in \mathbb{R}^{d}`. 
 
 The outputs of f, :math:`{\bf Y}` (responses), are usually expensive, time-consuming, or otherwise difficult to measure.
 
-Initially, a set of initial sampling :code:`X_init` is generated from a DOE. These sampling points are passed to f for evaluation. 
-
+Initially, a set of initial sampling :code:`X_init` is generated from a DOE. These sampling points are passed to :math:`f` for evaluation. 
 One collects the data :math:`{\bf D= (X,Y)}` and use it to train a cheap-to-evaluate surrogate model :math:`\hat{f}`(a Gaussian process). 
 
 Next, an acquisition function gives the new sampling points (i.e., infill points, :code:`X_new`) based on their usefulness for achieving the optimization goal. 
-
 At this stage, one could choose to visualize the response surfaces using the surrogate model or the infill points locations in the design space. 
-
 A new set of data would be collected by evaluating f at X_new and used to train :math:`\hat{f}`.
+
 This process is repeated until the accuracy of f ̂ is satisfactory or the optima location :math:`{\bf x^{*}} = \underset{{\bf x} \in A}{\operatorname{argmax}} f({\bf x})` is found.
 
 

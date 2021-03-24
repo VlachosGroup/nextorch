@@ -35,7 +35,7 @@ the range and name of them, and their conditions.
 
 Additionally, we can specify more conditions:
 
-..code-block:: python
+.. code-block:: python
 
     exp.input_data(X_real=X_real, Y_real=Y_real, X_ranges=X_ranges, X_names=X_names, standardized=True)
 
@@ -135,6 +135,8 @@ the output location of the simulation, and the selected column in the output fil
     To use :code:`COMSOLExperiment` and :code:`COMSOLMOOExperiment` class, you need to have or purchase your own valid 
     license for COMSOL Multiphysics\ |reg|.
 
+Run trials and get optimal
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 For all of discussed classes, :code:`run_trials_auto` can automatically perform the optimization.
 
 .. code-block:: python

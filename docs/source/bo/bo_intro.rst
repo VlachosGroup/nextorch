@@ -88,7 +88,7 @@ into a new objective :math:`{\bf Y_{mod}}` by multiplying each objective with a 
 populate the Pareto optimal. This method is simple but sometimes difficult to select proper set of weights to obtain the 
 optimal in a desired region of the design space.
 
-.. image:: ../_images/bo/weighted_sum.png
+.. image:: ../_images/bo/weighted_sum.svg
 
 An alternative is to use expected hypervolume improvement (EHVI) as the acquisition function `[1]`_. A hypervolume indicator (HV) 
 is used to approximate the Pareto set and EHVI evaluates its EI. 
@@ -108,7 +108,7 @@ hypervolume improvement (HVI) is define as:
 
     HVI(S^{'},S^{*})=HV(S^{*} \cup S^{'})-HV(S^{*})
 
-.. image:: ../_images/bo/hvi.png
+.. image:: ../_images/bo/hvi.svg
 
 In this regard, for a set of point :math:`\bf X`, the EHVI is the expectation of HVI over the posterior :math:`\hat{f}` 
 and can be expressed as:

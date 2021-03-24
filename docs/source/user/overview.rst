@@ -11,18 +11,18 @@ The objective function can be complex computer simulations or real-world experim
 .. image:: ../_images/user/active_learning_framework.svg
 
 
-:math:`\mu({\bf X})` denotes the input variables (parameters). Here, :math:`{\bf X= x_{1},x_{2},x_{3},…x_{d}}`; 
+:math:`{\bf X}` denotes the input variables (parameters). Here, :math:`{\bf X= x_{1},x_{2},x_{3},…x_{d}}`; 
 each of :math:`{\bf x_{i}}` is a vector :math:`{\bf x_{i}} = (x_{1i},x_{2i},…,x_{ni} )^T`
 :math:`n` is the number of sample points, and :math:`d` is the dimensionality of the input. 
-Each parameter is bounded, and the resulting multidimensional space is called a design space A, i.e., :math:`{\bf X} \in A \in \mathbb{R}^{d}`. 
+Each parameter is bounded, and the resulting multidimensional space is called a design space :math:`A`, i.e., :math:`{\bf X} \in A \in \mathbb{R}^{d}`. 
 
-The outputs of f, :math:`\mu({\bf Y})` (responses), are usually expensive, time-consuming, or otherwise difficult to measure.
+The outputs of f, :math:`{\bf Y}` (responses), are usually expensive, time-consuming, or otherwise difficult to measure.
 
-Initially, a set of initial sampling X_init is generated from a DOE. These sampling points are passed to f for evaluation. 
+Initially, a set of initial sampling :code:`X_init` is generated from a DOE. These sampling points are passed to f for evaluation. 
 
 One collects the data :math:`{\bf D= (X,Y)}` and use it to train a cheap-to-evaluate surrogate model :math:`\hat{f}`(a Gaussian process). 
 
-Next, an acquisition function gives the new sampling points (i.e., infill points, X_new) based on their usefulness for achieving the optimization goal. 
+Next, an acquisition function gives the new sampling points (i.e., infill points, :code:`X_new`) based on their usefulness for achieving the optimization goal. 
 
 At this stage, one could choose to visualize the response surfaces using the surrogate model or the infill points locations in the design space. 
 
@@ -62,10 +62,10 @@ BO Implementation Step by Step
 
 The major steps of implementing BO in NEXTorch can be summarized as following:
 
-1. Import `nextorch` and other packages
+1. Import :code:`nextorch` and other packages
 2. Define the objective function and the design space
 3. Define the initial sampling plan
-4. Initialize an `Experiment` object
+4. Initialize an :code:`Experiment` object
 5. Run optimization trials
 6. Visualize the model reponses
 7. Export the optimum

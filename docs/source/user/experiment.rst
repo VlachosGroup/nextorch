@@ -2,7 +2,7 @@
 Experiment
 ===================
 
-.. currentmodule:: nextorch.doe
+.. currentmodule:: nextorch.bo
 
 In NEXTorch, We use :code:`Experiment` objects to store the data and the setting of the optimization loop. We integrate 
 most acquisition functions and GP models from the upstream BoTorch with :code:`Experiment` objects. Experiment objects 
@@ -14,7 +14,10 @@ and :code:`COMSOLMOOExperiment` are provided to perform automatic optimization b
 
 Example
 ------------
-Initialize a :code:`Experiment` object with :code:`input_data` to specifiy the inputs of parameters and response, 
+
+:code:`Experiment` class
+^^^^^^^^^^^^^^^^^^^^^^^^
+Initialize a :code:`Experiment` object with :code:`input_data` to specify the inputs of parameters and response, 
 the range and name of them, and their conditions.
 
 .. code-block:: python
@@ -27,11 +30,14 @@ the range and name of them, and their conditions.
     X_real = np.array([[1.0, 1.0, 1.0], [5.0, 5.0, 5.0], [25.0, 25.0, 25.0]])
     Y_real = np.array([[0.5], [0.2], [0.7]])
 
-    exp_1 = bo.Experiment("Experiment")
-    exp_1.input_data(X_real=X_real, Y_real=Y_real)
-    exp_1.input_data(X_real=X_real, Y_real=Y_real, X_ranges=X_ranges)
-    exp_1.input_data(X_real=X_real, Y_real=Y_real, X_ranges=X_ranges, X_names=X_names)
-    exp_1.input_data(X_real=X_real, Y_real=Y_real, X_ranges=X_ranges, X_names=X_names, standardized=True)
+    exp = bo.Experiment("Experiment")
+    exp.input_data(X_real=X_real, Y_real=Y_real)
+
+Additionally, we can specify more conditions:
+
+..code-block:: python
+
+    exp.input_data(X_real=X_real, Y_real=Y_real, X_ranges=X_ranges, X_names=X_names, standardized=True)
 
 .. note::
 
@@ -64,23 +70,30 @@ Set the optimization conditions using :code:`set_optim_specs`
 
     objective_func = simple_1d
 
-    exp_1.set_optim_specs(objective_func=objective_func)
-    exp_1.set_optim_specs(objective_func=objective_func, maximize=False)
+    exp.set_optim_specs(objective_func=objective_func)
 
 .. note::
 
     :code:`set_optim_specs` by default maximizing the objective function. To minimize, set :code:`maximize` to :code:`False`.
 
+    .. code-block:: python
+
+        exp.set_optim_specs(objective_func=objective_func, maximize=False)
+
+:code:`WeightedMOOExperiment` class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In :code:`WeightedMOOExperiment`, an additional :code:`weights` for different objectives needs to be specify in :code:`set_optim_specs`.
 
 .. code-block:: python
 
     weights_obj = np.linspace(0, 1, 21)
 
-    exp_2 = bo.WeightedMOOExperiment("Weighted Experiment")
-    exp_2.input_data(X_real=X_real, Y_real=Y_real, X_ranges=X_ranges, X_names=X_names)
-    exp_2.set_optim_specs(objective_func=objective_func, maximize=True, weights=weights_obj)
+    exp_weighted = bo.WeightedMOOExperiment("Weighted Experiment")
+    exp_weighted.input_data(X_real=X_real, Y_real=Y_real, X_ranges=X_ranges, X_names=X_names)
+    exp_weighted.set_optim_specs(objective_func=objective_func, maximize=True, weights=weights_obj)
 
+:code:`EHVIMOOExperiment` class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 On the other hand, we can use an :code:`EHVIMOOExperiment` object to perform optimization using expected hypervolume 
 improvement as aquisition funciton. It requires all key components as :code:`Experiment`. Additionally, :code:`ref_point` 
 is required for :code:`set_ref_point` function.
@@ -89,10 +102,10 @@ is required for :code:`set_ref_point` function.
 
     ref_point = [10.0, 10.0]
 
-    exp_3 = bo.EHVIMOOExperiment("MOO Experiment")
-    exp_3.input_data(X_real=X_real, Y_real=Y_real, X_ranges=X_ranges, X_names=X_names)
-    exp_3.set_ref_point(ref_point)
-    exp_3.set_optim_specs(objective_func=objective_func, maximize=True)
+    exp_ehvi = bo.EHVIMOOExperiment("MOO Experiment")
+    exp_ehvi.input_data(X_real=X_real, Y_real=Y_real, X_ranges=X_ranges, X_names=X_names)
+    exp_ehvi.set_ref_point(ref_point)
+    exp_ehvi.set_optim_specs(objective_func=objective_func, maximize=True)
 
 .. note::
 
@@ -100,6 +113,8 @@ is required for :code:`set_ref_point` function.
     the lower bound is the minimum acceptable value of interest for each objective. It would be helpful if the user 
     know the rough values using domain knowledge prior to optimization. 
 
+:code:`COMSOLExperiment` class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The :code:`COMSOLExperiment` and :code:`COMSOLMOOExperiment` are designed for the integration with COMSOL Multiphysics\ |reg|.
 It requires all key components as :code:`Experiment`. Additionally, the :code:`X_names` and :code:`X_units` are required. 
 Instead of specifying objective function, the optimized file name,the installed location of COMSOL Multiphysics\ |reg|,  
@@ -111,9 +126,9 @@ the output location of the simulation, and the selected column in the output fil
     comsol_location =  "~/comsol54/multiphysics/bin/comsol" 
     output_file = "simulation_result.csv"
 
-    exp_4 = bo.COMSOLExperiment("COMSOL Experiment")
-    exp_4.input_data(X_real=X_real, Y_real=Y_real, X_ranges=X_ranges, X_names=X_names, X_units=X_units)
-    exp_4.set_optim_specs(file_name, comsol_location, output_file, comsol_output_col=2, maximize=True)
+    exp_comsol = bo.COMSOLExperiment("COMSOL Experiment")
+    exp_comsol.input_data(X_real=X_real, Y_real=Y_real, X_ranges=X_ranges, X_names=X_names, X_units=X_units)
+    exp_comsol.set_optim_specs(file_name, comsol_location, output_file, comsol_output_col=2, maximize=True)
 
 .. note::
 
@@ -126,10 +141,10 @@ For all of discussed classes, :code:`run_trials_auto` can automatically perform 
 
     n_trials=30
 
-    exp_1.run_trials_auto(n_trials=n_trials)
-    exp_2.run_trials_auto(n_trials=n_trials, acq_func_name='EI')
-    exp_3.run_trials_auto(n_trials=n_trials)
-    exp_4.run_trials_auto(n_trials=n_trials)
+    exp.run_trials_auto(n_trials=n_trials)
+    exp_weighted.run_trials_auto(n_trials=n_trials, acq_func_name='EI')
+    exp_ehvi.run_trials_auto(n_trials=n_trials)
+    exp_comsol.run_trials_auto(n_trials=n_trials)
 
 .. note::
 
@@ -139,7 +154,7 @@ Get the final optimal using :code:`get_optim` for all classes
 
 .. code-block:: python
 
-    y_opt_1, X_opt_1, index_opt_1 = exp_1.get_optim()
+    y_opt, X_opt, index_opt = exp.get_optim()
 
 For more details, see :code:`nextorch.bo`.
 

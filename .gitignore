@@ -2,3 +2,4 @@
 .vscode/
 nextorch/__pycache__/
 nextorch/.vscode/
+examples/PFR/__pycache__/

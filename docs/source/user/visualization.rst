@@ -2,6 +2,9 @@
 Visualization
 ===============
 
+.. contents:: Table of Contents
+    :depth: 2
+    
 .. currentmodule:: nextorch.plotting
 
 NEXTorch offers a variety of visualization functions in :code:`nextorch.plotting` module.
@@ -78,7 +81,7 @@ Pareto Front
 -------------------
 .. autosummary::
     :nosignatures:
-    
+
     pareto_front
     pareto_front_exp
 

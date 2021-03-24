@@ -2,6 +2,9 @@
 Input and Output 
 ==================
 
+.. contents:: Table of Contents
+    :depth: 2
+    
 .. currentmodule:: nextorch.io
 
 NEXTorch can read data from CSV or Excel files. It can output the same format. 

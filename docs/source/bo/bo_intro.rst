@@ -81,6 +81,9 @@ is strictly better than :math:`{\bf X_{2}}` in at least one objective. A Pareto 
 points of the set are not dominated by each other in that set, and the boundary defined by the response of this set is 
 the Pareto front. 
 
+Weighted Sum Method
+^^^^^^^^^^^^^^^^^^^^
+
 One classic method to perform MOO is the weighted sum method, which scalarizes a set of objectives :math:`\lbrace {\bf Y_{1}},{\bf Y_{2}},...{\bf Y_{i}},...{\bf Y_{M}}\rbrace` 
 into a new objective :math:`{\bf Y_{mod}}` by multiplying each objective with a set of user-defined weights 
 :math:`\lbrace w_{1},w_{2},...w_{i},...w_{M}\rbrace`, simplifying the MOO into a single-objective optimization, where 
@@ -89,6 +92,9 @@ populate the Pareto optimal. This method is simple but sometimes difficult to se
 optimal in a desired region of the design space.
 
 .. image:: ../_images/bo/weighted_sum.svg
+
+Expected Hypervolume Improvement (EHVI)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 An alternative is to use expected hypervolume improvement (EHVI) as the acquisition function `[1]`_. A hypervolume indicator (HV) 
 is used to approximate the Pareto set and EHVI evaluates its EI. 

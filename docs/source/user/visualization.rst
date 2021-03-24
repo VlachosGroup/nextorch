@@ -2,9 +2,6 @@
 Visualization
 ===============
 
-.. contents:: Table of Contents
-    :depth: 2
-    
 .. currentmodule:: nextorch.plotting
 
 NEXTorch offers a variety of visualization functions in :code:`nextorch.plotting` module.

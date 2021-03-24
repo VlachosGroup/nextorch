@@ -48,7 +48,6 @@ Welcome to nextorch's documentation!
    api/plotting
    
 .. toctree::
-   :maxdepth: 0
    :caption: Appendix
 
    appendix/glossary

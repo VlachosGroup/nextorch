@@ -2,9 +2,6 @@
 Parameter
 ============
 
-.. contents:: Table of Contents
-    :depth: 2
-    
 .. currentmodule:: nextorch.parameter
 
 Parameters and the data associated with them are generally of three types: 

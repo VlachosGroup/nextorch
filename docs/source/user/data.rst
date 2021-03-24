@@ -2,9 +2,6 @@
 Data Type and Preprocessing
 =============================
 
-.. contents:: Table of Contents
-    :depth: 2
-    
 .. currentmodule:: nextorch.utils
 
 

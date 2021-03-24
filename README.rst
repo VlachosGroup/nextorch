@@ -3,7 +3,7 @@ NEXTorch
 =========
 Next EXperiment toolkit implementation in PyTorch/BoTorch (NEXTorch)
 
-.. image:: ../docs/source/logos/nextorch_logo_1.png
+.. image:: docs/source/logos/nextorch_logo_1.png
    :target: https://vlachosgroup.github.io/nextorch/
    :align: center
 

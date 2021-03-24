@@ -13,8 +13,9 @@ These examples illustrate the main features and applications of the NEXTorch. Sp
   Two different ways of performing multi-objective optimization are employed to optimize the reaction conditions and design the 
   reactors.
 
+Basic API Usage
+---------------
 .. nbgallery::
-    :caption: Basic API Usage
     :name: basic-api-usage
     :glob:
 
@@ -22,18 +23,20 @@ These examples illustrate the main features and applications of the NEXTorch. Sp
     ../examples/02_sin_1d
     ../examples/10_PFR_mixed_type_inputs
 
+Applications in Reaction Engineering
+------------------------------------
 .. nbgallery::
-    :caption: Applications in Reaction Engineering
     :name: app-in-react-eng
     :glob:
 
     ../examples/03_LH_mechanism
     ../examples/04_NDC_catalyst
     ../examples/05_PFR_yield
-    ../examples/08_stub_tuner
+    ../examples/08_Stub_tuner
 
+Applications in Multi-Objective Optimization
+--------------------------------------------
 .. nbgallery::
-    :caption: Applications in Multi-Objective Optimization
     :name: app-in-moo
     :glob:
 

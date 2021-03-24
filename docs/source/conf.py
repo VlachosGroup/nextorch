@@ -130,5 +130,9 @@ nbsphinx_thumbnails = {
     'examples/04_NDC_catalyst': 'examples/_images/04.png',
     'examples/05_PFR_yield': 'examples/_images/05.png',
     'examples/06_ellipse_MOO': 'examples/_images/06.png',
-    'examples/07_PFR_MOO': 'examples/_images/07.png'
+    'examples/07_PFR_MOO': 'examples/_images/07.png',
+    'examples/08_Stub_tuner': 'examples/_images/08.png',
+    'examples/09_Stub_tuner_MOO': 'examples/_images/09.png',
+    'examples/10_PFR_mixed_type_inputs': 'examples/_images/10.png',
+    'examples/11_PFR_EHVI_MOO': 'examples/_images/11.png'
 }

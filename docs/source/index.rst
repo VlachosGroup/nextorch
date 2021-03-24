@@ -10,7 +10,7 @@ Welcome to nextorch's documentation!
    :maxdepth: 1
    :caption: Getting Started
 
-   includme
+   includeme
 
 .. toctree::
    :maxdepth: 1

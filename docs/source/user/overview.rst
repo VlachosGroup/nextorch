@@ -2,6 +2,10 @@
 Overview
 ===============
 
+.. contents:: Table of Contents
+    :depth: 2
+
+    
 Active Learning Framework
 --------------------------
 

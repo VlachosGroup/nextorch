@@ -8,7 +8,7 @@ Data Type and Preprocessing
 Data Types 
 ------------
 Python list_, numpy.ndarray_, and torch.tensor_ (PyTorch tensors) are the base data types. 
-The :code:`Experiment` class can handle data saved in any base type.
+The :code:`Experiment` class can handle data saved in any of these types.
 
 We use several customized types to specify the dimensionality and the base type of the data.
 
@@ -38,7 +38,7 @@ Type Conversion
 (Inverse) Normalization
 --------------------------
 Convert arrays or matrics from a real scale into a unit scale [0, 1] in each dimension, vice versa. 
-This step is often needed for :code:`X`. 
+This step is often needed for :code:`X` before modeling training. 
 
 .. autosummary::
     :nosignatures:
@@ -53,7 +53,7 @@ This step is often needed for :code:`X`.
 (Inverse) Standardization
 --------------------------
 Convert arrays or matrics from a real scale into a standardized scale with a zero mean and unit variance in each dimension, vice versa.
-This step is often needed for :code:`Y`. 
+This step is often needed for :code:`Y` before modeling training. 
 
 .. autosummary::
     :nosignatures:
@@ -88,7 +88,7 @@ We can do it with :code:`real_to_encode_X`. These encodings are used to train BO
 
 To convert the unit-scale encodings back to the original variable values, we can do it in two steps: using :code:`unit_to_encode_X` and :code:`encode_to_real_X`.
 
-A :code:`ParameterSpace` class can also be the input to these functions.
+A :code:`ParameterSpace` object can also be the input to these functions.
 
 .. autosummary::
     :nosignatures:

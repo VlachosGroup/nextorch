@@ -15,7 +15,7 @@ BO, a popular active learning framework, refers to a suite of techniques for glo
 
 
 
-Prior works
+Prior Works
 ===============
 
 Machine learning and scientific research communities have developed several BO (kriging) software tools and most of them have interfaces in Python. 
@@ -42,7 +42,7 @@ BoTorch stands out since it naturally supports parallel optimization, Monte Carl
 The PyTorch backend also makes it suitable for easy experimentation and fast prototyping. 
 
 
-Why we build this?
+Why We Build This?
 ====================
 
 However, most tools are designed for AI researchers or software engineers, often requiring a steep learning curve. The workflow can also be less transparent to end-users. 
@@ -57,7 +57,7 @@ From a practical perspective, we believe a BO tool should be scalable, flexible,
 Hence, we build NEXTorch, extending the capabilities of BoTorch, to democratize the use of BO in chemical sciences. 
 
 
-Why NEXTorch
+Why NEXTorch?
 =============
 
 NEXTorch is unique for several reasons:
@@ -73,8 +73,8 @@ We believe its ease of use could serve the community including experimentalists 
 
 ----------------
 
-Reference: 
---------
+Reference
+----------
 
 `[1]`_ Shields, B. J.; Stevens, J.; Li, J.; Parasram, M.; Damani, F.; Alvarado, J. I. M.; Janey, J. M.; Adams, R. P.; Doyle, A. G. Bayesian Reaction Optimization as a Tool for Chemical Synthesis. Nature 2021, 590, 89–96.
 

@@ -29,8 +29,9 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.optim.fit import fit_gpytorch_torch
 
 import nextorch.utils as ut
-from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d, Parameter, ParameterSpace
+from nextorch.utils import Array, Matrix, ArrayLike1d, MatrixLike2d 
 from nextorch.utils import tensor_to_np, np_to_tensor
+from nextorch.parameter import Parameter, ParameterSpace
 
 # Dictionary for compatiable acqucision functions
 acq_dict = {'EI': ExpectedImprovement, 

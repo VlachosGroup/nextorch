@@ -120,6 +120,7 @@ and can be expressed as:
 
 In NEXTorch, one can use either weighted sum method or Monte Carlo EHVI (qEHVI) as acquisition function to perform MOO.
 
+-----------------------------------
 References
 ----------
 `[1]`_ Daulton S.; Balandat M.; Bakshy E. Differentiable Expected Hypervolume Improvement for Parallel 

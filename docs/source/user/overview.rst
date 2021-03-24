@@ -27,7 +27,7 @@ One collects the data :math:`{\bf D= (X,Y)}` and use it to train a cheap-to-eval
 
 Next, an acquisition function gives the new sampling points (i.e., infill points, :code:`X_new`) based on their usefulness for achieving the optimization goal. 
 At this stage, one could choose to visualize the response surfaces using the surrogate model or the infill points locations in the design space. 
-A new set of data would be collected by evaluating f at X_new and used to train :math:`\hat{f}`.
+A new set of data would be collected by evaluating f at :code:`X_new` and used to train :math:`\hat{f}`.
 
 This process is repeated until the accuracy of f ̂ is satisfactory or the optima location :math:`{\bf x^{*}} = \underset{{\bf x} \in A}{\operatorname{argmax}} f({\bf x})` is found.
 
@@ -41,7 +41,7 @@ NEXTorch Design
 As a software package, NEXTorch is structured in a similar way to the active learning framework. 
 Initially, users are left to identify the parameters and objectives and frame the optimization problems they work with. 
 The key information required includes the ranges and types (categorical, ordinal, continuous, or mixed) of each parameter. 
-It would also be helpful to know the sensitivity of parameters by performing exploratory data analysis (such as PCA or random forest).
+It would also be helpful to know the sensitivity of parameters by performing exploratory data analysis (such as PCA_ or `random forest`_).
 
 Depending on the availability of the objective function, NEXTorch supports two types of optimization loop: 
 
@@ -49,7 +49,7 @@ Depending on the availability of the objective function, NEXTorch supports two t
    often in the case of computer simulations
 2. human-in-the-loop optimization, where the objective function is unknown, often in the case of laboratory experiments. 
 
-We call the action of generating data from the objective function an “experiment,” which is also the name of the core class in NEXTorch. 
+We call the action of generating data from the objective function an :code:`Experiment`, which is also the name of the core class in NEXTorch. 
 
 In (1), data are passed through the loop, and experiments are evaluated at the new trials suggested by the acquisition function automatically. 
 
@@ -64,7 +64,7 @@ BO Implementation Step by Step
 
 The major steps of implementing BO in NEXTorch can be summarized as following:
 
-1. Import :code:`nextorch` and other packages
+1. Import nextorch and other packages
 2. Define the objective function and the design space
 3. Define the initial sampling plan
 4. Initialize an :code:`Experiment` object

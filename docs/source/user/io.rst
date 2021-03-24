@@ -2,12 +2,12 @@
 Input and Output 
 ==================
 
+.. currentmodule:: nextorch.io
+
 NEXTorch can read data from CSV or Excel files. It can also output the same format. 
 
 IO functions that interfaces with CSV or Excel are built on pandas_. 
 The data are first read in as pandas.DataFrame_. They are then converted to numpy.ndarray_, passed to :code:`Experiment` classes and used for plotting. 
-Data conversion between numpy.ndarray_ and torch.tensor_ (PyTorch tensors) are handled automatically insided :code:`Experiment` classes.
-
 
 Examples
 ---------
@@ -25,7 +25,7 @@ Read the data from a CSV file.
 
 
 
-Convert the output data from a numpy.ndarray_ to a pandas.DataFrame_ and then export it to excel.
+Convert the output data from a numpy.ndarray_ to a pandas.DataFrame_ and then export it to a CSV file.
 
 .. code-block:: python
 
@@ -35,7 +35,20 @@ Convert the output data from a numpy.ndarray_ to a pandas.DataFrame_ and then ex
     data.to_csv('test_data.csv')
 
 
+
+Here is a complete list of IO functions in :code:`nextorch.io` module.
+
+.. autosummary::
+    :nosignatures:
+
+    np_to_dataframe
+    read_csv
+    read_excel
+    split_X_y
+
 .. _pandas: https://pandas.pydata.org/
 .. _pandas.DataFrame: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
 .. _numpy.ndarray: https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html
-.. _torch.tensor: https://pytorch.org/docs/stable/tensors.html
+
+
+

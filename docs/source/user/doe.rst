@@ -10,7 +10,6 @@ We use LHS heavily since its near-random design and the efficient space-filling 
 
 
 .. autosummary::
-    :toctree: doe
     :nosignatures:
 
     full_factorial

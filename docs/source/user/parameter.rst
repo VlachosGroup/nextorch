@@ -60,7 +60,6 @@ Set the parameter space for an :code:`Experiment` class.
 For more details, see :code:`nextorch.parameter`.
 
 .. autosummary::
-    :toctree: parameter
     :nosignatures:
 
     Parameter
@@ -71,7 +70,7 @@ For more details, see :code:`nextorch.parameter`.
 Reference
 ----------
 
-`[1]`_: Frazier, P. I. A Tutorial on Bayesian Optimization. 2018.
+`[1]`_ Frazier, P. I. A Tutorial on Bayesian Optimization. 2018.
 
 
 .. _[1]: https://arxiv.org/abs/1807.02811

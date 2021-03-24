@@ -77,3 +77,7 @@ The major steps of implementing BO in NEXTorch can be summarized as following:
     Step 6 can take place after step 3, 4 or each optimization loop in step 5.
 
 NEXTorch is implemented in a modular fashion which makes running each step much easier. We will go through the main modules and functions next.
+
+
+.. _random forest: https://en.wikipedia.org/wiki/Random_forest#:~:text=Random%20forests%20or%20random%20decision,average%20prediction%20(regression)%20of%20the
+.. _PCA: https://en.wikipedia.org/wiki/Principal_component_analysis#:~:text=Principal%20component%20analysis%20(PCA)%20is,components%20and%20ignoring%20the%20rest.

@@ -12,12 +12,14 @@ We use LHS heavily since its near-random design and the efficient space-filling 
 .. note::
 
     :code:`X_init` is always in a unit scale. 
-    Setting the :code:`seed` parameter in random designs could make sure that the same data are generated every time.
+
+    Setting the :code:`seed` parameter in random designs could make sure that the same set of data are generated every time.
 
 
 Example 
 ----------
-Generate a full factorial design with 5 levels. 
+The examples are for a 3-dimensional system.
+Generate a full factorial design with 5 levels in each dimension. 
 
 .. code-block:: python
 
@@ -28,23 +30,24 @@ Generate a full factorial design with 5 levels.
 
 
 
-Generate a LHS design with 10 initial points in a 3-dimensional system. 
+Generate a LHS design with 10 initial points. 
 
 .. code-block:: python
 
     from nextorch import doe
 
-    n_init_lhs = 10
-    X_init_lhs = doe.latin_hypercube(n_dim=3, n_points=n_init_lhc, seed=1)
+    X_init_lhs = doe.latin_hypercube(n_dim=3, n_points=10, seed=1)
     
 
-Generate a completely random design with 50 initial points in a 3-dimensional system.
+Generate a completely random design with 50 initial points.
 
 .. code-block:: python
 
+    from nextorch import doe
+
     X_init_random = doe.randomized_design(n_dim=3, n_points=50, seed=1)
 
-    
+
 Here is a list of DOE functions in :code:`nextorch.doe` module.
 
 .. autosummary::

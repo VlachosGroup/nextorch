@@ -22,6 +22,7 @@ Welcome to nextorch's documentation!
    user/io
    user/parameter
    user/doe
+   user/datatype
    user/botorch
    user/experiment
    user/visualization

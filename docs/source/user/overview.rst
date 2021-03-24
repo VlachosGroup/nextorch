@@ -72,4 +72,8 @@ The major steps of implementing BO in NEXTorch can be summarized as following:
 6. Visualize the model reponses
 7. Export the optimum
 
+.. note::
+
+    Step 6 can take place after step 3, 4 or each optimization loop in step 5.
+
 NEXTorch is implemented in a modular fashion which makes running each step much easier. We will go through the main modules and functions next.

@@ -3,22 +3,26 @@ Applications of BO
 ===================
 
 
-BO (or kriging) has seen a rise in its applications in engineering and chemistry.
+BO (or kriging) has becoming more popular among scientists and engineers. 
+Here, we provide a comprehensive list of its recent applications in engineering and chemistry
 
 
-In high throughput reactions,
+High Throughput Reactions
+-----------------------------
 
 `[1]`_ Shields, B. J.; Stevens, J.; Li, J.; Parasram, M.; Damani, F.; Alvarado, J. I. M.; Janey, J. M.; Adams, R. P.; Doyle, A. G. Bayesian Reaction Optimization as a Tool for Chemical Synthesis. Nature 2021, 590, 89–96.
 
 
-In catalyst synthesis,
+Catalyst Synthesis
+---------------------
 
 `[2]`_ Burger, B.; Maffettone, P. M.; Gusev, V. V.; Aitchison, C. M.; Bai, Y.; Wang, X.; Li, X.; Alston, B. M.; Li, B.; Clowes, R.; Rankin, N.; Harris, B.; Sprick, R. S.; Cooper, A. I. A Mobile Robotic Chemist. Nature 2020, 583, 237–241.
 
 `[3]`_ Ebikade, E. O.; Wang, Y.; Samulewicz, N.; Hasa, B.; Vlachos, D. Active Learning-Driven Quantitative Synthesis–Structure–Property Relations for Improving Performance and Revealing Active Sites of Nitrogen-Doped Carbon for the Hydrogen Evolution Reaction. React. Chem. Eng. 2020.
 
 
-In computational material discovery,
+Computational Material Discovery
+----------------------------------
 
 `[4]`_ del Rosario, Z.; Rupp, M.; Kim, Y.; Antono, E.; Ling, J. Assessing the Frontier: Active Learning, Model Accuracy, and Multi-Objective Materials Discovery and Optimization. 2019, 024112.
 
@@ -26,26 +30,31 @@ In computational material discovery,
 
 `[6]`_ Montoya, J. H.; Winther, K. T.; Flores, R. A.; Bligaard, T.; Hummelshøj, J. S.; Aykol, M. Autonomous Intelligent Agents for Accelerated Materials Discovery. Chem. Sci. 2020, 11, 8517–8532.
 
-In process engineering,
+
+Reaction Engineering
+----------------------
 
 `[7]`_ Boukouvala, F.; Muzzio, F. J.; Ierapetritou, M. G. Dynamic Data-Driven Modeling of Pharmaceutical Processes. Ind. Eng. Chem. Res. 2011, 50, 6743–6754.
-
-In reactor optimization,
 
 `[8]`_ Mateos, C.; Nieves-Remacha, M. J.; Rincón, J. A. Automated Platforms for Reaction Self-Optimization in Flow. React. Chem. Eng. 2019, 4, 1536–1544.
 
 `[9]`_ Chen, T. Y.; Baker-Fales, M.; Vlachos, D. G. Operation and Optimization of Microwave-Heated Continuous-Flow Microfluidics. Ind. Eng. Chem. Res. 2020, 59, 10418–10427.
 
-In automation,
+
+Automation
+-----------
 
 `[10]`_ Shalloo, R. J.; et al. Automation and Control of Laser Wakefield Accelerators Using Bayesian Optimization. Nat. Commun. 2020, 11, 0–7.
 
 
-In electronic calculations,
+Electronic Calculations
+--------------------------
 
 `[11]`_ Yu, M.; Yang, S.; Wu, C.; Marom, N. Machine Learning the Hubbard U Parameter in DFT+U Using Bayesian Optimization. npj Comput. Mater. 2020, 6.
 
-In neuroscience,
+
+Neuroscience
+--------------
 
 `[12]`_ Lorenz, R.; Violante, I. R.; Monti, R. P.; Montana, G.; Hampshire, A.; Leech, R. Dissociating Frontoparietal Brain Networks with Neuroadaptive Bayesian Optimization. Nat. Commun. 2018, 9.
 

@@ -4,7 +4,7 @@ Applications of BO
 
 
 BO (or kriging) has becoming more popular among scientists and engineers. 
-Here, we provide a comprehensive list of its recent applications in engineering and chemistry
+Here, we provide a comprehensive list of its recent applications in engineering and chemistry.
 
 
 High Throughput Reactions

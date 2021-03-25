@@ -40,7 +40,7 @@ constraint functions as a function of design variables. In BO, the surrogate mod
 Gaussian Process (GP)
 ---------------------
 A GP model constructs a joint probability distribution over the variables, assuming a multivariate Gaussian distribution. 
-A GP is determined from a mean function :math:`\mu({\bf X})` and a covariance kernel function :math:`\Sigma({\bf X}, {\bf X^{'}})`. 
+A GP is determined from a mean function :math:`\mu({\bf X})` and a covariance kernel function :math:`\Sigma({\bf X}, {\bf X^{'}})`.`[1]`_
 A Matern covariance function is typically used as the kernel function:
 
 .. math::
@@ -96,7 +96,7 @@ optimal in a desired region of the design space.
 Expected Hypervolume Improvement (EHVI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An alternative is to use expected hypervolume improvement (EHVI) as the acquisition function. A hypervolume indicator (HV) 
+An alternative is to use expected hypervolume improvement (EHVI) as the acquisition function.`[9]`_ A hypervolume indicator (HV) 
 is used to approximate the Pareto set and EHVI evaluates its EI. 
 
 Given a Pareto set :math:`S^{*}` and a reference point :math:`r\in{\mathbb{R}}^{M}`, the hypervolume (HV) of :math:`S^{*}` 
@@ -126,42 +126,50 @@ and can be expressed as:
 
 In NEXTorch, one can use either weighted sum method or Monte Carlo EHVI (qEHVI) as acquisition function to perform MOO.
 
------------------------------------
 
 
-Key Papers and Books
+Useful Papers and Books
 ============================
 
 Gaussian Processes
 ------------------
 `[1]`_ Rasmussen, C. E. Gaussian Processes in Machine Learning; MIT Press, 2006.
+`[2]`_ Görtler, J.; Kehlbeck, R.; Deussen, O. A Visual Exploration of Gaussian Processes. Distill 2019, 4.
 
 Kriging 
 ----------------------------
-`[2]`_ Jones, D. R.; Schonlau, M.; W. J. Welch. Efficient Global Optimization of Expensive Black-Box Functions," , Vol. 13, No. 4, Pp. 455-492, 1998. J. Glob. Optim. 1998, 13, 455–492.
-`[3]`_ Jones, D. R. A Taxonomy of Global Optimization Methods Based on Response Surfaces. J. Glob. Optim. 2001, 21, 345–383.
-`[4]`_ Forrester, A. I. J.; Sbester, A.; Keane, A. J. Engineering Design via Surrogate Modelling; John Wiley & Sons, Ltd: Chichester, UK, 2008.
+`[3]`_ Jones, D. R.; Schonlau, M.; W. J. Welch. Efficient Global Optimization of Expensive Black-Box Functions," , Vol. 13, No. 4, Pp. 455-492, 1998. J. Glob. Optim. 1998, 13, 455–492.
+`[4]`_ Jones, D. R. A Taxonomy of Global Optimization Methods Based on Response Surfaces. J. Glob. Optim. 2001, 21, 345–383.
+`[5]`_ Forrester, A. I. J.; Sbester, A.; Keane, A. J. Engineering Design via Surrogate Modelling; John Wiley & Sons, Ltd: Chichester, UK, 2008.
 
 BO Tutorial and Reviews
 ----------------------------
-
-
+`[6]`_ Brochu, E.; Cora, V. M.; de Freitas, N. A Tutorial on Bayesian Optimization of Expensive Cost Functions, with Application to Active User Modeling and Hierarchical Reinforcement Learning. 2010.
+`[7]`_ Shahriari, B.; Swersky, K.; Wang, Z.; Adams, R. P.; De Freitas, N. Taking the Human out of the Loop: A Review of Bayesian Optimization. Proc. IEEE 2016, 104, 148–175.
+`[8]`_ Frazier, P. I. A Tutorial on Bayesian Optimization. 2018.
 
 
 Multi-objective Optimization (MOO)
 ------------------------------------
 
-`[1]`_ (1) Daulton, S.; Balandat, M.; Bakshy, E. Differentiable Expected Hypervolume Improvement for Parallel Multi-Objective Bayesian Optimization. 2020.
+`[9]`_ Daulton, S.; Balandat, M.; Bakshy, E. Differentiable Expected Hypervolume Improvement for Parallel Multi-Objective Bayesian Optimization. 2020.
 
 
-BoTorch Papers
+Other BoTorch Papers
 ----------------------
 
-(1) Balandat, M.; Karrer, B.; Jiang, D. R.; Daulton, S.; Letham, B.; Wilson, A. G.; Bakshy, E. BoTorch: Programmable Bayesian Optimization in PyTorch. 2019.
+`[10]`_ Balandat, M.; Karrer, B.; Jiang, D. R.; Daulton, S.; Letham, B.; Wilson, A. G.; Bakshy, E. BoTorch: A Framework for Efficient Monte-Carlo Bayesian Optimization. 2019.
+`[11]`_ Letham, B.; Karrer, B.; Ottoni, G.; Bakshy, E. Constrained Bayesian Optimization with Noisy Experiments. Bayesian Anal. 2019, 14, 495–519.
 
 
-References
-----------
-
-
-.. _[1]: https://arxiv.org/abs/2006.05078
+.. _[1]: http://www.gaussianprocess.org/gpml/chapters/RW.pdf
+.. _[2]: https://distill.pub/2019/visual-exploration-gaussian-processes/
+.. _[3]: https://link.springer.com/article/10.1023/A:1008306431147
+.. _[4]: https://link.springer.com/article/10.1023/A:1012771025575
+.. _[5]: https://onlinelibrary.wiley.com/doi/book/10.1002/9780470770801
+.. _[6]: https://arxiv.org/abs/1012.2599
+.. _[7]: https://ieeexplore.ieee.org/document/7352306
+.. _[8]: https://arxiv.org/abs/1807.02811
+.. _[9]: https://arxiv.org/abs/2006.05078
+.. _[10]: https://arxiv.org/abs/1910.06403
+.. _[11]: https://arxiv.org/abs/1706.07094

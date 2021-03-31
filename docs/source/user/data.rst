@@ -40,6 +40,13 @@ Type Conversion
 Convert arrays or matrics from a real scale into a unit scale [0, 1] in each dimension, vice versa. 
 This step is often needed for :code:`X` before modeling training. 
 
+.. note::
+
+    :code:`X` or :code:`X_unit` suggests that the values are in unit scales.
+
+    :code:`X_real` suggests that the values are in real scales or units.
+
+
 .. autosummary::
     :nosignatures:
 
@@ -54,6 +61,13 @@ This step is often needed for :code:`X` before modeling training.
 --------------------------
 Convert arrays or matrics from a real scale into a standardized scale with a zero mean and unit variance in each dimension, vice versa.
 This step is often needed for :code:`Y` before modeling training. 
+
+.. note::
+
+    :code:`Y` suggests that the values are in standardized scales.
+
+    :code:`Y_real` suggests that the values are in real scales or units.
+
 
 .. autosummary::
     :nosignatures:

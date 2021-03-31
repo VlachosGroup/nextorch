@@ -1,7 +1,14 @@
 =========
 NEXTorch
 =========
-Next EXperiment toolkit implementation in PyTorch/BoTorch (NEXTorch)
+
+NEXTorch is an open-source software package in Python/PyTorch to faciliate 
+experimental design using Bayesian Optimization (BO). 
+
+NEXTorch stands for Next EXperiment toolkit implementation in PyTorch/BoTorch.
+
+NEXTorch is also a library for learning the theory and implementation of Bayesian Optimization.
+
 
 .. image:: docs/source/logos/nextorch_logo_doc.png
    :target: https://vlachosgroup.github.io/nextorch/

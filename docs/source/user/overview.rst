@@ -23,7 +23,7 @@ Each parameter is bounded, and the resulting multidimensional space is called a 
 The outputs of f, :math:`{\bf Y}` (responses), are usually expensive, time-consuming, or otherwise difficult to measure.
 
 Initially, a set of initial sampling :code:`X_init` is generated from a DOE. These sampling points are passed to :math:`f` for evaluation. 
-One collects the data :math:`{\bf D= (X,Y)}` and use it to train a cheap-to-evaluate surrogate model :math:`\hat{f}`(a Gaussian process). 
+One collects the data :math:`{\bf D= (X,Y)}` and use it to train a cheap-to-evaluate surrogate model :math:`\hat{f}` (a Gaussian process). 
 
 Next, an acquisition function gives the new sampling points (i.e., infill points, :code:`X_new`) based on their usefulness for achieving the optimization goal. 
 At this stage, one could choose to visualize the response surfaces using the surrogate model or the infill points locations in the design space. 

@@ -21,7 +21,9 @@ BO, a popular active learning framework, refers to a suite of techniques for glo
 Prior Works
 ===============
 
-Machine learning and scientific research communities have developed several BO (kriging) software tools and most of them have interfaces in Python. 
+Machine learning and scientific research communities have developed several software tools for BO 
+(and its close variant from geostatistics - kriging). 
+Most of them have interfaces in Python. 
 We curate a list of open-source BO packages and provide further discussions in `our paper`_. 
 
 Their documentation pages can be found at:

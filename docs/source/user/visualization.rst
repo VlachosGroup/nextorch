@@ -9,7 +9,9 @@ The plots are rendered using matplotlib_ as a backend.
 It is an active area of development for NEXTorch.
 
 We provide two forms of the visualization functions depending on their inputs format: 
-(1) :code:`X` or :code:`Y` matrics or (2) an :code:`Experiment` object (functions that end with :code:`_exp`). 
+
+1. :code:`X` or :code:`Y` matrics or 
+2. an :code:`Experiment` object (functions that end with :code:`_exp`). 
 
 Parity Plots
 --------------
@@ -33,7 +35,7 @@ Discovery Plots
     opt_per_trial_exp
 
 
-Functions in 1-dimension Parameter Space
+Functions in 1-dimension Parameter Spaces
 -------------------------------------------
 
 .. autosummary::

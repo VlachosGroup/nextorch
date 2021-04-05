@@ -2,29 +2,40 @@
 Examples
 ============
 
-These examples illustrate the main features and applications of the NEXTorch. Specifically these tutorials include:
+These examples illustrate the main features and applications of the NEXTorch. 
 
-- `Basic API Usage`_ demonstrates the whole process of using NEXTorch to do the optimizations, how does NEXTorch deal with 
-  different parameter types, and the basic usage of the NEXTorch API.
-- `Applications in Reaction Engineering`_ demonstrates the applications of NEXTorch in the real-world problem, such as 
-  catalyst synthesis, reaction condition optimizations, and reactor design. Moreover, the human-in-the-loop optimization using 
-  NEXTorch and the integration of NEXTorch with computational simulations for automatic optimizations are demonstrated.
-- `Applications in Multi-Objective Optimization`_ shows the capability of doing multi-objective optimizations using NEXTorch. 
-  Two different ways of performing multi-objective optimization are employed to optimize the reaction conditions and design the 
-  reactors.
+Specifically these tutorials fall into three categories:
+
+- `Basic API Usage`_ 
+- `Applications in Reaction Engineering`_ 
+- `Mixed Type Parameters`_
+- `Multi-Objective Optimization(MOO)`_ 
 
 Basic API Usage
 ---------------
+
+Basic usage of the NEXTorch API
+
+- Example 1 and 2: Implementation of NEXTorch for single-objective optimization
+
 .. nbgallery::
     :name: basic-api-usage
     :glob:
 
     ../examples/01_simple_1d
     ../examples/02_sin_1d
-    ../examples/10_PFR_mixed_type_inputs
+
 
 Applications in Reaction Engineering
 ------------------------------------
+
+Applications of NEXTorch in the real-world problems, such as 
+catalyst synthesis, reaction condition optimizations, and reactor design
+
+- Example 3, 5, and 8: Automated optimization loop for computational simulations
+- Example 4: Human-in-the-loop optimization for laboratory experiments
+  
+
 .. nbgallery::
     :name: app-in-react-eng
     :glob:
@@ -34,8 +45,28 @@ Applications in Reaction Engineering
     ../examples/05_PFR_yield
     ../examples/08_Stub_tuner
 
-Applications in Multi-Objective Optimization
+
+Mixed Type Parameters
 --------------------------------------------
+
+Demo for systems with parameters of mixed types 
+
+.. nbgallery::
+  :name: mixed-type
+  :glob:
+
+  ../examples/10_PFR_mixed_type_inputs
+
+
+Multi-Objective Optimization(MOO)
+--------------------------------------------
+
+Demo for MOO systems 
+
+- Example 6, 7 and 9: MOO with the weighted sum method
+- Example 11: MOO with EHVI
+
+
 .. nbgallery::
     :name: app-in-moo
     :glob:

@@ -120,8 +120,8 @@ for i in range(n_trials_lhc):
 
 Y_real_opts, X_real_opts = Exp_lhc.get_optim()
 
-expected_yield = pytest.approx(50, abs=1)
-expected_selectivity = pytest.approx(65, abs=1)
+expected_yield = pytest.approx(50, abs=3)
+expected_selectivity = pytest.approx(65, abs=3)
 
 assert np.max(Y_real_opts[:,0]) == expected_yield
 assert np.max(Y_real_opts[:,1]) == expected_selectivity

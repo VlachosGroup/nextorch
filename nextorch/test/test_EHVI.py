@@ -11,7 +11,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('agg')
 dir_path = os.path.dirname(os.path.realpath(__file__))
-PFR_path = os.path.abspath(os.path.join(dir_path, '..', 'examples', 'PFR'))
+PFR_path = os.path.abspath(os.path.join(dir_path, '..', '..','examples', 'PFR'))
 
 sys.path.insert(0, PFR_path)
 from nextorch import bo, doe

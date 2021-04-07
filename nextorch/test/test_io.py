@@ -1,10 +1,6 @@
 import os
 import sys
 import numpy as np
-
-#package_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-#sys.path.insert(0, package_path)
-
 from nextorch import io
 
 dir_path = os.path.dirname(os.path.realpath(__file__))

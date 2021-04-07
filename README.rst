@@ -28,25 +28,27 @@ Dependencies
 
 -  Python >= 3.7
 -  `PyTorch`_ >= 1.8: Used for tensor operations with GPU and autograd support
--  `BoTorch`_ >= 0.4.0: Used for providing Bayesian Optimization framework
 -  `GPyTorch`_ >= 1.4: Used for training Gaussian Processes
+-  `BoTorch`_ >= 0.4.0: Used for providing Bayesian Optimization framework
+-  `Matplotlib`_: Used for generating plots
 -  `PyDOE2`_: Used for constructing experimental designs
 -  `Numpy`_: Used for vector and matrix operations
+-  `Scipy`_: Used for curve fitting
 -  `Pandas`_: Used to import data from Excel or CSV files
--  `Matplotlib`_: Used for generating plots
--  `xlrd`_: Used by Pandas to import Excel files
+-  `openpyxl`_: Used by Pandas to import Excel files
 
 
 .. _documentation page: https://vlachosgroup.github.io/nextorch/
 .. _PyTorch: https://pytorch.org/
-.. _BoTorch: https://botorch.org/
 .. _GPyTorch: https://gpytorch.ai/ 
+.. _BoTorch: https://botorch.org/
+.. _Matplotlib: https://matplotlib.org/
 .. _pyDOE2: https://pythonhosted.org/pyDOE/
 .. _Numpy: http://www.numpy.org/
+.. _Scipy: https://www.scipy.org/
 .. _Pandas: https://pandas.pydata.org/
-.. _xlrd: https://xlrd.readthedocs.io/en/latest/
-.. _SciPy: https://www.scipy.org/
-.. _Matplotlib: https://matplotlib.org/
+.. _openpyxl: https://openpyxl.readthedocs.io/en/stable/
+
 
 
 

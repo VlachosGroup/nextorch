@@ -29,22 +29,19 @@
 # The ranges of the input X are specified. 
 
 # %%
-import os
-import sys
+import warnings
+warnings.filterwarnings("ignore")
+
 import time
 from IPython.display import display
-
-project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, project_path)
-
-# Set the path for objective function
-objective_path = os.path.join(project_path, 'examples', 'PFR')
-sys.path.insert(0, objective_path)
 
 import numpy as np
 from nextorch import plotting, bo, doe, utils, io
 
-
+import os
+import sys
+PFR_path = os.path.abspath(os.path.join(os.getcwd(), '..', 'examples', 'PFR'))
+sys.path.insert(0, PFR_path)
 # %%
 #%% Define the objective function
 from fructose_pfr_model_function import Reactor

@@ -30,15 +30,12 @@ Created on Tue Mar  9 00:13:45 2021
 # %% [markdown]
 # ## 1. Import `nextorch` and other packages
 
-# %%
-import os
-import sys
-project_path = os.path.abspath(os.path.join(os.getcwd(), '..'))
-sys.path.insert(0, project_path)
+import warnings
+warnings.filterwarnings("ignore")
 
 import numpy as np
 from nextorch import plotting, bo
-from nextorch.utils import Parameter
+from nextorch.parameter import Parameter
 
 # %% [markdown]
 # ## 2. Define the objective function and the design space

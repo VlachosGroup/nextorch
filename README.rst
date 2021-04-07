@@ -36,6 +36,7 @@ Dependencies
 -  `Scipy`_: Used for curve fitting
 -  `Pandas`_: Used to import data from Excel or CSV files
 -  `openpyxl`_: Used by Pandas to import Excel files
+-  `pytest`_: Used for unit tests
 
 
 .. _documentation page: https://vlachosgroup.github.io/nextorch/
@@ -48,7 +49,7 @@ Dependencies
 .. _Scipy: https://www.scipy.org/
 .. _Pandas: https://pandas.pydata.org/
 .. _openpyxl: https://openpyxl.readthedocs.io/en/stable/
-
+.. _pytest: https://docs.pytest.org/en/stable/
 
 
 

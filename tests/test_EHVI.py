@@ -13,9 +13,6 @@ matplotlib.use('agg')
 dir_path = os.path.dirname(os.path.realpath(__file__))
 PFR_path = os.path.abspath(os.path.join(dir_path, '..', 'examples', 'PFR'))
 
-project_path = os.path.abspath(os.path.join(dir_path, '..'))
-sys.path.insert(0, project_path)
-
 sys.path.insert(0, PFR_path)
 from nextorch import bo, doe
 

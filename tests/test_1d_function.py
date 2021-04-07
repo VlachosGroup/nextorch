@@ -8,8 +8,9 @@ import warnings
 from numpy.testing._private.utils import assert_string_equal
 warnings.filterwarnings("ignore")
 
+import matplotlib
 import matplotlib.pyplot as plt
-plt.switch_backend('agg')
+matplotlib.use('agg')
 
 import pytest
 import numpy as np
@@ -55,7 +56,7 @@ Y_init = objective_func(X_init)
 
 # Initialize an Experiment object Exp
 # Set its name, the files will be saved under the folder with the same name
-Exp = bo.Experiment('simple_1d') 
+Exp = bo.Experiment('test_out_simple_1d') 
 
 # Define parameter space
 parameter = Parameter()
@@ -66,8 +67,8 @@ Exp.define_space(parameter)
 Exp.input_data(X_init, Y_init, unit_flag = True)
 
 # Test on input X, Y
-assert np.all(Exp.X_init == X_init)
-assert np.all(Exp.Y_init == Y_init) 
+assert np.all(Exp.X_real == X_init)
+assert np.all(Exp.Y_real == Y_init) 
 
 # Set the optimization specifications 
 # Here we set the objective function, minimization as the goal
@@ -107,11 +108,10 @@ plotting.parity_with_ci_exp(Exp, save_fig = save_fig_flag)
 
 
 # Test on optimal X and Y
-expected_X_opt = pytest.approx(-0.75, abs=0.01)
+expected_X_opt = pytest.approx(0.75, abs=0.01)
 expected_Y_opt = pytest.approx(-6.02, abs=0.01)
 assert X_opt[0] == expected_X_opt 
 assert y_opt == expected_Y_opt  
 
-import matplotlib.pyplot as plt
-# Make a parity plot comparing model predictions versus ground truth values
-plotting.parity_exp(Exp, save_fig = save_fig_flag)
+# switch back to interactive mode
+matplotlib.use('TkAgg')

@@ -2,7 +2,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import numpy as np
-from nextorch import bo, doe
+import pytest
+from nextorch import bo, doe, utils
 
 import os
 import sys
@@ -98,6 +99,8 @@ Exp_lhc.set_ref_point(ref_point)
 Exp_lhc.set_optim_specs(objective_func = objective_func, 
                         maximize = True)
 
+assert np.all(Exp_lhc.ref_point == ref_point)
+
 # Set the number of iterations for each experiments
 n_trials_lhc = 30 
 for i in range(n_trials_lhc):
@@ -113,4 +116,8 @@ for i in range(n_trials_lhc):
 
 Y_real_opts, X_real_opts = Exp_lhc.get_optim()
 
+expected_yield = pytest.approx(50, abs=1)
+expected_selectivity = pytest.approx(65, abs=1)
 
+assert np.max(Y_real_opts[:,0]) == expected_yield
+assert np.max(Y_real_opts[:,1]) == expected_selectivity

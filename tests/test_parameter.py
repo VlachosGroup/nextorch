@@ -6,6 +6,11 @@ Created on Sat Mar  6 17:44:03 2021
 """
 
 import numpy as np
+import os
+import sys
+
+project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, project_path)
 
 from nextorch import io, bo, doe
 import nextorch.utils as ut
@@ -19,6 +24,13 @@ Y = np.array([1,2,3])
 # test on ordinal parameters
 p1 = Parameter(x_type = 'ordinal', interval = 1, x_range = [0,2])
 p1_encoding_unit = ut.unitscale_xv(p1.encoding, p1.x_range)
+
+def test_parameter():
+    p1 = Parameter(x_type = 'ordinal', interval = 1, x_range = [0,2])
+    p1_encoding_unit = ut.unitscale_xv(p1.encoding, p1.x_range)
+    p1_real = [0, 0.5, 1]
+    assert p1_encoding_unit == p1_real
+
 
 # encoding
 xi_encoded_1 = ut.encode_xv(xi, p1_encoding_unit)

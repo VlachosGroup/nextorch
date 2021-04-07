@@ -2,14 +2,20 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import numpy as np
-from nextorch import bo, doe
 
 import os
 import sys
-
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('agg')
 dir_path = os.path.dirname(os.path.realpath(__file__))
 PFR_path = os.path.abspath(os.path.join(dir_path, '..', 'examples', 'PFR'))
+
+project_path = os.path.abspath(os.path.join(dir_path, '..'))
+sys.path.insert(0, project_path)
+
 sys.path.insert(0, PFR_path)
+from nextorch import bo, doe
 
 #%% Define the objective function
 from fructose_pfr_model_function import Reactor

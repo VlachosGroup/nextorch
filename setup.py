@@ -40,7 +40,8 @@ setuptools.setup(
         "numpy>=1.19.2",
         "scipy>=1.3.1",
         "pandas>=0.25.1",
-        "openpyxl>=3.0.7"],
+        "openpyxl>=3.0.7",
+        "pytest>=6.2.3"],
     classifiers=[
         "Programming Language :: Python :: 3",
 		"License :: OSI Approved :: MIT License",

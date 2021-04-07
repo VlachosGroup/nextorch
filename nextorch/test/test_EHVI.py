@@ -14,7 +14,7 @@ matplotlib.use('agg')
 from nextorch import bo, doe
 
 #%% Define the objective function
-from fructose_pfr_model_function import Reactor
+from nextorch.test.fructose_pfr_model_function import Reactor
 
 def PFR(X_real):
     """PFR model

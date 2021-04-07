@@ -14,7 +14,7 @@ matplotlib.use('agg')
 
 import pytest
 import numpy as np
-from nextorch import plotting, bo
+from nextorch import plotting, bo, utils
 from nextorch.parameter import Parameter
 
 def simple_1d(X):
@@ -68,8 +68,8 @@ Exp.input_data(X_init, Y_init, unit_flag = True)
 
 def test_input():
     # Test on input X, Y
-    assert np.all(Exp.X_real == X_init)
-    assert np.all(Exp.Y_real == Y_init) 
+    assert np.all(Exp.X_real[:4, :] == X_init)
+    assert np.all(Exp.Y_real[:4, :] == Y_init)
 
 # Set the optimization specifications 
 # Here we set the objective function, minimization as the goal

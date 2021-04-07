@@ -66,9 +66,10 @@ Exp.define_space(parameter)
 # Set unit_flag to true since the X is in a unit scale
 Exp.input_data(X_init, Y_init, unit_flag = True)
 
-# Test on input X, Y
-assert np.all(Exp.X_real == X_init)
-assert np.all(Exp.Y_real == Y_init) 
+def test_input():
+    # Test on input X, Y
+    assert np.all(Exp.X_real == X_init)
+    assert np.all(Exp.Y_real == Y_init) 
 
 # Set the optimization specifications 
 # Here we set the objective function, minimization as the goal
@@ -106,12 +107,14 @@ plotting.parity_exp(Exp, save_fig = save_fig_flag)
 # Make a parity plot with the confidence intervals on the predictions
 plotting.parity_with_ci_exp(Exp, save_fig = save_fig_flag)
 
-
-# Test on optimal X and Y
-expected_X_opt = pytest.approx(0.75, abs=0.01)
-expected_Y_opt = pytest.approx(-6.02, abs=0.01)
-assert X_opt[0] == expected_X_opt 
-assert y_opt == expected_Y_opt  
-
 # switch back to interactive mode
 matplotlib.use('TkAgg')
+
+def test_opt():
+    # Test on optimal X and Y
+    expected_X_opt = pytest.approx(0.75, abs=0.01)
+    expected_Y_opt = pytest.approx(-6.02, abs=0.01)
+    assert X_opt[0] == expected_X_opt 
+    assert y_opt == expected_Y_opt  
+
+

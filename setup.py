@@ -30,6 +30,8 @@ setuptools.setup(
         "Source": "https://github.com/VlachosGroup/nextorch",
     },
     packages=setuptools.find_packages(),
+    package_data={'':['*.xlsx']},
+    include_package_data=True,
     python_requires=">=3.7",
     install_requires=[
         "torch>=1.8", 

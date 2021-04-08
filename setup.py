@@ -21,7 +21,7 @@ setuptools.setup(
     version="0.0.1",
     author="Vlachos Research Group",
     author_email="vlachos@udel.edu",
-    description="Next EXperiment toolkit in PyTorch/BoTorch (NEXTorch)",
+    description="Experimental design and Bayesian optimization library in Python/PyTorch",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     url="https://github.com/VlachosGroup/nextorch",

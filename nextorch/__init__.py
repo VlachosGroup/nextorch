@@ -1,5 +1,5 @@
 name = 'nextorch'
-__version__ = '0.0.2'
+__version__ = '0.0.1'
 
 import torch
 # use a GPU if available

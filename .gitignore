@@ -5,3 +5,4 @@ nextorch/.vscode/
 examples/PFR/__pycache__/
 buildinstructions
 .DS_Store
+nextorch/.DS_Store

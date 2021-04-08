@@ -111,7 +111,7 @@ html_favicon = './logos/x_icon.ico'
 # auto mock imports 
 # This will allow your docs to import the example code 
 # without requiring those modules be installed.
-autodoc_mock_imports = ['torch', 'pyDOE2', 'scipy', 'gpytorch', 'botorch']
+autodoc_mock_imports = ['torch', 'pyDOE2', 'scipy', 'gpytorch', 'botorch', 'numpy', 'pandas', 'matplotlib']
 
 
 def setup(app):

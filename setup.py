@@ -26,7 +26,7 @@ setuptools.setup(
     long_description_content_type="text/x-rst",
     url="https://github.com/VlachosGroup/nextorch",
     project_urls={
-        "Documentation": "https://vlachosgroup.github.io/nextorch/",
+        "Documentation": "https://nextorch.readthedocs.io/en/latest/",
         "Source": "https://github.com/VlachosGroup/nextorch",
     },
     packages=setuptools.find_packages(),

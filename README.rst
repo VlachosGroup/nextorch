@@ -56,13 +56,14 @@ Dependencies
 Getting Started
 ---------------
 
-1. Install using pip (see documentation for more thorough instructions)::
+1. Install using pip (see documentation for full instructions)::
 
     pip install nextorch
 
-2. Look at examples using the code.
+2. Run the unit tests.
 
-3. Run the unit tests.
+3. Read the documentation for tutorials and examples.
+
 
 License
 -------

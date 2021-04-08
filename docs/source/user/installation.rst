@@ -6,30 +6,38 @@ Installing Python
 -----------------
 Anaconda is the recommended method to install Python for scientific
 applications. It is supported on Linux, Windows and Mac OS X.
-`Download Anaconda here`_. Note that NEXTorch runs on Python 3.X.
+`Download Anaconda here`_. Note that NEXTorch runs on Python 3.7 and above.
 
-Installing PyTorch, BoTorch and GPyTorch
+Create a new conda environment (optional)
 ------------------------------------------
-Using `conda` is the recommended method.
+It may not be possible for one Python installation to meet the requirements of every application. 
+To avoid such conflicts, we recommend working inside a virtual environment dedicated to all PyTorch applications. 
+If you have not done so, use `conda` to create a new environment, 
 .. code-block::
 
-    conda install botorch -c pytorch -c gpytorch
+    conda create -n torch 
+
+Activate the new environment,
+.. code-block::
+
+    conda activate torch
+
+Deactivate it after each use,
+.. code-block::
+
+    conda deactivate
 
 
 Installing NEXTorch using pip
 ---------------------------------
 Using `pip` is the most straightforward way to install NEXTorch.
 
-1. Open a command prompt with access to Python (if Python is installed via
-   Anaconda on Windows, open the Anaconda Prompt from the start menu).
+1. Activate the virtual environment for PyTorch.
 
-2. Install NEXTorch by typing the following in the command prompt:
+2. Install NEXTorch by typing the following in the command prompt (the fresh installation takes ~1-2 minutes):
 .. code-block::
 
     pip install nextorch
-
-The output towards the end should state "Successfully built nextorch" if the
-installation was successful. 
 
 
 Installing NEXTorch from source
@@ -51,20 +59,21 @@ To upgrade to a newer release, use the --upgrade flag:
 
 Running unit tests
 ------------------
-NEXTorch has a suite of unit tests that should be run before committing any code.
-To run the tests, run the following commands in a Python terminal.
+NEXTorch has a suite of unit tests built on the `pytest` framework. One should run the tests to ensure all code functions as expected. 
+Run the following commands in a Python terminal (usually takes less than a minute):
 .. code-block::
 
-     import nextorch
-     nextorch.run_tests()
+     pytest --pyargs nextorch
 
 The expected output is shown below. The number of tests will not
 necessarily be the same. ::
 
-    .........................
-    ----------------------------------------------------------------------
-    Ran 25 tests in 0.020s
+    PACKAGE_PATH\nextorch\test\test_1d_function.py ..                                     [ 15%]
+    PACKAGE_PATH\nextorch\test\test_EHVI.py ..                                            [ 30%]
+    PACKAGE_PATH\nextorch\test\test_io.py ....                                            [ 61%]
+    PACKAGE_PATH\nextorch\test\test_parameter.py ...                                      [ 84%]
+    PACKAGE_PATH\nextorch\test\test_plotting.py ..                                        [100%]
 
-    OK
+    ================================== 13 passed in 44.00s ======================================
 
 .. _`Download Anaconda here`: https://www.anaconda.com/distribution/#download-section

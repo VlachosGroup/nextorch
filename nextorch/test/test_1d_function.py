@@ -4,16 +4,13 @@ Test on 1d function
 """
 
 import warnings
-
-from numpy.testing._private.utils import assert_string_equal
 warnings.filterwarnings("ignore")
-
-import matplotlib
-import matplotlib.pyplot as plt
-matplotlib.use('agg')
 
 import pytest
 import numpy as np
+import matplotlib
+matplotlib.use('agg')
+
 from nextorch import plotting, bo, utils
 from nextorch.parameter import Parameter
 
@@ -66,11 +63,6 @@ Exp.define_space(parameter)
 # Set unit_flag to true since the X is in a unit scale
 Exp.input_data(X_init, Y_init, unit_flag = True)
 
-def test_input():
-    # Test on input X, Y
-    assert np.all(Exp.X_real[:4, :] == X_init)
-    assert np.all(Exp.Y_real[:4, :] == Y_init)
-
 # Set the optimization specifications 
 # Here we set the objective function, minimization as the goal
 Exp.set_optim_specs(objective_func = objective_func, maximize = False)
@@ -110,6 +102,12 @@ plotting.parity_with_ci_exp(Exp, save_fig = save_fig_flag)
 # switch back to interactive mode
 matplotlib.use('TkAgg')
 
+
+def test_input():
+    # Test on input X, Y
+    assert np.all(Exp.X_real[:4, :] == X_init)
+    assert np.all(Exp.Y_real[:4, :] == Y_init)
+    
 def test_opt():
     # Test on optimal X and Y
     expected_X_opt = pytest.approx(0.75, abs=0.01)

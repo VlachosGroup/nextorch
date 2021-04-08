@@ -1,10 +1,15 @@
-from nextorch import plotting, utils
-import matplotlib.pyplot as plt
-import matplotlib
+
+"""
+Test 3d plotting and creating test matrices
+"""
 import os
 import numpy as np
 
+import matplotlib.pyplot as plt
+import matplotlib
 matplotlib.use('agg')
+
+from nextorch import plotting, utils
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 save_path = os.path.join(dir_path, 'test_3d.png')
@@ -15,15 +20,14 @@ ax = fig.add_subplot(111, projection='3d')
 plotting.add_x_slice_2d(ax, 10, [1,100], [2,4])
 fig.savefig(save_path, bbox_inches="tight")
 
-
 # switch back to interactive mode
 matplotlib.use('TkAgg')
-
 
 # test create full X functions
 X_ranges = [[0,1], [0,2], [0,3], [2,3]]
 X_test_2d, _, _ = utils.create_full_X_test_2d(X_ranges=X_ranges, x_indices=[0,1]) 
 X_test_1d = utils.create_full_X_test_1d(X_ranges=X_ranges, x_index=0, baseline = 'center') 
+
 
 def test_X_2d_dimensions():
     # Test on two-dimensional testing matrix

@@ -1,18 +1,15 @@
+"""
+Test on qEHVI for multiobjective optimization
+"""
 import warnings
 warnings.filterwarnings("ignore")
 
 import numpy as np
 import pytest
-from nextorch import bo, doe, utils
-
-import os
-import sys
 import matplotlib
-import matplotlib.pyplot as plt
 matplotlib.use('agg')
 
-from nextorch import bo, doe
-
+from nextorch import bo, doe, utils
 #%% Define the objective function
 from nextorch.test.fructose_pfr_model_function import Reactor
 
@@ -117,6 +114,7 @@ for i in range(n_trials_lhc):
     Exp_lhc.run_trial(X_new, X_new_real, Y_new_real)
 
 Y_real_opts, X_real_opts = Exp_lhc.get_optim()
+
 
 def test_opt_results():
     expected_yield = pytest.approx(50, abs=3)

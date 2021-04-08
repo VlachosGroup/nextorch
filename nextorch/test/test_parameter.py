@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+"""
+Test parameter and parameterspace
+"""
 import numpy as np
 
 from nextorch import io, bo, doe

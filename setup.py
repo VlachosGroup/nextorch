@@ -18,10 +18,10 @@ with open(os.path.join(root_dir, "README.rst"), "r") as fh:
 
 setuptools.setup(
     name="nextorch", 
-    version="0.0.2",
+    version="0.0.1",
     author="Vlachos Research Group",
     author_email="vlachos@udel.edu",
-    description="Next EXperiment toolkit implementation in PyTorch/BoTorch (NEXTorch)",
+    description="Next EXperiment toolkit in PyTorch/BoTorch (NEXTorch)",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     url="https://github.com/VlachosGroup/nextorch",

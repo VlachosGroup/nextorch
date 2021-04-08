@@ -1,5 +1,7 @@
+"""
+Test on importing data from excel files
+"""
 import os
-import sys
 import numpy as np
 from nextorch import io
 

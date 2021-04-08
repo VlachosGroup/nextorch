@@ -9,13 +9,14 @@ NEXTorch stands for Next EXperiment toolkit implementation in PyTorch/BoTorch.
 It is also a library for learning the theory and implementation of Bayesian Optimization.
 
 
-.. image:: docs/source/logos/nextorch_logo_doc.png
-   :target: https://vlachosgroup.github.io/nextorch/
+.. image:: https://github.com/VlachosGroup/nextorch/blob/62b6163d65d2b49fdb8f6d3485af3222f4409500/docs/source/logos/nextorch_logo_doc.png
+   :target: https://nextorch.readthedocs.io/en/latest/
 
 Documentation
 -------------
 
-See our documentation page for examples, equations used, and docstrings.
+See our `documentation page`_ for examples, equations used, and docstrings.
+
 
 Developers
 ----------
@@ -39,7 +40,7 @@ Dependencies
 -  `pytest`_: Used for unit tests
 
 
-.. _documentation page: https://vlachosgroup.github.io/nextorch/
+.. _documentation page: https://nextorch.readthedocs.io/en/latest/
 .. _PyTorch: https://pytorch.org/
 .. _GPyTorch: https://gpytorch.ai/ 
 .. _BoTorch: https://botorch.org/

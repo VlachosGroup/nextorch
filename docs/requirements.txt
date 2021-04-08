@@ -1,3 +1,4 @@
 sphinxcontrib-napoleon
 sphinx-rtd-theme
 nbsphinx
+sphinx-gallery

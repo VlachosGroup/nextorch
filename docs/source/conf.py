@@ -15,7 +15,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 import os
 import sys
-project_path = os.path.join(os.path.dirname(__file__), '../../nextorch')
+project_path = os.path.join(os.path.dirname(__file__), '../../../nextorch')
 sys.path.insert(0, os.path.abspath(project_path))
 
 # -- Project information -----------------------------------------------------

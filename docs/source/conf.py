@@ -115,7 +115,7 @@ autodoc_mock_imports = ['torch', 'pyDOE2', 'scipy', 'gpytorch', 'botorch', 'nump
 
 
 def setup(app):
-    app.add_stylesheet('css/modify.css')
+    app.add_css_file('css/modify.css')
 
 
 # List of arguments to be passed to the kernel that executes the notebooks:

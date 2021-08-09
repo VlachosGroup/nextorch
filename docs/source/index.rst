@@ -27,6 +27,7 @@ Welcome to nextorch's documentation!
    user/experiment
    user/visualization
    user/examples
+   user/ax
 
 .. toctree::
    :maxdepth: 1

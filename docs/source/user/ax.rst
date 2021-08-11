@@ -24,7 +24,7 @@ We provide an additional example (Using Ax for optimizating PFR yield) here to h
     :name: ax-example
     :glob:
 
-    ../examples/12_Using_Ax
+    ../examples/13_Using_Ax
 
 
 .. _Ax: https://ax.dev/

@@ -1,4 +1,4 @@
 sphinxcontrib-napoleon
-sphinx-rtd-theme
+sphinx_rtd_theme==0.5.0rc1
 nbsphinx
 sphinx-gallery

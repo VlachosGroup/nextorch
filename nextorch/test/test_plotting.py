@@ -21,7 +21,7 @@ plotting.add_x_slice_2d(ax, 10, [1,100], [2,4])
 fig.savefig(save_path, bbox_inches="tight")
 
 # switch back to interactive mode
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
 
 # test create full X functions
 X_ranges = [[0,1], [0,2], [0,3], [2,3]]

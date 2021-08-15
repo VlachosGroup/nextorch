@@ -212,7 +212,6 @@ def unitscale_X(
     Xunit: numpy matrix
         matrix scaled to a unit scale
     """
-    X = torch.squeeze(X)
     
     #If 1D, make it 2D a matrix
     if len(X.shape)<2:

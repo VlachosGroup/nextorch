@@ -100,7 +100,7 @@ plotting.parity_exp(Exp, save_fig = save_fig_flag)
 plotting.parity_with_ci_exp(Exp, save_fig = save_fig_flag)
 
 # switch back to interactive mode
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
 
 
 def test_input():

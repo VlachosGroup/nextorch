@@ -17,13 +17,15 @@ Basic API Usage
 Basic usage of the NEXTorch API
 
 - Example 1 and 2: Implementation of NEXTorch for single-objective optimization
-
+- Example 12 and 13: different DOE methods and comparing NEXTorch to Ax syntax
 .. nbgallery::
     :name: basic-api-usage
     :glob:
 
     ../examples/01_simple_1d
     ../examples/02_sin_1d
+    ../examples/12_PFR_yield_extension
+    ../examples/13_Using_Ax
 
 
 Applications in Reaction Engineering

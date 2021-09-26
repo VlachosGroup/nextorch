@@ -1,9 +1,6 @@
 """
 Creates 1-dimensional, 2-dimensional and 3-dimensional visualizations 
 
-The plots are rendered using matplotlib_ as a backend
-
-.. _matplotlib: https://matplotlib.org/stable/index.html
 """
 
 import os, sys

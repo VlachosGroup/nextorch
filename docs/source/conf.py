@@ -111,7 +111,7 @@ html_favicon = './logos/x_icon.ico'
 # auto mock imports 
 # This will allow your docs to import the example code 
 # without requiring those modules be installed.
-autodoc_mock_imports = ['torch', 'pyDOE2', 'scipy', 'gpytorch', 'botorch', 'numpy', 'pandas', 'matplotlib']
+autodoc_mock_imports = ['torch', 'pyDOE2', 'scipy', 'gpytorch', 'botorch', 'numpy', 'pandas', 'matplotlib', 'mpl_toolkits']
 
 
 def setup(app):
@@ -135,6 +135,6 @@ nbsphinx_thumbnails = {
     'examples/09_Stub_tuner_MOO': 'examples/_images/09.png',
     'examples/10_PFR_mixed_type_inputs': 'examples/_images/10.png',
     'examples/11_PFR_EHVI_MOO': 'examples/_images/11.png',
-    'examples/12_PFR_yield_extension': 'examples/_images/12.png'
+    'examples/12_PFR_yield_extension': 'examples/_images/12.png',
     'examples/13_Using_Ax': 'examples/_images/13.png'
 }

@@ -26,15 +26,15 @@ from nextorch.bo import eval_acq_func, eval_objective_func, \
     model_predict, model_predict_real, Experiment, EHVIMOOExperiment, WeightedMOOExperiment
 
 
-# Set matplotlib default values
-font = {'size'   : 20}
+# # Set matplotlib default values
+# font = {'size'   : 20}
 
-matplotlib.rc('font', **font)
-#matplotlib.rcParams['axes.linewidth'] = 1.5
-matplotlib.rcParams['xtick.major.size'] = 8
-matplotlib.rcParams['xtick.major.width'] = 2
-matplotlib.rcParams['ytick.major.size'] = 8
-matplotlib.rcParams['ytick.major.width'] = 2
+# matplotlib.rc('font', **font)
+# matplotlib.rcParams['axes.linewidth'] = 1.5
+# matplotlib.rcParams['xtick.major.size'] = 8
+# matplotlib.rcParams['xtick.major.width'] = 2
+# matplotlib.rcParams['ytick.major.size'] = 8
+# matplotlib.rcParams['ytick.major.width'] = 2
 
 # Set global colormap
 colormap = cm.jet

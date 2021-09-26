@@ -30,7 +30,7 @@ from nextorch.bo import eval_acq_func, eval_objective_func, \
 font = {'size'   : 20}
 
 matplotlib.rc('font', **font)
-matplotlib.rcParams['axes.linewidth'] = 1.5
+#matplotlib.rcParams['axes.linewidth'] = 1.5
 matplotlib.rcParams['xtick.major.size'] = 8
 matplotlib.rcParams['xtick.major.width'] = 2
 matplotlib.rcParams['ytick.major.size'] = 8

@@ -36,9 +36,9 @@ from nextorch.bo import eval_acq_func, eval_objective_func, \
 # matplotlib.rcParams['ytick.major.size'] = 8
 # matplotlib.rcParams['ytick.major.width'] = 2
 
-# Set global colormap
+# Set global 
 colormap = cm.jet
-
+figformat = 'eps'
 
 #%% Parity plots
 def parity(
@@ -96,7 +96,7 @@ def parity(
         if save_path is None: 
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
-        fig.savefig(os.path.join(save_path, 'parity_'+ str(i_iter) + '.png'), 
+        fig.savefig(os.path.join(save_path, 'parity_'+ str(i_iter) + '.' + figformat), 
                     bbox_inches="tight")
 
 
@@ -194,7 +194,7 @@ def parity_with_ci(
         if save_path is None: 
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
-        fig.savefig(os.path.join(save_path, 'parity_w_ci_'+ str(i_iter) + '.png'), 
+        fig.savefig(os.path.join(save_path, 'parity_w_ci_'+ str(i_iter) + '.' + figformat), 
                     bbox_inches="tight")
 
 
@@ -313,7 +313,7 @@ def opt_per_trial(
         if save_path is None: 
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
-        fig.savefig(os.path.join(save_path, file_name + '.png'), 
+        fig.savefig(os.path.join(save_path, file_name + '.' + figformat), 
                     bbox_inches="tight")
 
 
@@ -447,7 +447,7 @@ def acq_func_1d(
         if save_path is None: 
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
-        fig.savefig(os.path.join(save_path, 'acq_func_i'+ str(i_iter) + '.png'), 
+        fig.savefig(os.path.join(save_path, 'acq_func_i'+ str(i_iter) + '.' + figformat), 
                     bbox_inches="tight")
 
 
@@ -677,7 +677,7 @@ def response_1d(
         if save_path is None: 
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
-        fig.savefig(os.path.join(save_path, 'objective_func_i'+ str(i_iter) + '.png'), 
+        fig.savefig(os.path.join(save_path, 'objective_func_i'+ str(i_iter) + '.' + figformat), 
                     bbox_inches="tight")
 
 
@@ -893,7 +893,7 @@ def sampling_2d(
         if save_path is None: 
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
-        fig.savefig(os.path.join(save_path, file_name + '.png'), 
+        fig.savefig(os.path.join(save_path, file_name + '.' + figformat), 
                     bbox_inches="tight")
 
 def sampling_2d_exp(
@@ -1190,7 +1190,7 @@ def sampling_3d(
         if save_path is None: 
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
-        fig.savefig(os.path.join(save_path, file_name + '.png'), 
+        fig.savefig(os.path.join(save_path, file_name + '.' + figformat), 
                     bbox_inches="tight")
 
 
@@ -1382,7 +1382,7 @@ def response_heatmap(
         if save_path is None: 
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
-        fig.savefig(os.path.join(save_path, filename + '.png'), 
+        fig.savefig(os.path.join(save_path, filename + '.' + figformat), 
                     bbox_inches="tight")
     
 
@@ -1837,7 +1837,7 @@ def response_surface(
             save_path = os.getcwd()
 
         if not os.path.exists(save_path): os.makedirs(save_path)
-        fig.savefig(os.path.join(save_path, filename + '.png'), 
+        fig.savefig(os.path.join(save_path, filename + '.' + figformat), 
                     bbox_inches="tight")
 
 
@@ -1951,7 +1951,7 @@ def response_scatter_exp(
             save_path = os.getcwd()
 
         if not os.path.exists(save_path): os.makedirs(save_path)
-        fig.savefig(os.path.join(save_path, filename + '.png'), 
+        fig.savefig(os.path.join(save_path, filename + '.' + figformat), 
                     bbox_inches="tight")
 
 def response_surface_exp(
@@ -2256,7 +2256,7 @@ def pareto_front(
         if save_path is None: 
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
-        fig.savefig(os.path.join(save_path, 'pareto_'+ str(i_iter) + '.png'), 
+        fig.savefig(os.path.join(save_path, 'pareto_'+ str(i_iter) + '.' + figformat), 
                     bbox_inches="tight")
 
 

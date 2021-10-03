@@ -36,9 +36,10 @@ from nextorch.bo import eval_acq_func, eval_objective_func, \
 # matplotlib.rcParams['ytick.major.size'] = 8
 # matplotlib.rcParams['ytick.major.width'] = 2
 
-# Set global 
+# Set global plotting variables
 colormap = cm.jet
 figformat = 'eps'
+backgroundtransparency = False
 
 #%% Parity plots
 def parity(
@@ -97,7 +98,7 @@ def parity(
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, 'parity_'+ str(i_iter) + '.' + figformat), 
-                    bbox_inches="tight")
+                    bbox_inches="tight", transparent=backgroundtransparency)
 
 
 def parity_exp(
@@ -195,7 +196,7 @@ def parity_with_ci(
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, 'parity_w_ci_'+ str(i_iter) + '.' + figformat), 
-                    bbox_inches="tight")
+                    bbox_inches="tight", transparent=backgroundtransparency)
 
 
 def parity_with_ci_exp(Exp: Experiment, 
@@ -314,7 +315,7 @@ def opt_per_trial(
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, file_name + '.' + figformat), 
-                    bbox_inches="tight")
+                    bbox_inches="tight", transparent=backgroundtransparency)
 
 
 def opt_per_trial_exp(
@@ -448,7 +449,7 @@ def acq_func_1d(
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, 'acq_func_i'+ str(i_iter) + '.' + figformat), 
-                    bbox_inches="tight")
+                    bbox_inches="tight", transparent=backgroundtransparency)
 
 
 
@@ -678,7 +679,7 @@ def response_1d(
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, 'objective_func_i'+ str(i_iter) + '.' + figformat), 
-                    bbox_inches="tight")
+                    bbox_inches="tight", transparent=backgroundtransparency)
 
 
 def response_1d_exp(
@@ -894,7 +895,7 @@ def sampling_2d(
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, file_name + '.' + figformat), 
-                    bbox_inches="tight")
+                    bbox_inches="tight", transparent=backgroundtransparency)
 
 def sampling_2d_exp(
     Exp: Experiment,
@@ -1191,7 +1192,7 @@ def sampling_3d(
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, file_name + '.' + figformat), 
-                    bbox_inches="tight")
+                    bbox_inches="tight", transparent=backgroundtransparency)
 
 
 def sampling_3d_exp(
@@ -1383,7 +1384,7 @@ def response_heatmap(
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, filename + '.' + figformat), 
-                    bbox_inches="tight")
+                    bbox_inches="tight", transparent=backgroundtransparency)
     
 
 def response_heatmap_exp(
@@ -1838,7 +1839,7 @@ def response_surface(
 
         if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, filename + '.' + figformat), 
-                    bbox_inches="tight")
+                    bbox_inches="tight", transparent=backgroundtransparency)
 
 
 def response_scatter_exp(
@@ -1952,7 +1953,7 @@ def response_scatter_exp(
 
         if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, filename + '.' + figformat), 
-                    bbox_inches="tight")
+                    bbox_inches="tight", transparent=backgroundtransparency)
 
 def response_surface_exp(
     Exp: Experiment,
@@ -2257,7 +2258,7 @@ def pareto_front(
             save_path = os.getcwd()
         if not os.path.exists(save_path): os.makedirs(save_path)
         fig.savefig(os.path.join(save_path, 'pareto_'+ str(i_iter) + '.' + figformat), 
-                    bbox_inches="tight")
+                    bbox_inches="tight", transparent=backgroundtransparency)
 
 
 

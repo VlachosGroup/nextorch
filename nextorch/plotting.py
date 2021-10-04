@@ -35,10 +35,12 @@ from nextorch.bo import eval_acq_func, eval_objective_func, \
 # matplotlib.rcParams['xtick.major.width'] = 2
 # matplotlib.rcParams['ytick.major.size'] = 8
 # matplotlib.rcParams['ytick.major.width'] = 2
+# matplotlib.rcParams["figure.dpi"] = 100
+# matplotlib.rcParams['savefig.dpi'] = 600
 
 # Set global plotting variables
 colormap = cm.jet
-figformat = 'eps'
+figformat = 'png'
 backgroundtransparency = False
 
 #%% Parity plots

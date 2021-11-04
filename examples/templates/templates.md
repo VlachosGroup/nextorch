@@ -1,12 +1,10 @@
-===============
-Templates 
-===============
+### Templates 
+
 
 
 The templates are mainly for lab experiments and human-in-the-loop optimizatin. 
 
-Step-by-step Guide
----------------------
+### Step-by-step Guide
 
 1. Use `template_initial_doe.py` to generate points for the initial experimental design
 - The goal is to sample the design space efficiently with an initial DOE

@@ -1198,6 +1198,7 @@ class BasicExperiment(Database):
         Y_test_upper_real: numpy matrix 
             The upper confidence interval in a real scale
         """
+        X_test = ut.unitscale_X(X_test, self.X_ranges)
         Y_real, Y_lower_real, Y_upper_real = model_predict_real(self.model, 
                                                                 X_test, 
                                                                 self.Y_mean, 

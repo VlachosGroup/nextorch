@@ -48,3 +48,4 @@ build/lib/nextorch/doe.py
 build/lib/nextorch/bo.py
 build/lib/nextorch/__init__.py
 .DS_Store
+.ipynb_checkpoints

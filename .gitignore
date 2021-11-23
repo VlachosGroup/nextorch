@@ -1,11 +1,8 @@
-
 .vscode/
 nextorch/__pycache__/
 nextorch/.vscode/
 examples/PFR/__pycache__/
 buildinstructions
-.DS_Store
-nextorch/.DS_Store
 test_out_simple_1d/parity_w_ci_final.png
 test_out_simple_1d/parity_final.png
 test_out_simple_1d/objective_func_i9.png

@@ -102,4 +102,4 @@ Acknowledgements
 Publications
 ------------
 
-Y. Wang, T.-Y. Chen, and D.G. Vlachos, NEXTorch: A Design and Bayesian Optimization Toolkit for Chemical Sciences and Engineering, J. Chem. Inf. Model. 2021, 61, 11, 5312–5319.
+\Y. Wang, T.-Y. Chen, and D.G. Vlachos, NEXTorch: A Design and Bayesian Optimization Toolkit for Chemical Sciences and Engineering, J. Chem. Inf. Model. 2021, 61, 11, 5312–5319.

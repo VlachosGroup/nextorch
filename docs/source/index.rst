@@ -27,6 +27,7 @@ Welcome to nextorch's documentation!
    user/experiment
    user/visualization
    user/examples
+   user/templates
    user/ax
 
 .. toctree::

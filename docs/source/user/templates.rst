@@ -2,19 +2,10 @@
 Templates
 ===============
 
-.. contents:: Table of Contents
-    :depth: 2
-
-
-
 Template for initial DOE
 --------------------------
 
 .. code-block:: python
-    """
-    Template to run lab experiments (human-in-the-loop)
-    Use this for the initial set of experimental design
-    """
 
     #%% 1. Import NEXTorch and other packages
     import os, sys
@@ -83,10 +74,6 @@ Template for active learning iterations
 ---------------------------------------
 
 .. code-block:: python
-    """
-    Template to run lab experiments (human-in-the-loop)
-    Use this for the following active learning iterations
-    """
 
     #%% 1. Import NEXTorch and other packages
     import os, sys
@@ -235,3 +222,5 @@ Template for active learning iterations
         i_trial += 1
         
     #%% 5. Plot the reponses versus experiment no. 
+
+

@@ -7,9 +7,19 @@ import numpy as np
 import copy
 import torch
 from torch import Tensor, tensor 
-
 from typing import Optional, TypeVar, Union, Tuple, List
-from nextorch.utils import ArrayLike1d
+
+# NEED TO EXPLAIN THESE IN DOCS
+# Create a type variable for 1D arrays from numpy, np.ndarray
+Array = TypeVar('Array')
+# Create a type variable for 2D arrays from numpy, np.ndarray, and call it as a matrix
+Matrix = TypeVar('Matrix')
+
+# Create a type variable which is array like (1D) including list, array, 1d tensor
+ArrayLike1d = Union[list, Array, Tensor]
+# Create a type variable which is matrix like (2D) including matrix, tensor, 2d list
+# This also includes ArrayList1d types
+MatrixLike2d = Union[list, Matrix, Tensor]
 
 #%% Parameter space classes 
 class Parameter():

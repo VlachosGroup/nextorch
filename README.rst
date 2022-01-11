@@ -13,7 +13,6 @@ It is also a library for learning the theory and implementation of Bayesian Opti
 
 
 .. image:: https://github.com/VlachosGroup/nextorch/blob/62b6163d65d2b49fdb8f6d3485af3222f4409500/docs/source/logos/nextorch_logo_doc.png
-   :target: https://nextorch.readthedocs.io/en/latest/
 
 Documentation
 -------------

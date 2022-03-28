@@ -24,7 +24,7 @@ Developers
 ----------
 
 -  Yifan Wang (wangyf@udel.edu)
--  Tai-Ying (Chris) Chen (tychen@udel.edu)
+-  Tai-Ying (Chris) Chen
 
 Dependencies
 ------------

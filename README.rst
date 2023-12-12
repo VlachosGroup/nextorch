@@ -32,7 +32,7 @@ Dependencies
 -  Python >= 3.7
 -  `PyTorch`_ >= 1.8: Used for tensor operations with GPU and autograd support
 -  `GPyTorch`_ >= 1.4: Used for training Gaussian Processes
--  `BoTorch`_ >= 0.4.0: Used for providing Bayesian Optimization framework
+-  `BoTorch`_ = 0.4.0: Used for providing Bayesian Optimization framework
 -  `Matplotlib`_: Used for generating plots
 -  `PyDOE2`_: Used for constructing experimental designs
 -  `Numpy`_: Used for vector and matrix operations

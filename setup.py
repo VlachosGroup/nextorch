@@ -18,7 +18,7 @@ with open(os.path.join(root_dir, "README.rst"), "r") as fh:
 
 setuptools.setup(
     name="nextorch", 
-    version="0.1.0",
+    version="0.2.2",
     author="Vlachos Research Group",
     author_email="vlachos@udel.edu",
     description="Experimental design and Bayesian optimization library in Python/PyTorch",
@@ -35,8 +35,8 @@ setuptools.setup(
     python_requires=">=3.7",
     install_requires=[
         "torch>=1.8", 
-        "gpytorch>=1.4",
-        "botorch>=0.4.0",
+        "gpytorch<=1.4",
+        "botorch<=0.4.0",
         "matplotlib>=3.1.1",
         "pyDOE2>=1.3.0",
         "numpy>=1.19.2",

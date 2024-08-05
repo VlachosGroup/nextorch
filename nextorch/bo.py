@@ -1175,7 +1175,8 @@ class BasicExperiment(Database):
 
     def predict_real(self, 
                     X_test: MatrixLike2d,
-                    show_confidence: Optional[bool] = False
+                    show_confidence: Optional[bool] = False,
+                    scale_X: bool = True
     ) -> Union[Matrix, Tuple[Matrix, Matrix, Matrix]]:
         """Use GP model for prediction at X_test
 
@@ -1188,6 +1189,8 @@ class BasicExperiment(Database):
         show_confidence : Optional[bool], optional
             by default False, only return posterior mean
             If True, return the mean, and lower, upper confidence interval
+        scale_X: bool, optional
+            by default True, convert X to unit scale if not scaled already.
 
         Returns
         -------
@@ -1198,7 +1201,7 @@ class BasicExperiment(Database):
         Y_test_upper_real: numpy matrix 
             The upper confidence interval in a real scale
         """
-        X_test_real = ut.unitscale_X(X_test, self.X_ranges)
+        X_test_real = ut.unitscale_X(X_test, self.X_ranges) if scale_X else X_test
         Y_real, Y_lower_real, Y_upper_real = model_predict_real(self.model, 
                                                                 X_test_real, 
                                                                 self.Y_mean, 

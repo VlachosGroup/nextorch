@@ -1443,8 +1443,8 @@ def response_heatmap_exp(
                                          baseline=baseline,
                                          mesh_size=mesh_size) 
                                      
-    # Make prediction using the GP model
-    Y_test = Exp.predict_real(X_test)
+    # Make prediction using the GP model, don't scale X as it's already scaled
+    Y_test = Exp.predict_real(X_test, scale_X=False)
     Y_test_2d = transform_Y_mesh_2d(Y_test, mesh_size=mesh_size)
     # select the sample points
     X_train = None
